@@ -1,0 +1,113 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aster"
+version = "0.1.0"
+description = "Production-oriented Apple Silicon local LLM inference runtime for long-context, agent-style workloads"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "Eitan", email = "eitan@example.com"}
+]
+keywords = [
+    "llm",
+    "inference",
+    "apple-silicon",
+    "mlx",
+    "local-serving",
+    "agents",
+    "openai-compatible"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "fastapi>=0.135.0",
+    "uvicorn>=0.42.0",
+    "pydantic>=2.12.0",
+    "PyYAML>=6.0.3",
+    "prometheus-client>=0.24.0",
+    "httpx>=0.28.0",
+    "sse-starlette>=3.3.0",
+    "orjson>=3.11.0",
+    "psutil>=7.0.0",
+    "numpy>=2.4.0",
+    "mlx>=0.31.0",
+    "mlx-lm>=0.31.0",
+    "transformers>=5.0.0",
+    "sentencepiece>=0.2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "pyright>=1.1.350",
+    "black>=24.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/aster"
+Documentation = "https://github.com/yourusername/aster/tree/main/docs"
+Repository = "https://github.com/yourusername/aster.git"
+Issues = "https://github.com/yourusername/aster/issues"
+
+[project.scripts]
+aster = "aster.__main__:main"
+
+[tool.setuptools]
+packages = ["aster"]
+
+[tool.setuptools.package-data]
+aster = ["py.typed"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+include = ["aster", "tests"]
+exclude = [".venv", "models"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "models", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.ruff.lint.isort]
+known-first-party = ["aster"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["aster"]
+omit = ["*/tests/*", "*/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

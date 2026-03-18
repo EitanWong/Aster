@@ -1,0 +1,48 @@
+api:
+  host: 127.0.0.1
+  port: 8080
+  max_queue_depth: 128
+  request_timeout_seconds: 180.0
+model:
+  name: Qwen3.5-9B
+  path: /ABSOLUTE/PATH/TO/Qwen3.5-9B-MLX   # or a compatible HF repo id
+  draft_name: Qwen3.5-0.8B
+  draft_path: /ABSOLUTE/PATH/TO/Qwen3.5-0.8B-MLX   # or a compatible HF repo id
+  runtime: mlx
+  context_length: 16384
+cache:
+  kv_page_tokens: 128
+  kv_max_pages: 8192
+  prefix_cache_enabled: true
+  prefix_cache_max_entries: 256
+  prefix_cache_max_bytes: 8589934592
+  eviction_policy: lru
+batch:
+  max_batch_size: 8
+  prefill_batch_size: 4
+  decode_batch_size: 8
+  min_batch_window_ms: 1.5
+  max_batch_window_ms: 10.0
+  latency_target_ms: 250.0
+  scheduler_mode: adaptive
+speculative:
+  enabled: true
+  max_draft_tokens: 6
+  min_acceptance_rate: 0.45
+  min_speedup_ratio: 1.05
+  auto_disable_on_regression: true
+autotune:
+  enabled: true
+  startup_warmup: true
+  profile_path: ./configs/autotune_profile.json
+  benchmark_prompt_tokens: [4096, 8192, 16384]
+  concurrency_levels: [1, 2, 4]
+workers:
+  restart_limit: 5
+  heartbeat_timeout_seconds: 30.0
+  degraded_after_restarts: 2
+telemetry:
+  json_logs: true
+  metrics_namespace: aster
+logging:
+  level: INFO
