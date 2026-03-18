@@ -1,0 +1,22 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" fill="#ffffff"/>
+  
+  <!-- Modern "A" design -->
+  <g fill="url(#grad2)">
+    <!-- Left stroke of A -->
+    <polygon points="60,160 100,40 110,40 145,160 130,160 120,130 80,130 70,160"/>
+    <!-- Horizontal bar -->
+    <rect x="80" y="95" width="40" height="12" fill="url(#grad2)"/>
+  </g>
+  
+  <!-- Accent dot (representing AI/spark) -->
+  <circle cx="155" cy="50" r="8" fill="#8b5cf6" opacity="0.8"/>
+</svg>

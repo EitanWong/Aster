@@ -1,0 +1,18 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" fill="#ffffff"/>
+  
+  <!-- Minimalist star - cleaner design -->
+  <path d="M 100 30 L 115 75 L 165 75 L 127 115 L 142 160 L 100 120 L 58 160 L 73 115 L 35 75 L 85 75 Z" 
+        fill="url(#grad1)" stroke="none"/>
+  
+  <!-- Subtle inner highlight -->
+  <circle cx="100" cy="100" r="20" fill="#ffffff" opacity="0.15"/>
+</svg>

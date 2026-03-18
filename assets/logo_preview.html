@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aster Logo 设计选项</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 50px;
+            font-size: 1.1em;
+        }
+        
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .logo-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+        
+        .logo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .logo-display {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .logo-display img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .logo-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .logo-subtitle {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .logo-description {
+            font-size: 0.95em;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .pros, .cons {
+            text-align: left;
+        }
+        
+        .pros h4 {
+            color: #27ae60;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .cons h4 {
+            color: #e74c3c;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .pros ul, .cons ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .pros li:before {
+            content: "✓ ";
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .cons li:before {
+            content: "✗ ";
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .pros li, .cons li {
+            margin-bottom: 5px;
+            font-size: 0.85em;
+        }
+        
+        .recommendation {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-top: 50px;
+            text-align: center;
+        }
+        
+        .recommendation h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        
+        .recommendation-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .recommendation-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .recommendation-item h3 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .recommendation-item p {
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Aster Logo 设计选项</h1>
+        <p class="subtitle">请选择你最喜欢的设计风格</p>
+        
+        <div class="logo-grid">
+            <!-- Option 1 -->
+            <div class="logo-card">
+                <div class="logo-display">
+                    <img src="logo_v2_clean_star.svg" alt="Clean Star">
+                </div>
+                <div class="logo-title">Option 1: Clean Star</div>
+                <div class="logo-subtitle">简洁星形</div>
+                <div class="logo-description">
+                    简洁的 5 点星形，去掉了复杂的效果。
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>优点</h4>
+                        <ul>
+                            <li>简单易识别</li>
+                            <li>经典设计</li>
+                            <li>易于缩放</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>缺点</h4>
+                        <ul>
+                            <li>可能太传统</li>
+                            <li>科技感不足</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Option 2 -->
+            <div class="logo-card">
+                <div class="logo-display">
+                    <img src="logo_v3_letter_a.svg" alt="Letter A">
+                </div>
+                <div class="logo-title">Option 2: Letter A</div>
+                <div class="logo-subtitle">字母 A</div>
+                <div class="logo-description">
+                    基于 Aster 首字母的现代设计，带有火花点。
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>优点</h4>
+                        <ul>
+                            <li>独特易识别</li>
+                            <li>代表项目名</li>
+                            <li>现代感强</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>缺点</h4>
+                        <ul>
+                            <li>科技感一般</li>
+                            <li>可能太简单</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Option 3 -->
+            <div class="logo-card">
+                <div class="logo-display">
+                    <img src="logo_v4_orbital.svg" alt="Orbital">
+                </div>
+                <div class="logo-title">Option 3: Orbital</div>
+                <div class="logo-subtitle">轨道</div>
+                <div class="logo-description">
+                    同心圆环设计，代表神经网络和推理过程。
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>优点</h4>
+                        <ul>
+                            <li>科技感强</li>
+                            <li>代表 AI/推理</li>
+                            <li>现代专业</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>缺点</h4>
+                        <ul>
+                            <li>可能有点复杂</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Option 4 -->
+            <div class="logo-card">
+                <div class="logo-display">
+                    <img src="logo_v5_triangle.svg" alt="Triangle">
+                </div>
+                <div class="logo-title">Option 4: Triangle</div>
+                <div class="logo-subtitle">三角形</div>
+                <div class="logo-description">
+                    向上的三角形，代表上升、速度和能量。
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>优点</h4>
+                        <ul>
+                            <li>简洁现代</li>
+                            <li>有动感</li>
+                            <li>易于识别</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>缺点</h4>
+                        <ul>
+                            <li>可能太简单</li>
+                            <li>科技感不足</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Option 5 -->
+            <div class="logo-card">
+                <div class="logo-display">
+                    <img src="logo_v6_tech.svg" alt="Tech Squares">
+                </div>
+                <div class="logo-title">Option 5: Tech Squares</div>
+                <div class="logo-subtitle">科技方块</div>
+                <div class="logo-description">
+                    嵌套的旋转方块，现代科技风格。
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>优点</h4>
+                        <ul>
+                            <li>专业科技感</li>
+                            <li>现代设计</li>
+                            <li>易于扩展</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>缺点</h4>
+                        <ul>
+                            <li>可能有点冷</li>
+                            <li>不代表项目名</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Option 6 -->
+            <div class="logo-card">
+                <div class="logo-display">
+                    <img src="logo_v7_flower.svg" alt="Flower">
+                </div>
+                <div class="logo-title">Option 6: Flower</div>
+                <div class="logo-subtitle">花朵</div>
+                <div class="logo-description">
+                    6 瓣花朵设计，灵感来自 Aster 花。
+                </div>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>优点</h4>
+                        <ul>
+                            <li>优雅独特</li>
+                            <li>代表项目名</li>
+                            <li>易于识别</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>缺点</h4>
+                        <ul>
+                            <li>科技感不足</li>
+                            <li>可能太柔和</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendation">
+            <h2>💡 我的建议</h2>
+            <p style="margin-bottom: 20px;">根据项目特性（Apple Silicon LLM 推理运行时），以下是我的推荐：</p>
+            <div class="recommendation-list">
+                <div class="recommendation-item">
+                    <h3>🥇 最推荐</h3>
+                    <p><strong>Option 3 (Orbital)</strong> 或 <strong>Option 5 (Tech Squares)</strong></p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">科技感强，代表 AI/推理，现代专业</p>
+                </div>
+                <div class="recommendation-item">
+                    <h3>🥈 次推荐</h3>
+                    <p><strong>Option 2 (Letter A)</strong></p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">独特易识别，代表项目名称，现代感</p>
+                </div>
+                <div class="recommendation-item">
+                    <h3>🥉 备选</h3>
+                    <p><strong>Option 4 (Triangle)</strong></p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">简洁有力，代表速度和能量</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>所有 logo 都使用相同的颜色方案</strong></p>
+            <p>主色: #6366f1 (Indigo) | 渐变: #6366f1 → #8b5cf6 (Indigo → Purple)</p>
+            <p>格式: 可扩展 SVG | 大小: 200x200px (可任意缩放)</p>
+            <p style="margin-top: 20px; color: #999;">请告诉我你最喜欢哪个选项，或者你想要什么样的风格！</p>
+        </div>
+    </div>
+</body>
+</html>
