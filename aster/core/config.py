@@ -89,10 +89,10 @@ class RuntimeSettings(BaseModel):
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    result = dict(base)
+    result: dict[str, Any] = dict(base)
     for key, value in override.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
-            result[key] = _deep_merge(result[key], value)
+            result[key] = _deep_merge(result[key], value)  # type: ignore
         else:
             result[key] = value
     return result
@@ -107,3 +107,4 @@ def load_settings(config_path: str) -> RuntimeSettings:
     if env_override:
         data = _deep_merge(data, yaml.safe_load(env_override) or {})
     return RuntimeSettings.model_validate(data)
+ttings.model_validate(data)

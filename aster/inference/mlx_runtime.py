@@ -52,7 +52,12 @@ class MLXRuntime:
         return self._draft
 
     def _load_model(self, name: str, path: str) -> LoadedRuntimeModel:
-        model, tokenizer, config = load(path, lazy=False, return_config=True)
+        result = load(path, lazy=False, return_config=True)
+        if isinstance(result, tuple) and len(result) == 3:
+            model, tokenizer, config = result
+        else:
+            model, tokenizer = result  # type: ignore
+            config = {}
         self.logger.info(f"loaded_model name={name} path={path}")
         return LoadedRuntimeModel(name=name, path=path, model=model, tokenizer=tokenizer, config=config)
 

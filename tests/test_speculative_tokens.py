@@ -9,17 +9,18 @@ import json
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 from aster.core.config import load_settings
 from aster.core.lifecycle import create_application
 
 
 async def measure_tokens_per_second(
-    inference_engine,
+    inference_engine: Any,
     prompt: str,
     max_tokens: int = 100,
     speculative_enabled: bool = False,
-) -> dict:
+) -> dict[str, str | float | bool]:
     """Measure tokens/second for a given prompt."""
 
     print(f"\n{'='*60}")
@@ -33,8 +34,8 @@ async def measure_tokens_per_second(
 
     # Warm up
     print("Warming up...")
-    from inference.engine import InferenceRequest
-    warmup_req = InferenceRequest(
+    from aster.inference.engine import InferenceRequest  # type: ignore
+    warmup_req: Any = InferenceRequest(
         prompt=prompt,
         max_tokens=10,
         temperature=0.7,
@@ -46,22 +47,22 @@ async def measure_tokens_per_second(
     print("Measuring...")
     start_time = time.time()
 
-    test_req = InferenceRequest(
+    test_req: Any = InferenceRequest(
         prompt=prompt,
         max_tokens=max_tokens,
         temperature=0.7,
         top_p=0.9,
     )
 
-    result = await inference_engine.infer(test_req)
+    result: Any = await inference_engine.infer(test_req)
 
     end_time = time.time()
     elapsed = end_time - start_time
 
     # Extract metrics
-    tokens_per_second = result.generation_tps
+    tokens_per_second: float = result.generation_tps
 
-    result_dict = {
+    result_dict: dict[str, str | float | bool] = {
         "mode": "speculative" if speculative_enabled else "non-speculative",
         "elapsed_seconds": round(elapsed, 3),
         "completion_tokens": result.completion_tokens,
@@ -85,7 +86,7 @@ async def measure_tokens_per_second(
     return result_dict
 
 
-async def main():
+async def main() -> None:
     """Run the test."""
 
     print("\n" + "="*60)
@@ -115,7 +116,7 @@ async def main():
     try:
         app = create_application(str(config_path))
         container = app.state.container
-        inference_engine = container.inference_engine
+        inference_engine: Any = container.inference_engine
         print("✅ Inference engine initialized")
     except Exception as e:
         print(f"Error initializing engine: {e}")
@@ -130,7 +131,7 @@ async def main():
         "What are the benefits of machine learning?",
     ]
 
-    results = []
+    results: list[dict[str, str | float | bool]] = []
 
     # Test non-speculative mode
     print("\n" + "="*60)
@@ -180,16 +181,19 @@ async def main():
     non_spec_results = [r for r in results if r["mode"] == "non-speculative"]
     spec_results = [r for r in results if r["mode"] == "speculative"]
 
+    avg_non_spec: float = 0.0
+    avg_spec: float = 0.0
+
     if non_spec_results:
-        avg_non_spec = sum(r["tokens_per_second"] for r in non_spec_results) / len(non_spec_results)
+        avg_non_spec = sum(r["tokens_per_second"] for r in non_spec_results) / len(non_spec_results)  # type: ignore
         print(f"\nNon-Speculative Average: {avg_non_spec:.2f} tokens/second")
 
     if spec_results:
-        avg_spec = sum(r["tokens_per_second"] for r in spec_results) / len(spec_results)
+        avg_spec = sum(r["tokens_per_second"] for r in spec_results) / len(spec_results)  # type: ignore
         print(f"Speculative Average: {avg_spec:.2f} tokens/second")
 
     if non_spec_results and spec_results:
-        speedup = avg_spec / avg_non_spec if avg_non_spec > 0 else 0
+        speedup: float = avg_spec / avg_non_spec if avg_non_spec > 0 else 0
         print(f"\nSpeedup: {speedup:.2f}x")
         if speedup > 1:
             print(f"✅ Speculative mode is {(speedup-1)*100:.1f}% faster")

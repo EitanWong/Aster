@@ -18,7 +18,7 @@ class KVPage:
 @dataclass(slots=True)
 class RequestPageMap:
     request_id: str
-    page_ids: list[int] = field(default_factory=list)
+    page_ids: list[int] = field(default_factory=list)  # type: list[int]
 
 
 class PagedKVCache:

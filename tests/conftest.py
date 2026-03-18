@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -14,7 +15,7 @@ if str(ROOT) not in sys.path:
 
 
 @pytest.fixture
-def tmp_config(tmp_path):
+def tmp_config(tmp_path: Path) -> Generator[str, None, None]:
     """Create a temporary config file for testing."""
     config_path = tmp_path / "config.yaml"
     config_path.write_text("""
@@ -33,15 +34,15 @@ scheduler:
   batch_window_ms: 10
   max_batch_size: 4
 """)
-    return str(config_path)
+    yield str(config_path)
 
 
 @pytest.fixture
-def minimal_config(tmp_path):
+def minimal_config(tmp_path: Path) -> Generator[str, None, None]:
     """Create a minimal config file for testing."""
     config_path = tmp_path / "config.yaml"
     config_path.write_text("""
 logging:
   level: DEBUG
 """)
-    return str(config_path)
+    yield str(config_path)

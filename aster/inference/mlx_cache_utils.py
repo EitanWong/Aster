@@ -9,7 +9,7 @@ def prompt_cache_length(prompt_cache: Any | None) -> int:
 
     # Newer/other mlx-lm variants may expose a helper or direct attr on the cache container.
     for attr in ("cache_length", "length", "size"):
-        value = getattr(prompt_cache, attr, None)
+        value: Any = getattr(prompt_cache, attr, None)
         if isinstance(value, int):
             return max(0, value)
         if callable(value):
