@@ -175,6 +175,7 @@ fi
 should_regenerate_filelist() {
     local command_file="$LOCAL_DIR/.hfd/last_download_command"
     local current_command=$(generate_command_string)
+    local fileslist_file=".hfd/${TOOL}_urls.txt"
     
     # If file list doesn't exist, regenerate
     if [[ ! -f "$LOCAL_DIR/$fileslist_file" ]]; then
