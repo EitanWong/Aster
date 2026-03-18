@@ -1,7 +1,5 @@
 """Tests for scheduler modules."""
 
-import pytest
-
 from aster.core.config import BatchSettings
 from aster.scheduler.adaptive_batcher import AdaptiveBatcher
 
@@ -25,7 +23,7 @@ def test_adaptive_batcher_batch_formation():
         min_batch_size=1
     )
     batcher = AdaptiveBatcher(settings)
-    
+
     # Batcher should handle empty queue
     batch = batcher.form_batch([])
     assert batch is not None or batch == []

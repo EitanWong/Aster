@@ -4,18 +4,14 @@ Manual test for Speculative Decoding token output speed.
 Uses Aster's actual initialization logic.
 """
 
-import time
-import json
 import asyncio
-from pathlib import Path
-from typing import Dict
+import json
 import sys
+import time
+from pathlib import Path
 
-# Add Aster to path
-sys.path.insert(0, str(Path(__file__).parent))
-
-from aster.core.lifecycle import create_application
 from aster.core.config import load_settings
+from aster.core.lifecycle import create_application
 
 
 async def measure_tokens_per_second(
@@ -23,7 +19,7 @@ async def measure_tokens_per_second(
     prompt: str,
     max_tokens: int = 100,
     speculative_enabled: bool = False,
-) -> Dict:
+) -> dict:
     """Measure tokens/second for a given prompt."""
 
     print(f"\n{'='*60}")
@@ -77,7 +73,7 @@ async def measure_tokens_per_second(
         "speculative_path_mode": result.speculative_path_mode,
     }
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Elapsed: {result_dict['elapsed_seconds']}s")
     print(f"  Completion tokens: {result_dict['completion_tokens']}")
     print(f"  Generation TPS: {result_dict['generation_tps']}")
@@ -106,7 +102,7 @@ async def main():
 
     try:
         settings = load_settings(str(config_path))
-        print(f"✅ Config loaded successfully")
+        print("✅ Config loaded successfully")
         print(f"   Model: {settings.model.name}")
         print(f"   Draft model: {settings.model.draft_name}")
         print(f"   Speculative enabled: {settings.speculative.enabled}")

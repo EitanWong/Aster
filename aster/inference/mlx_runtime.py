@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import copy
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Iterator
+from typing import Any
 
 import mlx.core as mx
 from mlx_lm import load
@@ -229,28 +230,28 @@ class MLXRuntime:
         # Create a fresh cache that works with both models
         # by prefilling with both models simultaneously
         cache = mlx_cache.make_prompt_cache(target_model)
-        
+
         if len(prompt_tokens) == 0:
             return cache
-        
+
         # Prefill the cache with both models to ensure compatibility
         prompt_array = mx.array(prompt_tokens)
-        
+
         # Process in chunks to avoid memory issues
         chunk_size = 512
         for i in range(0, len(prompt_tokens), chunk_size):
             chunk = prompt_array[i:i+chunk_size]
             if chunk.size == 0:
                 continue
-            
+
             # Prefill with target model
             target_model(chunk[None], cache=cache)
             mx.eval([c.state for c in cache])
-            
+
             # Note: We don't prefill draft model cache separately
             # mlx_lm.speculative_generate_step will handle draft model internally
             mx.clear_cache()
-        
+
         return cache
 
     def _build_generator(
@@ -266,7 +267,7 @@ class MLXRuntime:
     ):
         cache_copy = self.clone_cache(prompt_cache)
         prompt_array = mx.array(prompt_tokens)
-        
+
         if draft_model is not None:
             # For speculative decoding, try to use a compatible cache
             # If we have a reused cache, try to use it directly
@@ -278,7 +279,7 @@ class MLXRuntime:
                 except Exception as e:
                     self.logger.warning(f"Failed to build speculative cache: {e}, falling back to no cache")
                     cache_copy = None
-            
+
             return speculative_generate_step(
                 prompt_array,
                 target_model,
