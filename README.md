@@ -1,5 +1,7 @@
 # Aster
 
+[English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+
 Aster is a production-oriented Apple Silicon local LLM inference runtime for long-context, OpenClaw-style agent workloads.
 
 ## Why Aster

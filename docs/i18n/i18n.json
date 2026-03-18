@@ -1,0 +1,97 @@
+{
+  "project": "Aster",
+  "description": "Production-oriented Apple Silicon local LLM inference runtime",
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "native_name": "English",
+      "status": "complete",
+      "maintainer": "Eitan"
+    },
+    {
+      "code": "zh",
+      "name": "Chinese (Simplified)",
+      "native_name": "中文（简体）",
+      "status": "complete",
+      "maintainer": "Eitan"
+    },
+    {
+      "code": "ja",
+      "name": "Japanese",
+      "native_name": "日本語",
+      "status": "complete",
+      "maintainer": "Community"
+    },
+    {
+      "code": "es",
+      "name": "Spanish",
+      "native_name": "Español",
+      "status": "complete",
+      "maintainer": "Community"
+    },
+    {
+      "code": "fr",
+      "name": "French",
+      "native_name": "Français",
+      "status": "complete",
+      "maintainer": "Community"
+    },
+    {
+      "code": "de",
+      "name": "German",
+      "native_name": "Deutsch",
+      "status": "complete",
+      "maintainer": "Community"
+    },
+    {
+      "code": "ko",
+      "name": "Korean",
+      "native_name": "한국어",
+      "status": "complete",
+      "maintainer": "Community"
+    }
+  ],
+  "documents": [
+    {
+      "name": "README",
+      "translations": {
+        "en": "README.md",
+        "zh": "README.zh.md",
+        "ja": "README.ja.md",
+        "es": "README.es.md",
+        "fr": "README.fr.md",
+        "de": "README.de.md",
+        "ko": "README.ko.md"
+      }
+    },
+    {
+      "name": "CONTRIBUTING",
+      "translations": {
+        "en": "CONTRIBUTING.md",
+        "zh": "CONTRIBUTING.zh.md",
+        "ja": "CONTRIBUTING.ja.md",
+        "es": "CONTRIBUTING.es.md",
+        "fr": "CONTRIBUTING.fr.md",
+        "de": "CONTRIBUTING.de.md",
+        "ko": "CONTRIBUTING.ko.md"
+      }
+    },
+    {
+      "name": "DEVELOPMENT",
+      "translations": {
+        "en": "docs/DEVELOPMENT.md",
+        "zh": "docs/i18n/zh/DEVELOPMENT.md",
+        "ja": "docs/i18n/ja/DEVELOPMENT.md"
+      }
+    }
+  ],
+  "last_updated": "2026-03-18",
+  "translation_guidelines": {
+    "preserve_structure": true,
+    "preserve_code_blocks": true,
+    "preserve_urls": true,
+    "use_native_terminology": true,
+    "maintain_tone": "professional and friendly"
+  }
+}
