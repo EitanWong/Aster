@@ -1,0 +1,49 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" fill="#ffffff"/>
+  
+  <!-- Outer subtle ring -->
+  <circle cx="100" cy="100" r="75" fill="none" stroke="url(#grad)" stroke-width="1" opacity="0.2"/>
+  
+  <!-- 6 elegant petals (smooth curves) -->
+  <g fill="url(#grad)" opacity="0.9" filter="url(#softGlow)">
+    <!-- Top petal -->
+    <path d="M 100 45 Q 110 65 100 85 Q 90 65 100 45" fill="url(#grad)"/>
+    <!-- Top-right petal -->
+    <path d="M 135 60 Q 145 75 130 95 Q 120 80 135 60" fill="url(#grad)"/>
+    <!-- Bottom-right petal -->
+    <path d="M 135 140 Q 145 125 130 105 Q 120 120 135 140" fill="url(#grad)"/>
+    <!-- Bottom petal -->
+    <path d="M 100 155 Q 110 135 100 115 Q 90 135 100 155" fill="url(#grad)"/>
+    <!-- Bottom-left petal -->
+    <path d="M 65 140 Q 55 125 70 105 Q 80 120 65 140" fill="url(#grad)"/>
+    <!-- Top-left petal -->
+    <path d="M 65 60 Q 55 75 70 95 Q 80 80 65 60" fill="url(#grad)"/>
+  </g>
+  
+  <!-- Middle ring (tech element) -->
+  <circle cx="100" cy="100" r="45" fill="none" stroke="url(#grad)" stroke-width="1.5" opacity="0.4"/>
+  
+  <!-- Inner circle with gradient -->
+  <circle cx="100" cy="100" r="28" fill="url(#grad)" opacity="0.8"/>
+  
+  <!-- Center highlight -->
+  <circle cx="100" cy="100" r="20" fill="#ffffff" opacity="0.15"/>
+  
+  <!-- Core dot -->
+  <circle cx="100" cy="100" r="8" fill="#ffffff" opacity="0.4"/>
+</svg>
