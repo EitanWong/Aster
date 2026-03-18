@@ -4,7 +4,6 @@ import argparse
 import asyncio
 import json
 
-import _bootstrap
 from autotune.benchmark import BenchmarkSuite
 from core.config import load_settings
 from scheduler.policy_engine import PolicyEngine

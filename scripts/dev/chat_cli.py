@@ -21,7 +21,7 @@ class RunResult:
 
 
 def load_config(config_path: str) -> dict[str, Any]:
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

@@ -137,7 +137,7 @@ class BenchmarkSuite:
                 self._measure_candidate(candidate, mode=mode, max_tokens=max_tokens),
                 timeout=timeout_seconds,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.warning(
                 "benchmark_candidate_timeout "
                 f"spec={candidate.speculative_enabled} draft={candidate.draft_tokens} "

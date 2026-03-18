@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 K = TypeVar("K")
 V = TypeVar("V")
 
 
-class LRUEvictionIndex(Generic[K, V]):
+class LRUEvictionIndex[K, V]:
     def __init__(self) -> None:
         self._items: OrderedDict[K, V] = OrderedDict()
 

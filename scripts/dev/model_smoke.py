@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-import _bootstrap
 from core.config import load_settings
 from inference.mlx_runtime import MLXRuntime
 

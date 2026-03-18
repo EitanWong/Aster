@@ -19,7 +19,7 @@ class TuningProfile:
         return json.dumps(asdict(self), indent=2)
 
     @classmethod
-    def from_path(cls, path: str) -> "TuningProfile | None":
+    def from_path(cls, path: str) -> TuningProfile | None:
         file = Path(path)
         if not file.exists():
             return None
