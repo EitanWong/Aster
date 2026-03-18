@@ -1,6 +1,12 @@
-# Aster
-
-[English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+<div align="center">
+  <img src="assets/logo.svg" alt="Aster Logo" width="200" height="200">
+  
+  # Aster
+  
+  **Apple Silicon용 프로덕션 지향 로컬 LLM 추론 런타임**
+  
+  [English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+</div>
 
 Aster는 긴 컨텍스트와 OpenClaw 스타일의 에이전트 워크로드를 위해 최적화된 Apple Silicon용 프로덕션 지향 로컬 LLM 추론 런타임입니다.
 

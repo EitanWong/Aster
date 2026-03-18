@@ -1,6 +1,12 @@
-# Aster
-
-[English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+<div align="center">
+  <img src="assets/logo.svg" alt="Aster Logo" width="200" height="200">
+  
+  # Aster
+  
+  **为 Apple Silicon 优化的本地 LLM 推理运行时**
+  
+  [English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+</div>
 
 Aster 是一个为 Apple Silicon 优化的本地 LLM 推理运行时，专为长上下文和 OpenClaw 风格的 Agent 工作负载设计。
 

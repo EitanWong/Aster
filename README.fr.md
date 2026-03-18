@@ -1,6 +1,12 @@
-# Aster
-
-[English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+<div align="center">
+  <img src="assets/logo.svg" alt="Aster Logo" width="200" height="200">
+  
+  # Aster
+  
+  **Runtime d'inférence LLM local optimisé pour Apple Silicon**
+  
+  [English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
+</div>
 
 Aster est un runtime d'inférence LLM local optimisé pour Apple Silicon, conçu pour les charges de travail de contexte long et les agents de style OpenClaw.
 
