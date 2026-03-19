@@ -190,7 +190,7 @@ class MLXRuntime:
         started = time.perf_counter()
         generated = 0
         for item in generator:
-            if isinstance(item, tuple) and len(item) == 3:
+            if len(item) == 3:  # type: ignore[arg-type]
                 token, logprobs, from_draft = item  # type: ignore[misc]
             else:
                 token, logprobs = item  # type: ignore[misc]
@@ -301,5 +301,8 @@ class MLXRuntime:
             target_model,
             max_tokens=max_tokens,
             sampler=sampler,
+            prompt_cache=cache_copy,
+        )
+sampler,
             prompt_cache=cache_copy,
         )

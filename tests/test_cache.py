@@ -26,7 +26,7 @@ def test_prefix_hash_different_inputs() -> None:
 def test_paged_kv_cache_allocation() -> None:
     """Test KV cache page allocation."""
     settings = CacheSettings(kv_max_pages=10, kv_page_tokens=512)
-    metrics = MetricsRegistry()
+    metrics = MetricsRegistry(namespace="test")
     cache = PagedKVCache(settings, metrics)
 
     # Allocate pages for a request
