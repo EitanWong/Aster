@@ -118,6 +118,22 @@ Point OpenClaw to Aster’s OpenAI-compatible base URL and model id. Aster is bu
 
 ## Project guidance docs
 
+- `docs/MODEL_SETUP.md` — model download and setup guide
+- `docs/ROADMAP.md` — long-term architectural evolution plan
+- `docs/OPENAI_COMPAT.md` — compatibility boundary and debug extension rules
+- `docs/DEBUGGING.md` — operator debugging guide
+- `docs/OPERATIONS.md` — day-to-day service operations
+ource .venv/bin/activate
+python scripts/model_smoke.py --config configs/config.yaml
+python scripts/benchmark_live.py --config configs/config.yaml
+```
+
+## OpenClaw integration
+
+Point OpenClaw to Aster’s OpenAI-compatible base URL and model id. Aster is built for repeated system/tool prefixes and long-lived agent sessions, so it should particularly benefit workloads with stable scaffolding and long-context reuse.
+
+## Project guidance docs
+
 - `docs/ROADMAP.md` — long-term architectural evolution plan
 - `docs/OPENAI_COMPAT.md` — compatibility boundary and debug extension rules
 - `docs/DEBUGGING.md` — operator debugging guide
