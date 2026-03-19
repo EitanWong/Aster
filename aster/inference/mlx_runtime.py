@@ -303,6 +303,3 @@ class MLXRuntime:
             sampler=sampler,
             prompt_cache=cache_copy,
         )
-sampler,
-            prompt_cache=cache_copy,
-        )
