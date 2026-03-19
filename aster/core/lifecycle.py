@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from fastapi import FastAPI
 
 from aster.api.routes import build_router
+from aster.audio.mlx_asr import MLXASRRuntime
+from aster.audio.mlx_tts import MLXTTSRuntime
+from aster.audio.service import AudioServiceContainer
 from aster.autotune.selector import PolicySelector
 from aster.cache.paged_kv_cache import PagedKVCache
 from aster.cache.prefix_cache import PrefixCache
@@ -56,6 +59,12 @@ def create_application(config_path: str) -> FastAPI:
     inference_engine = InferenceEngine(settings, metrics, kv_cache, prefix_cache, policy_engine)
     scheduler = RequestScheduler(settings, metrics, inference_engine, policy_engine)
     supervisor = WorkerSupervisor(settings, metrics, inference_engine)
+
+    # Initialize audio services
+    asr_service = MLXASRRuntime(settings.audio) if settings.audio.asr_enabled else None
+    tts_service = MLXTTSRuntime(settings.audio) if settings.audio.tts_enabled else None
+    audio = AudioServiceContainer(asr=asr_service, tts=tts_service)
+
     container = Container(
         settings=settings,
         metrics=metrics,
@@ -65,12 +74,9 @@ def create_application(config_path: str) -> FastAPI:
         inference_engine=inference_engine,
         scheduler=scheduler,
         supervisor=supervisor,
+        audio=audio,
     )
     app = FastAPI(title="Aster", version="0.1.0", lifespan=lifespan)
     app.state.container = container
     app.include_router(build_router())
-    return app
-er())
-    return app
-p.include_router(build_router())
     return app
