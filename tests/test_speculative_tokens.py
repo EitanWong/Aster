@@ -37,9 +37,8 @@ async def measure_tokens_per_second(
     try:
         from aster.inference.engine import InferenceRequest  # type: ignore[import-not-found]
     except ImportError:
-        from aster.core.config import RuntimeSettings  # type: ignore[import-not-found]
         InferenceRequest = type("InferenceRequest", (), {})  # type: ignore[assignment,misc]
-    
+
     warmup_req: Any = InferenceRequest(
         prompt=prompt,
         max_tokens=10,

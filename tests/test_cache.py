@@ -48,7 +48,7 @@ def test_paged_kv_cache_release() -> None:
 
     # Allocate and release
     request_id = "test_request_2"
-    pages = cache.allocate(request_id, tokens=5)
+    cache.allocate(request_id, tokens=5)
     cache.release(request_id)
 
     # Should be able to allocate again
