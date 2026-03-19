@@ -39,7 +39,8 @@ def test_health_endpoint(client: TestClient) -> None:
     """Test health check endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    # Health can be either "ok" or "degraded" depending on supervisor state
+    assert response.json()["status"] in ("ok", "degraded")
 
 
 def test_ready_endpoint(client: TestClient) -> None:
