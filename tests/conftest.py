@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
@@ -28,8 +28,8 @@ model:
   path: "dummy"
   draft_path: "dummy"
 cache:
-  max_pages: 100
-  page_size: 512
+  kv_max_pages: 100
+  kv_page_tokens: 512
 scheduler:
   batch_window_ms: 10
   max_batch_size: 4

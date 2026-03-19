@@ -18,7 +18,7 @@ class KVPage:
 @dataclass(slots=True)
 class RequestPageMap:
     request_id: str
-    page_ids: list[int] = field(default_factory=list)  # type: list[int]
+    page_ids: list[int] = field(default_factory=list)
 
 
 class PagedKVCache:
@@ -40,7 +40,7 @@ class PagedKVCache:
                 raise MemoryError("Insufficient KV pages")
             page_ids: list[int] = []
             for _ in range(needed):
-                page_id = self._free_pages.pop()
+                page_id: int = self._free_pages.pop()
                 page = self._pages[page_id]
                 page.owner_request_id = request_id
                 page_ids.append(page_id)

@@ -54,10 +54,12 @@ class MLXRuntime:
     def _load_model(self, name: str, path: str) -> LoadedRuntimeModel:
         result = load(path, lazy=False, return_config=True)
         if isinstance(result, tuple) and len(result) == 3:
-            model, tokenizer, config = result
-        else:
-            model, tokenizer = result  # type: ignore
+            model, tokenizer, config = result  # type: ignore[misc]
+        elif isinstance(result, tuple) and len(result) == 2:
+            model, tokenizer = result  # type: ignore[misc]
             config = {}
+        else:
+            raise ValueError(f"Unexpected load result type: {type(result)}")
         self.logger.info(f"loaded_model name={name} path={path}")
         return LoadedRuntimeModel(name=name, path=path, model=model, tokenizer=tokenizer, config=config)
 
@@ -114,7 +116,7 @@ class MLXRuntime:
                 break
             step = int(min(remaining.size - 1, 2048))
             target.model(remaining[:step][None], cache=prompt_cache)
-            mx.eval([c.state for c in prompt_cache])
+            mx.eval([c.state for c in prompt_cache])  # type: ignore[arg-type]
             remaining = remaining[step:]
             mx.clear_cache()
         return PrefilledPrompt(
@@ -188,10 +190,10 @@ class MLXRuntime:
         started = time.perf_counter()
         generated = 0
         for item in generator:
-            if draft_model is not None:
-                token, logprobs, from_draft = item
+            if isinstance(item, tuple) and len(item) == 3:
+                token, logprobs, from_draft = item  # type: ignore[misc]
             else:
-                token, logprobs = item
+                token, logprobs = item  # type: ignore[misc]
                 from_draft = False
 
             token_id = int(token)
@@ -251,7 +253,7 @@ class MLXRuntime:
 
             # Prefill with target model
             target_model(chunk[None], cache=cache)
-            mx.eval([c.state for c in cache])
+            mx.eval([c.state for c in cache])  # type: ignore[arg-type]
 
             # Note: We don't prefill draft model cache separately
             # mlx_lm.speculative_generate_step will handle draft model internally

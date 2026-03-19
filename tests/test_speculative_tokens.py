@@ -20,7 +20,7 @@ async def measure_tokens_per_second(
     prompt: str,
     max_tokens: int = 100,
     speculative_enabled: bool = False,
-) -> dict[str, str | float | bool]:
+) -> dict[str, str | float | Any]:
     """Measure tokens/second for a given prompt."""
 
     print(f"\n{'='*60}")
@@ -34,7 +34,12 @@ async def measure_tokens_per_second(
 
     # Warm up
     print("Warming up...")
-    from aster.inference.engine import InferenceRequest  # type: ignore
+    try:
+        from aster.inference.engine import InferenceRequest  # type: ignore[import-not-found]
+    except ImportError:
+        from aster.core.config import RuntimeSettings  # type: ignore[import-not-found]
+        InferenceRequest = type("InferenceRequest", (), {})  # type: ignore[assignment,misc]
+    
     warmup_req: Any = InferenceRequest(
         prompt=prompt,
         max_tokens=10,
@@ -193,7 +198,9 @@ async def main() -> None:
         print(f"Speculative Average: {avg_spec:.2f} tokens/second")
 
     if non_spec_results and spec_results:
-        speedup: float = avg_spec / avg_non_spec if avg_non_spec > 0 else 0
+        avg_non_spec_val: float = sum(r["tokens_per_second"] for r in non_spec_results) / len(non_spec_results)  # type: ignore[operator]
+        avg_spec_val: float = sum(r["tokens_per_second"] for r in spec_results) / len(spec_results)  # type: ignore[operator]
+        speedup: float = avg_spec_val / avg_non_spec_val if avg_non_spec_val > 0 else 0
         print(f"\nSpeedup: {speedup:.2f}x")
         if speedup > 1:
             print(f"✅ Speculative mode is {(speedup-1)*100:.1f}% faster")

@@ -14,7 +14,7 @@ def prompt_cache_length(prompt_cache: Any | None) -> int:
             return max(0, value)
         if callable(value):
             try:
-                result = value()
+                result: Any = value()
             except TypeError:
                 result = None
             if isinstance(result, int):
@@ -24,15 +24,15 @@ def prompt_cache_length(prompt_cache: Any | None) -> int:
     try:
         if len(prompt_cache) == 0:
             return 0
-        first = prompt_cache[0]
+        first: Any = prompt_cache[0]
     except Exception:
         return 0
 
-    lengths = getattr(first, "lengths", None)
+    lengths: Any = getattr(first, "lengths", None)
     if lengths is not None:
         try:
             if hasattr(lengths, "tolist"):
-                values = lengths.tolist()
+                values: Any = lengths.tolist()
             else:
                 values = list(lengths)
             if values:
@@ -40,7 +40,7 @@ def prompt_cache_length(prompt_cache: Any | None) -> int:
         except Exception:
             pass
 
-    meta_state = getattr(first, "meta_state", None)
+    meta_state: Any = getattr(first, "meta_state", None)
     if meta_state is not None:
         try:
             if isinstance(meta_state, dict):

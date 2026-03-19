@@ -92,7 +92,7 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     result: dict[str, Any] = dict(base)
     for key, value in override.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
-            result[key] = _deep_merge(result[key], value)  # type: ignore
+            result[key] = _deep_merge(result[key], value)  # type: ignore[arg-type]
         else:
             result[key] = value
     return result
@@ -102,9 +102,11 @@ def load_settings(config_path: str) -> RuntimeSettings:
     path = Path(config_path)
     if not path.exists():
         raise ConfigurationError(code="config_not_found", message=f"Missing config: {path}")
-    data = yaml.safe_load(path.read_text()) or {}
+    raw_data: Any = yaml.safe_load(path.read_text())
+    data: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}
     env_override = os.getenv("ASTER_CONFIG_OVERRIDE")
     if env_override:
-        data = _deep_merge(data, yaml.safe_load(env_override) or {})
+        env_data: Any = yaml.safe_load(env_override)
+        override_dict: dict[str, Any] = env_data if isinstance(env_data, dict) else {}
+        data = _deep_merge(data, override_dict)
     return RuntimeSettings.model_validate(data)
-ttings.model_validate(data)
