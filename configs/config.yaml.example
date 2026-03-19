@@ -46,3 +46,15 @@ telemetry:
   metrics_namespace: aster
 logging:
   level: INFO
+audio:
+  asr_enabled: true
+  asr_model: mlx-community/Qwen3-ASR-0.6B-4bit
+  asr_model_path: models/qwen3-asr-0.6b
+  tts_enabled: true
+  tts_model: mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit
+  tts_model_path: models/qwen3-tts-0.6b-base
+  tts_custom_voice_model: mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-4bit
+  tts_custom_voice_path: models/qwen3-tts-0.6b-custom
+  tts_default_voice: default
+  audio_cache_enabled: true
+  audio_cache_max_entries: 128

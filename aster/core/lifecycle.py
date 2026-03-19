@@ -29,6 +29,7 @@ class Container:
     inference_engine: InferenceEngine
     scheduler: RequestScheduler
     supervisor: WorkerSupervisor
+    audio: AudioServiceContainer
 
 
 @asynccontextmanager
@@ -68,4 +69,8 @@ def create_application(config_path: str) -> FastAPI:
     app = FastAPI(title="Aster", version="0.1.0", lifespan=lifespan)
     app.state.container = container
     app.include_router(build_router())
+    return app
+er())
+    return app
+p.include_router(build_router())
     return app

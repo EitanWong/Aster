@@ -76,6 +76,20 @@ class LoggingSettings(BaseModel):
     level: str = "INFO"
 
 
+class AudioSettings(BaseModel):
+    asr_enabled: bool = True
+    asr_model: str = "mlx-community/Qwen3-ASR-0.6B-4bit"
+    asr_model_path: str = "models/qwen3-asr-0.6b"
+    tts_enabled: bool = True
+    tts_model: str = "mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit"
+    tts_model_path: str = "models/qwen3-tts-0.6b-base"
+    tts_custom_voice_model: str | None = "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-4bit"
+    tts_custom_voice_path: str | None = "models/qwen3-tts-0.6b-custom"
+    tts_default_voice: str = "default"
+    audio_cache_enabled: bool = True
+    audio_cache_max_entries: int = 128
+
+
 class RuntimeSettings(BaseModel):
     api: APISettings = Field(default_factory=APISettings)
     model: ModelSettings = Field(default_factory=ModelSettings)

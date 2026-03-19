@@ -23,6 +23,8 @@ class RouteBuilder:
         self.router.add_api_route("/v1/models", self.models, methods=["GET"])
         self.router.add_api_route("/v1/chat/completions", self.chat_completions, methods=["POST"])
         self.router.add_api_route("/v1/completions", self.completions, methods=["POST"])
+        self.router.add_api_route("/v1/audio/transcriptions", self.transcribe, methods=["POST"])
+        self.router.add_api_route("/v1/audio/speech", self.synthesize, methods=["POST"])
 
     async def health(self, request: Request) -> HealthResponse:
         container = request.app.state.container
@@ -157,6 +159,47 @@ class RouteBuilder:
                 )
                 return await to_sse(
                     container.inference_engine.stream(inference_request),
+                    body.model,
+                    include_debug_summary=debug_summary,
+                )
+            self.logger.info("completion_scheduler_submit", extra={"request_id": request_id})
+            result = await container.scheduler.submit(inference_request)
+            payload = {
+                "id": result.request_id,
+                "object": "text_completion",
+                "created": int(time()),
+                "model": body.model,
+                "choices": [{"index": 0, "text": result.text, "finish_reason": "stop"}],
+                "usage": {
+                    "prompt_tokens": result.prompt_tokens,
+                    "completion_tokens": result.completion_tokens,
+                    "total_tokens": result.prompt_tokens + result.completion_tokens,
+                },
+                "aster": {
+                    "cache_hit": result.cache_hit,
+                    "speculative_enabled": result.speculative_enabled,
+                },
+            }
+            self.logger.info(
+                "completion_non_stream_finish",
+                extra={
+                    "request_id": result.request_id,
+                    "latency_s": round(perf_counter() - started, 4),
+                    "completion_tokens": result.completion_tokens,
+                },
+            )
+            return JSONResponse(payload, headers={"X-Request-Id": result.request_id})
+        except AsterError as exc:
+            self.logger.exception("completion_request_failed", extra={"request_id": request_id})
+            return JSONResponse(status_code=exc.status_code, content=exc.to_payload(), headers={"X-Request-Id": request_id})
+        except Exception:
+            self.logger.exception("completion_request_failed_unhandled", extra={"request_id": request_id})
+            raise
+
+
+def build_router() -> APIRouter:
+    return RouteBuilder().router
+tainer.inference_engine.stream(inference_request),
                     body.model,
                     include_debug_summary=debug_summary,
                 )
