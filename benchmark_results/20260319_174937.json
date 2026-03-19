@@ -1,0 +1,109 @@
+{
+  "system_info": {
+    "cpu_count": 10,
+    "cpu_freq_ghz": 0.004,
+    "memory_gb": 24.0,
+    "memory_available_gb": 6.78363037109375,
+    "platform": "darwin",
+    "timestamp": "2026-03-19T17:49:37.703354"
+  },
+  "llm_benchmarks": [
+    {
+      "test_name": "Short prompt",
+      "prompt": "What is 2+2?",
+      "prompt_tokens": 3,
+      "completion_tokens": 5,
+      "total_tokens": 8,
+      "time_to_first_token_ms": 449.5861530303955,
+      "total_time_ms": 729.4209003448486,
+      "tokens_per_second": 6.854752856185157,
+      "memory_peak_mb": 46.1875,
+      "memory_avg_mb": 46.184895833333336,
+      "cpu_percent_avg": 0.08333333333333333,
+      "success": true,
+      "error": null
+    },
+    {
+      "test_name": "Medium prompt",
+      "prompt": "Explain quantum computing in simple terms.",
+      "prompt_tokens": 6,
+      "completion_tokens": 99,
+      "total_tokens": 105,
+      "time_to_first_token_ms": 435.3668689727783,
+      "total_time_ms": 4916.339874267578,
+      "tokens_per_second": 20.136931646685376,
+      "memory_peak_mb": 46.21875,
+      "memory_avg_mb": 46.21434294871795,
+      "cpu_percent_avg": 0.17435897435897435,
+      "success": true,
+      "error": null
+    },
+    {
+      "test_name": "Long prompt",
+      "prompt": "Write a detailed explanation of machine learning, including supervised and unsupervised learning, ne",
+      "prompt_tokens": 17,
+      "completion_tokens": 149,
+      "total_tokens": 166,
+      "time_to_first_token_ms": 390.64502716064453,
+      "total_time_ms": 7186.351299285889,
+      "tokens_per_second": 20.733748434314116,
+      "memory_peak_mb": 46.21875,
+      "memory_avg_mb": 46.21595982142857,
+      "cpu_percent_avg": 0.1660714285714286,
+      "success": true,
+      "error": null
+    }
+  ],
+  "asr_benchmarks": [
+    {
+      "test_name": "ASR Test",
+      "audio_duration_sec": 58.7614375,
+      "audio_size_kb": 1836.294921875,
+      "transcription_time_ms": 764.4438743591309,
+      "real_time_factor": 76.86821684490894,
+      "memory_peak_mb": 48.03125,
+      "memory_avg_mb": 48.03125,
+      "cpu_percent_avg": 0.13333333333333333,
+      "success": true,
+      "error": null
+    }
+  ],
+  "tts_benchmarks": [
+    {
+      "test_name": "Short text",
+      "text_length": 11,
+      "audio_duration_sec": 1.568344671201814,
+      "synthesis_time_ms": 568.4731006622314,
+      "characters_per_second": 19.350080042812525,
+      "memory_peak_mb": 48.03125,
+      "memory_avg_mb": 48.03125,
+      "cpu_percent_avg": 0.22000000000000003,
+      "success": true,
+      "error": null
+    },
+    {
+      "test_name": "Medium text",
+      "text_length": 89,
+      "audio_duration_sec": 6.4445351473922905,
+      "synthesis_time_ms": 2601.853847503662,
+      "characters_per_second": 34.2063794572438,
+      "memory_peak_mb": 48.046875,
+      "memory_avg_mb": 42.66220238095238,
+      "cpu_percent_avg": 0.17142857142857143,
+      "success": true,
+      "error": null
+    },
+    {
+      "test_name": "Long text",
+      "text_length": 247,
+      "audio_duration_sec": 17.06766439909297,
+      "synthesis_time_ms": 4931.281805038452,
+      "characters_per_second": 50.08839684392646,
+      "memory_peak_mb": 35.875,
+      "memory_avg_mb": 35.44591346153846,
+      "cpu_percent_avg": 0.16666666666666666,
+      "success": true,
+      "error": null
+    }
+  ]
+}

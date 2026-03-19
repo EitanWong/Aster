@@ -6,7 +6,7 @@ from time import perf_counter, time
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
-from aster.api.schemas import ChatCompletionRequest, CompletionRequest, HealthResponse, ModelCard
+from aster.api.schemas import ChatCompletionRequest, CompletionRequest, HealthResponse, ModelCard, TTSRequest
 from aster.api.streaming import to_sse
 from aster.core.errors import AsterError
 from aster.inference.engine import InferenceRequest
@@ -196,47 +196,81 @@ class RouteBuilder:
             self.logger.exception("completion_request_failed_unhandled", extra={"request_id": request_id})
             raise
 
-
-def build_router() -> APIRouter:
-    return RouteBuilder().router
-tainer.inference_engine.stream(inference_request),
-                    body.model,
-                    include_debug_summary=debug_summary,
-                )
-            self.logger.info("completion_scheduler_submit", extra={"request_id": request_id})
-            result = await container.scheduler.submit(inference_request)
-            payload = {
-                "id": result.request_id,
-                "object": "text_completion",
-                "created": int(time()),
-                "model": body.model,
-                "choices": [{"index": 0, "text": result.text, "finish_reason": "stop"}],
-                "usage": {
-                    "prompt_tokens": result.prompt_tokens,
-                    "completion_tokens": result.completion_tokens,
-                    "total_tokens": result.prompt_tokens + result.completion_tokens,
-                },
-                "aster": {
-                    "cache_hit": result.cache_hit,
-                    "speculative_enabled": result.speculative_enabled,
-                },
-            }
-            self.logger.info(
-                "completion_non_stream_finish",
-                extra={
-                    "request_id": result.request_id,
-                    "latency_s": round(perf_counter() - started, 4),
-                    "completion_tokens": result.completion_tokens,
-                },
+    async def transcribe(self, request: Request) -> dict:
+        """Transcribe audio to text (ASR)."""
+        container = request.app.state.container
+        if not container.audio.asr:
+            return JSONResponse(
+                status_code=503,
+                content={"error": "ASR service not available"},
             )
-            return JSONResponse(payload, headers={"X-Request-Id": result.request_id})
-        except AsterError as exc:
-            self.logger.exception("completion_request_failed", extra={"request_id": request_id})
-            return JSONResponse(status_code=exc.status_code, content=exc.to_payload(), headers={"X-Request-Id": request_id})
-        except Exception:
-            self.logger.exception("completion_request_failed_unhandled", extra={"request_id": request_id})
-            raise
+
+        try:
+            form = await request.form()
+            audio_file = form.get("file")
+            if not audio_file:
+                return JSONResponse(
+                    status_code=400,
+                    content={"error": "No audio file provided"},
+                )
+
+            audio_data = await audio_file.read()
+            language = form.get("language")
+            prompt = form.get("prompt")
+
+            result = await container.audio.asr.transcribe(
+                audio=audio_data,
+                language=language,
+                prompt=prompt,
+            )
+
+            return {
+                "text": result.text,
+                "language": result.language,
+                "duration": result.duration,
+                "confidence": result.confidence,
+            }
+        except Exception as e:
+            self.logger.exception("transcribe_failed")
+            return JSONResponse(
+                status_code=500,
+                content={"error": str(e)},
+            )
+
+    async def synthesize(self, request: Request, body: TTSRequest) -> Response:
+        """Synthesize text to speech (TTS)."""
+        container = request.app.state.container
+        if not container.audio.tts:
+            return JSONResponse(
+                status_code=503,
+                content={"error": "TTS service not available"},
+            )
+
+        try:
+            result = await container.audio.tts.synthesize(
+                text=body.input,
+                voice=body.voice,
+                language=body.language,
+                speed=body.speed,
+                reference_audio=body.reference_audio,
+                speaker=body.speaker,
+                instruct=body.instruct,
+            )
+
+            return Response(
+                content=result.audio,
+                media_type="audio/wav",
+                headers={"Content-Disposition": "attachment; filename=output.wav"},
+            )
+        except Exception as e:
+            self.logger.exception("synthesize_failed")
+            return JSONResponse(
+                status_code=500,
+                content={"error": str(e)},
+            )
+
 
 
 def build_router() -> APIRouter:
     return RouteBuilder().router
+

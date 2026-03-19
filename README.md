@@ -38,11 +38,44 @@ It exposes an OpenAI-compatible API and treats advanced optimizations as candida
 
 ```bash
 cd /Users/eitan/Documents/Projects/Python/Aster
+
+# Create virtual environment
 /opt/homebrew/bin/python3.13 -m venv .venv
 source .venv/bin/activate
+
+# Install dependencies (including mlx-audio for ASR/TTS)
 python -m pip install -r requirements.txt
-cp configs/config.yaml.example configs/config.yaml
-python server.py --config configs/config.yaml
+
+# Download models (ASR, LLM, TTS)
+bash scripts/setup/download_models.sh
+
+# Start the server
+python -m aster --config configs/config.yaml
+```
+
+The API will be available at `http://127.0.0.1:8080`
+
+### Verify installation
+
+```bash
+# Check health
+curl http://127.0.0.1:8080/health
+
+# Test LLM inference
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.5-9B",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "max_tokens": 100
+  }'
+
+# Test ASR (speech-to-text)
+python scripts/test_audio_cli.py --tts "Hello world" --output test.wav
+python scripts/test_audio_cli.py --asr test.wav
+
+# Test end-to-end pipeline
+python scripts/test_audio_cli.py --pipeline "This is a test"
 ```
 
 ## Python version
@@ -55,11 +88,69 @@ Aster targets modern Python and should be run on Python 3.13.x when available (3
 - `GET /ready`
 - `GET /metrics`
 - `GET /v1/models`
-- `POST /v1/chat/completions`
-- `POST /v1/completions`
+- `POST /v1/chat/completions` — LLM chat inference
+- `POST /v1/completions` — LLM text completion
+- `POST /v1/audio/transcriptions` — ASR (speech-to-text)
+- `POST /v1/audio/speech` — TTS (text-to-speech)
 
 Compatibility notes:
 - See `docs/OPENAI_COMPAT.md` for Aster's default compatibility contract and opt-in debug extensions.
+
+## Audio Services (ASR & TTS)
+
+Aster includes integrated speech recognition and synthesis powered by Qwen3 models:
+
+### ASR (Speech-to-Text)
+- Model: Qwen3-ASR-0.6B (0.66GB)
+- Supports multiple languages
+- Fast local transcription
+
+### TTS (Text-to-Speech)
+- Base model: Qwen3-TTS-0.6B (1.59GB)
+- CustomVoice model: Qwen3-TTS-CustomVoice-0.6B (optional, for voice cloning)
+- Adjustable speech speed
+- Voice cloning with reference audio
+
+### Audio API Examples
+
+**TTS (Text-to-Speech):**
+```bash
+curl -X POST http://127.0.0.1:8080/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-TTS-0.6B",
+    "input": "Hello, this is a test",
+    "voice": "default",
+    "speed": 1.0
+  }' \
+  --output output.wav
+```
+
+**ASR (Speech-to-Text):**
+```bash
+curl -X POST http://127.0.0.1:8080/v1/audio/transcriptions \
+  -F "file=@audio.wav" \
+  -F "model=Qwen3-ASR-0.6B"
+```
+
+### Audio Testing
+
+Use the provided CLI test tool:
+```bash
+# Test TTS
+python scripts/test_audio_cli.py --tts "Hello world" --output output.wav
+
+# Test ASR
+python scripts/test_audio_cli.py --asr output.wav
+
+# Test end-to-end pipeline (TTS -> ASR)
+python scripts/test_audio_cli.py --pipeline "Test message"
+
+# Run full test suite
+pytest tests/test_audio_services.py -v -s
+```
+
+See `DEPLOYMENT.md` for detailed audio service documentation.
 
 ## Benchmarking philosophy
 

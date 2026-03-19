@@ -44,32 +44,55 @@ class MLXASRRuntime(ASRService):
             raise RuntimeError("ASR model not loaded")
 
         try:
-            from mlx_audio.stt.generate import generate_transcription
             import tempfile
+            import soundfile as sf
+            import numpy as np
 
             # Write audio bytes to temp file
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp.write(audio)
                 tmp_path = tmp.name
 
+            # Load audio using soundfile
+            audio_data, sample_rate = sf.read(tmp_path)
+            
+            # Ensure mono audio
+            if len(audio_data.shape) > 1:
+                audio_data = np.mean(audio_data, axis=1)
+            
+            # Ensure float32
+            if audio_data.dtype != np.float32:
+                audio_data = audio_data.astype(np.float32)
+
             started = time.perf_counter()
-            result = await generate_transcription(
-                model=self._model,
-                audio_path=tmp_path,
-                language=language,
+            
+            # Use model.generate directly instead of generate_transcription
+            segments = self._model.generate(
+                audio_data,
+                verbose=False,
             )
+            
             duration = time.perf_counter() - started
+
+            # Extract text from segments
+            text = ""
+            if isinstance(segments, list):
+                text = " ".join([seg.get("text", "") if isinstance(seg, dict) else str(seg) for seg in segments])
+            elif hasattr(segments, "text"):
+                text = segments.text
+            else:
+                text = str(segments)
 
             self.logger.info(
                 "transcribe_complete",
                 extra={
                     "duration_s": round(duration, 4),
-                    "text_length": len(result.text) if hasattr(result, "text") else 0,
+                    "text_length": len(text),
                 },
             )
 
             return ASRResult(
-                text=result.text if hasattr(result, "text") else str(result),
+                text=text,
                 language=language,
                 duration=duration,
                 confidence=None,

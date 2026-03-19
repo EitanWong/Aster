@@ -20,7 +20,7 @@ IFS=$'\n\t'
 #   bash scripts/download_models.sh --list             # List available models
 #   bash scripts/download_models.sh --verify-only      # Verify existing models
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 MODELS_DIR="$PROJECT_ROOT/models"
 VENV_PATH="$PROJECT_ROOT/.venv"
@@ -68,8 +68,8 @@ require_project_root() {
     err "Project root not found: $PROJECT_ROOT"
     exit 1
   fi
-  if [[ ! -f "$SCRIPTS_DIR/download_models.py" ]]; then
-    err "Python downloader not found: $SCRIPTS_DIR/download_models.py"
+  if [[ ! -f "$SCRIPTS_DIR/lib/download_models.py" ]]; then
+    err "Python downloader not found: $SCRIPTS_DIR/lib/download_models.py"
     exit 1
   fi
 }
@@ -220,22 +220,22 @@ show_preflight() {
 
 run_downloader() {
   local args=("$@")
-  
+
   log "Running model downloader..."
   cd "$PROJECT_ROOT"
-  
+
   # Set environment for hfd if requested
   if [[ "$USE_HFD" == "1" ]]; then
     export HFD_PATH="$HFD_PATH"
   fi
-  
-  python "$SCRIPTS_DIR/download_models.py" "${args[@]}"
+
+  python "$SCRIPTS_DIR/lib/download_models.py" "${args[@]}"
 }
 
 main() {
   require_macos
   require_project_root
-  
+
   # Parse arguments
   local args=()
   if [[ $# -eq 0 ]]; then
@@ -244,7 +244,7 @@ main() {
   else
     args=("$@")
   fi
-  
+
   show_preflight
   ensure_brew
   ensure_python
@@ -253,12 +253,12 @@ main() {
   ensure_dependencies
   ensure_aria2_if_requested
   ensure_hfd_if_requested
-  
+
   if [[ "$HF_TOKEN" != "" ]]; then
     export HF_TOKEN
     log "HF_TOKEN set from environment"
   fi
-  
+
   run_downloader "${args[@]}"
 }
 

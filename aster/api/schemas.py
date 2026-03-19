@@ -40,3 +40,22 @@ class HealthResponse(BaseModel):
     status: str
     degraded: bool = False
     details: dict[str, Any] = Field(default_factory=dict)
+
+
+class TTSRequest(BaseModel):
+    model: str
+    input: str
+    voice: str = "default"
+    language: str | None = None
+    speed: float = 1.0
+    reference_audio: str | None = None
+    speaker: str | None = None
+    instruct: str | None = None
+
+
+class ASRResponse(BaseModel):
+    text: str
+    language: str | None = None
+    duration: float | None = None
+    confidence: float | None = None
+

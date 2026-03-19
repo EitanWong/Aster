@@ -54,62 +54,66 @@ class MLXTTSRuntime(TTSService):
         instruct: str | None = None,
     ) -> TTSResult:
         """Synthesize text to speech."""
-        if not self._healthy:
+        if not self._healthy or self._base_model is None:
             raise RuntimeError("TTS models not loaded")
 
         try:
-            from mlx_audio.tts.generate import generate_audio
             import tempfile
             import os
+            import numpy as np
+            import soundfile as sf
 
             started = time.perf_counter()
 
-            # Determine which model to use
-            use_custom_voice = speaker is not None or instruct is not None
-            model = self._custom_voice_model if use_custom_voice else self._base_model
+            # Use base model (Qwen3-TTS)
+            model = self._base_model
 
-            if model is None:
-                raise RuntimeError(f"{'CustomVoice' if use_custom_voice else 'Base'} TTS model not available")
+            # model.generate() returns a generator of result objects
+            # Each result has .audio attribute (mx.array)
+            results = list(model.generate(
+                text=text,
+                voice=voice or "default",
+                language=language or "English",
+            ))
 
-            # Prepare output directory
-            with tempfile.TemporaryDirectory() as tmpdir:
-                output_prefix = os.path.join(tmpdir, "output")
+            if not results:
+                raise RuntimeError("No audio generated from TTS model")
 
-                if use_custom_voice:
-                    # CustomVoice mode: use speaker + instruct
-                    result = await generate_audio(
-                        model=model,
-                        text=text,
-                        speaker=speaker or self.settings.tts_default_voice,
-                        instruct=instruct or "",
-                        file_prefix=output_prefix,
-                    )
+            # Collect audio from all results
+            audio_chunks = []
+            for result in results:
+                if hasattr(result, 'audio'):
+                    # result.audio is mx.array, convert to numpy
+                    audio_chunk = np.array(result.audio, dtype=np.float32)
+                    audio_chunks.append(audio_chunk)
                 else:
-                    # Base mode: use reference audio for voice cloning
-                    ref_audio_path = None
-                    if reference_audio:
-                        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                            tmp.write(reference_audio)
-                            ref_audio_path = tmp.name
+                    # Fallback if result is directly audio data
+                    audio_chunks.append(np.array(result, dtype=np.float32))
 
-                    result = await generate_audio(
-                        model=model,
-                        text=text,
-                        ref_audio=ref_audio_path,
-                        file_prefix=output_prefix,
-                    )
+            if not audio_chunks:
+                raise RuntimeError("No audio data extracted from results")
 
-                    if ref_audio_path and os.path.exists(ref_audio_path):
-                        os.unlink(ref_audio_path)
+            # Concatenate all chunks
+            audio_output = np.concatenate(audio_chunks) if len(audio_chunks) > 1 else audio_chunks[0]
 
-                # Read generated audio
-                audio_files = [f for f in os.listdir(tmpdir) if f.endswith(".wav")]
-                if not audio_files:
-                    raise RuntimeError("No audio file generated")
+            # Ensure float32
+            if audio_output.dtype != np.float32:
+                audio_output = audio_output.astype(np.float32)
 
-                audio_path = os.path.join(tmpdir, audio_files[0])
-                with open(audio_path, "rb") as f:
-                    audio_data = f.read()
+            # Normalize to [-1, 1] range if needed
+            max_val = np.abs(audio_output).max()
+            if max_val > 1.0:
+                audio_output = audio_output / max_val
+
+            # Convert to int16 for WAV format
+            audio_int16 = (audio_output * 32767).astype(np.int16)
+
+            # Write to temporary WAV file
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                sf.write(tmp.name, audio_int16, 22050)
+                with open(tmp.name, "rb") as f:
+                    audio_bytes = f.read()
+                os.unlink(tmp.name)
 
             duration = time.perf_counter() - started
 
@@ -118,12 +122,13 @@ class MLXTTSRuntime(TTSService):
                 extra={
                     "duration_s": round(duration, 4),
                     "text_length": len(text),
-                    "mode": "custom_voice" if use_custom_voice else "base",
+                    "voice": voice,
+                    "audio_samples": len(audio_int16),
                 },
             )
 
             return TTSResult(
-                audio=audio_data,
+                audio=audio_bytes,
                 duration=duration,
                 sample_rate=22050,
             )

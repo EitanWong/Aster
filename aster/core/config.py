@@ -100,6 +100,7 @@ class RuntimeSettings(BaseModel):
     workers: WorkerSettings = Field(default_factory=WorkerSettings)
     telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    audio: AudioSettings = Field(default_factory=AudioSettings)
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:

@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""
+Aster - Unified management CLI for the inference engine
+
+Usage:
+    aster daemon install          # Install as background service
+    aster daemon start            # Start the service
+    aster daemon stop             # Stop the service
+    aster daemon status           # Check service status
+    aster daemon logs             # View service logs
+    
+    aster service list            # List available services
+    aster service enable ASR      # Enable ASR service
+    aster service disable TTS     # Disable TTS service
+    aster service status          # Show service status
+    
+    aster health                  # Check API health
+    aster test                    # Run quick tests
+"""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).parent.parent
+SCRIPTS_DIR = PROJECT_ROOT / "scripts" / "ops"
+
+
+def run_daemon_command(args: list[str]) -> int:
+    """Run daemon.py command."""
+    cmd = [sys.executable, str(SCRIPTS_DIR / "daemon.py")] + args
+    return subprocess.call(cmd)
+
+
+def run_service_command(args: list[str]) -> int:
+    """Run service_manager.py command."""
+    cmd = [sys.executable, str(SCRIPTS_DIR / "service_manager.py")] + args
+    return subprocess.call(cmd)
+
+
+def check_health() -> int:
+    """Check API health."""
+    try:
+        import httpx
+        
+        print("Checking Aster API health...")
+        response = httpx.get("http://127.0.0.1:8080/health", timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✓ API is healthy")
+            print(f"  Status: {data.get('status', 'unknown')}")
+            print(f"  Degraded: {data.get('degraded', False)}")
+            
+            details = data.get('details', {})
+            if details:
+                print(f"  Details:")
+                for key, value in details.items():
+                    print(f"    {key}: {value}")
+            
+            return 0
+        else:
+            print(f"✗ API returned status {response.status_code}")
+            return 1
+    except Exception as e:
+        print(f"✗ Failed to connect to API: {e}")
+        print(f"  Make sure the service is running: aster daemon start")
+        return 1
+
+
+def run_tests() -> int:
+    """Run quick tests."""
+    print("Running Aster tests...\n")
+    
+    # Check health
+    print("1. Checking API health...")
+    if check_health() != 0:
+        print("✗ API health check failed")
+        return 1
+    
+    print()
+    
+    # Test ASR
+    print("2. Testing ASR service...")
+    test_script = SCRIPTS_DIR.parent / "test_audio_cli.py"
+    if test_script.exists():
+        result = subprocess.call([sys.executable, str(test_script), "--health"])
+        if result != 0:
+            print("✗ ASR test failed")
+            return 1
+    
+    print()
+    print("✓ All tests passed!")
+    return 0
+
+
+def main() -> int:
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="Aster - Unified management CLI for the inference engine",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Install and start the service
+  aster daemon install
+  aster daemon start
+  
+  # Check service status
+  aster daemon status
+  
+  # Enable ASR service
+  aster service enable ASR
+  
+  # Check API health
+  aster health
+  
+  # Run tests
+  aster test
+  
+  # View logs
+  aster daemon logs
+        """,
+    )
+    
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+    
+    # Daemon subcommand
+    daemon_parser = subparsers.add_parser("daemon", help="Manage background service")
+    daemon_parser.add_argument(
+        "action",
+        choices=["install", "uninstall", "start", "stop", "restart", "status", "logs", "enable", "disable", "config"],
+        help="Daemon action",
+    )
+    
+    # Service subcommand
+    service_parser = subparsers.add_parser("service", help="Manage individual services")
+    service_parser.add_argument(
+        "action",
+        choices=["list", "enable", "disable", "status", "config"],
+        help="Service action",
+    )
+    service_parser.add_argument(
+        "service",
+        nargs="?",
+        choices=["LLM", "ASR", "TTS"],
+        help="Service name",
+    )
+    
+    # Health subcommand
+    subparsers.add_parser("health", help="Check API health")
+    
+    # Test subcommand
+    subparsers.add_parser("test", help="Run quick tests")
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return 0
+    
+    if args.command == "daemon":
+        return run_daemon_command([args.action])
+    elif args.command == "service":
+        service_args = [args.action]
+        if args.service:
+            service_args.append(args.service)
+        return run_service_command(service_args)
+    elif args.command == "health":
+        return check_health()
+    elif args.command == "test":
+        return run_tests()
+    
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
