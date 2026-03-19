@@ -1,10 +1,10 @@
 <div align="center">
   <img src="assets/logo.svg" alt="Aster Logo" width="200" height="200">
-  
+
   # Aster
-  
+
   **Production-oriented Apple Silicon local LLM inference runtime**
-  
+
   [English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
 </div>
 
@@ -93,48 +93,50 @@ Aster enables only optimizations that prove beneficial on the local machine:
 - batching windows shrink automatically when latency rises
 - fallback profiles are selected when instability or regressions are detected
 
+## Model Setup
+
+One-click model download with hfd + aria2 acceleration:
+
+```bash
+# Download all required models (ASR, LLM, TTS)
+bash scripts/setup/download_models.sh
+
+# Or use Python directly for more control
+python scripts/download_models.py --all
+python scripts/download_models.py --group llm
+python scripts/download_models.py --list
+```
+
+See `scripts/setup/README-model-download.md` for detailed instructions.
+
 ## Model paths
 
 `model.path` and `model.draft_path` can be either:
 - absolute local paths to MLX-converted model directories
 - compatible Hugging Face repo ids loadable by `mlx-lm`
 
-For the intended production setup, prefer local MLX-converted directories for both the 9B target and 0.8B draft model.
+For production, prefer local MLX-converted directories. Update `configs/config.yaml`:
 
-Useful setup and validation commands:
+```yaml
+model:
+  path: models/qwen3.5-9b-mlx
+  draft_path: models/qwen3.5-0.8b-mlx
 
-```bash
-bash scripts/download_models.sh
-# or, for a more download-resilient path:
-USE_HFD=1 bash scripts/download_models.sh
-source .venv/bin/activate
-python scripts/model_smoke.py --config configs/config.yaml
-python scripts/benchmark_live.py --config configs/config.yaml
+audio:
+  asr_model_path: models/qwen3-asr-0.6b
+  tts_model_path: models/qwen3-tts-0.6b-base
 ```
 
 ## OpenClaw integration
 
-Point OpenClaw to Aster’s OpenAI-compatible base URL and model id. Aster is built for repeated system/tool prefixes and long-lived agent sessions, so it should particularly benefit workloads with stable scaffolding and long-context reuse.
+Point OpenClaw to Aster's OpenAI-compatible base URL and model id. Aster is built for repeated system/tool prefixes and long-lived agent sessions, so it should particularly benefit workloads with stable scaffolding and long-context reuse.
 
 ## Project guidance docs
 
-- `docs/MODEL_SETUP.md` — model download and setup guide
+- `scripts/setup/README-model-download.md` — model download guide
+- `docs/MODEL_SETUP.md` — detailed setup and troubleshooting
+- `docs/MODEL_DOWNLOAD_ARCHITECTURE.md` — system design
 - `docs/ROADMAP.md` — long-term architectural evolution plan
-- `docs/OPENAI_COMPAT.md` — compatibility boundary and debug extension rules
-- `docs/DEBUGGING.md` — operator debugging guide
-- `docs/OPERATIONS.md` — day-to-day service operations
-ource .venv/bin/activate
-python scripts/model_smoke.py --config configs/config.yaml
-python scripts/benchmark_live.py --config configs/config.yaml
-```
-
-## OpenClaw integration
-
-Point OpenClaw to Aster’s OpenAI-compatible base URL and model id. Aster is built for repeated system/tool prefixes and long-lived agent sessions, so it should particularly benefit workloads with stable scaffolding and long-context reuse.
-
-## Project guidance docs
-
-- `docs/ROADMAP.md` — long-term architectural evolution plan
-- `docs/OPENAI_COMPAT.md` — compatibility boundary and debug extension rules
+- `docs/OPENAI_COMPAT.md` — compatibility boundary and debug extensions
 - `docs/DEBUGGING.md` — operator debugging guide
 - `docs/OPERATIONS.md` — day-to-day service operations

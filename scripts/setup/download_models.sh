@@ -2,52 +2,50 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-# Aster model download + environment preparation helper for macOS / Apple Silicon.
+# Aster model download helper for macOS / Apple Silicon.
 #
 # Features:
-# - verifies macOS + project structure
-# - checks for / installs Homebrew if missing
-# - checks for modern Python (prefers 3.13, minimum 3.12)
-# - checks for / creates the project venv if needed
-# - installs huggingface_hub CLI into the venv if missing
-# - supports both `hf` and `huggingface-cli`
-# - uses HF mirror by default for faster downloads in mainland China
-# - optional hfd + aria2 accelerated path
-# - prepares model directories and config paths
-# - downloads MLX-compatible Qwen models into local directories
+# - downloads all required models (ASR, LLM, TTS)
+# - uses hfd + aria2 for fast accelerated downloads
+# - supports HF mirror for mainland China
+# - verifies downloads
+# - one-click setup
+#
+# Usage:
+#   bash scripts/download_models.sh                    # Download all required
+#   bash scripts/download_models.sh --all              # Download all (required + optional)
+#   bash scripts/download_models.sh --group llm        # Download LLM only
+#   bash scripts/download_models.sh --group asr        # Download ASR only
+#   bash scripts/download_models.sh --group tts        # Download TTS only
+#   bash scripts/download_models.sh --list             # List available models
+#   bash scripts/download_models.sh --verify-only      # Verify existing models
 
-PROJECT_ROOT="/Users/eitan/Documents/Projects/Python/Aster"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 MODELS_DIR="$PROJECT_ROOT/models"
-MAIN_DIR="$MODELS_DIR/qwen3.5-9b-mlx"
-DRAFT_DIR="$MODELS_DIR/qwen3.5-0.8b-mlx"
-CONFIG_PATH="$PROJECT_ROOT/configs/config.yaml"
-EXAMPLE_CONFIG_PATH="$PROJECT_ROOT/configs/config.yaml.example"
 VENV_PATH="$PROJECT_ROOT/.venv"
 TOOLS_DIR="$PROJECT_ROOT/tools"
 HFD_PATH="$TOOLS_DIR/hfd.sh"
 
-MAIN_REPO="${MAIN_REPO:-mlx-community/Qwen3.5-9B-4bit}"
-DRAFT_REPO="${DRAFT_REPO:-mlx-community/Qwen3.5-0.8B-4bit}"
-HF_ENDPOINT_VALUE="${HF_ENDPOINT_VALUE:-https://hf-mirror.com}"
-USE_HFD="${USE_HFD:-0}"
+# Configuration
+HF_ENDPOINT_VALUE="${HF_ENDPOINT:-https://hf-mirror.com}"
+USE_HFD="${USE_HFD:-1}"
 INSTALL_ARIA2="${INSTALL_ARIA2:-1}"
 HF_TOKEN="${HF_TOKEN:-}"
 
 BREW_BIN=""
 PYTHON_BIN=""
-HF_CMD=""
-HF_MODE=""
 
 log() {
-  printf '\n[%s] %s\n' "Aster" "$*"
+  printf '\n[Aster] %s\n' "$*"
 }
 
 warn() {
-  printf '\n[%s][warn] %s\n' "Aster" "$*" >&2
+  printf '[Aster][warn] %s\n' "$*" >&2
 }
 
 err() {
-  printf '\n[%s][error] %s\n' "Aster" "$*" >&2
+  printf '[Aster][error] %s\n' "$*" >&2
 }
 
 on_error() {
@@ -70,8 +68,8 @@ require_project_root() {
     err "Project root not found: $PROJECT_ROOT"
     exit 1
   fi
-  if [[ ! -f "$EXAMPLE_CONFIG_PATH" ]]; then
-    err "Example config missing: $EXAMPLE_CONFIG_PATH"
+  if [[ ! -f "$SCRIPTS_DIR/download_models.py" ]]; then
+    err "Python downloader not found: $SCRIPTS_DIR/download_models.py"
     exit 1
   fi
 }
@@ -168,55 +166,17 @@ ensure_venv() {
   source "$VENV_PATH/bin/activate"
 
   log "Active Python: $(python --version 2>&1)"
-  python -m pip install --upgrade pip setuptools wheel
+  python -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1
+}
+
+ensure_dependencies() {
+  log "Installing dependencies..."
+  python -m pip install -q PyYAML huggingface-hub
 }
 
 configure_hf_endpoint() {
   export HF_ENDPOINT="$HF_ENDPOINT_VALUE"
   log "HF_ENDPOINT set to: $HF_ENDPOINT"
-}
-
-resolve_hf_cli() {
-  if command -v hf >/dev/null 2>&1; then
-    HF_CMD="$(command -v hf)"
-    HF_MODE="hf"
-    return 0
-  fi
-  if command -v huggingface-cli >/dev/null 2>&1; then
-    HF_CMD="$(command -v huggingface-cli)"
-    HF_MODE="huggingface-cli"
-    return 0
-  fi
-  if [[ -x "$VENV_PATH/bin/hf" ]]; then
-    HF_CMD="$VENV_PATH/bin/hf"
-    HF_MODE="hf"
-    return 0
-  fi
-  if [[ -x "$VENV_PATH/bin/huggingface-cli" ]]; then
-    HF_CMD="$VENV_PATH/bin/huggingface-cli"
-    HF_MODE="huggingface-cli"
-    return 0
-  fi
-  return 1
-}
-
-ensure_hf_cli() {
-  if resolve_hf_cli; then
-    log "Hugging Face CLI found: $HF_CMD ($HF_MODE)"
-    return
-  fi
-
-  warn "No Hugging Face CLI found. Installing huggingface_hub[cli] into the venv."
-  python -m pip install -U "huggingface_hub[cli]"
-
-  if resolve_hf_cli; then
-    log "Hugging Face CLI installed: $HF_CMD ($HF_MODE)"
-    return
-  fi
-
-  err "No usable Hugging Face CLI was found after installation."
-  err "Expected one of: hf or huggingface-cli"
-  exit 1
 }
 
 ensure_aria2_if_requested() {
@@ -228,7 +188,7 @@ ensure_aria2_if_requested() {
     return
   fi
   ensure_brew
-  log "Installing aria2 via Homebrew for optional accelerated downloads"
+  log "Installing aria2 via Homebrew for accelerated downloads..."
   "$BREW_BIN" install aria2 || warn "aria2 installation failed; continuing without it"
 }
 
@@ -249,124 +209,57 @@ ensure_hfd_if_requested() {
   fi
 }
 
-hf_login_hint() {
-  if [[ "$HF_MODE" == "hf" ]]; then
-    echo "hf auth login"
-  else
-    echo "huggingface-cli login"
-  fi
-}
-
-ensure_config() {
-  mkdir -p "$MODELS_DIR" "$MAIN_DIR" "$DRAFT_DIR"
-
-  if [[ ! -f "$CONFIG_PATH" ]]; then
-    cp "$EXAMPLE_CONFIG_PATH" "$CONFIG_PATH"
-    log "Created config from example: $CONFIG_PATH"
-  fi
-
-  python - <<PY
-from pathlib import Path
-config_path = Path(r"$CONFIG_PATH")
-text = config_path.read_text()
-text = text.replace('/ABSOLUTE/PATH/TO/Qwen3.5-9B-MLX   # or a compatible HF repo id', r'$MAIN_DIR')
-text = text.replace('/ABSOLUTE/PATH/TO/Qwen3.5-0.8B-MLX   # or a compatible HF repo id', r'$DRAFT_DIR')
-config_path.write_text(text)
-print(f"[Aster] Updated config paths in {config_path}")
-PY
-}
-
 show_preflight() {
-  log "Project root: $PROJECT_ROOT"
-  log "Models dir:   $MODELS_DIR"
-  log "Main repo:    $MAIN_REPO"
-  log "Draft repo:   $DRAFT_REPO"
-  log "Mirror:       $HF_ENDPOINT_VALUE"
-  log "USE_HFD:      $USE_HFD"
+  log "Configuration:"
+  log "  Project root:  $PROJECT_ROOT"
+  log "  Models dir:    $MODELS_DIR"
+  log "  HF mirror:     $HF_ENDPOINT_VALUE"
+  log "  Use hfd:       $USE_HFD"
+  log "  Python:        $PYTHON_BIN"
 }
 
-hf_download() {
-  local repo="$1"
-  local target_dir="$2"
-
-  if [[ "$HF_MODE" == "hf" ]]; then
-    if [[ -n "$HF_TOKEN" ]]; then
-      "$HF_CMD" download "$repo" --token "$HF_TOKEN" --local-dir "$target_dir"
-    else
-      "$HF_CMD" download "$repo" --local-dir "$target_dir"
-    fi
-  else
-    if [[ -n "$HF_TOKEN" ]]; then
-      "$HF_CMD" download "$repo" --token "$HF_TOKEN" --resume-download --local-dir "$target_dir" --local-dir-use-symlinks False
-    else
-      "$HF_CMD" download "$repo" --resume-download --local-dir "$target_dir" --local-dir-use-symlinks False
-    fi
-  fi
-}
-
-hfd_download() {
-  local repo="$1"
-  local target_dir="$2"
-
-  if [[ ! -x "$HFD_PATH" ]]; then
-    err "Requested USE_HFD=1 but hfd helper is unavailable at $HFD_PATH"
-    exit 1
-  fi
-
-  mkdir -p "$target_dir"
-  (
-    cd "$target_dir"
-    if [[ -n "$HF_TOKEN" ]]; then
-      "$HFD_PATH" "$repo" --hf_token "$HF_TOKEN"
-    else
-      "$HFD_PATH" "$repo"
-    fi
-  )
-}
-
-download_model() {
-  local repo="$1"
-  local target_dir="$2"
-  local label="$3"
-
-  log "Downloading $label model to: $target_dir"
+run_downloader() {
+  local args=("$@")
+  
+  log "Running model downloader..."
+  cd "$PROJECT_ROOT"
+  
+  # Set environment for hfd if requested
   if [[ "$USE_HFD" == "1" ]]; then
-    hfd_download "$repo" "$target_dir"
-  else
-    hf_download "$repo" "$target_dir"
+    export HFD_PATH="$HFD_PATH"
   fi
-}
-
-postflight() {
-  log "Download complete."
-  log "Main model path:  $MAIN_DIR"
-  log "Draft model path: $DRAFT_DIR"
-  printf '\n[Aster] Suggested next commands:\n'
-  printf '  cd %s\n' "$PROJECT_ROOT"
-  printf '  source .venv/bin/activate\n'
-  printf '  python scripts/model_smoke.py --config configs/config.yaml\n'
-  printf '  python scripts/benchmark_live.py --config configs/config.yaml\n\n'
+  
+  python "$SCRIPTS_DIR/download_models.py" "${args[@]}"
 }
 
 main() {
   require_macos
   require_project_root
+  
+  # Parse arguments
+  local args=()
+  if [[ $# -eq 0 ]]; then
+    # Default: download required models only
+    args=("--required-only")
+  else
+    args=("$@")
+  fi
+  
   show_preflight
   ensure_brew
   ensure_python
   ensure_venv
   configure_hf_endpoint
-  ensure_hf_cli
+  ensure_dependencies
+  ensure_aria2_if_requested
   ensure_hfd_if_requested
-  ensure_config
-
-  warn "If the repositories require authentication, run: $(hf_login_hint)"
-  warn "If a gated repo still fails, set HF_TOKEN=hf_xxx when invoking the script."
-
-  download_model "$MAIN_REPO" "$MAIN_DIR" "main"
-  download_model "$DRAFT_REPO" "$DRAFT_DIR" "draft"
-
-  postflight
+  
+  if [[ "$HF_TOKEN" != "" ]]; then
+    export HF_TOKEN
+    log "HF_TOKEN set from environment"
+  fi
+  
+  run_downloader "${args[@]}"
 }
 
 main "$@"

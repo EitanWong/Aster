@@ -1,94 +1,147 @@
-# Aster model download instructions
+# Aster Model Download Instructions
 
-Use `scripts/download_models.sh` to prepare the local environment and manually download the two MLX model directories Aster expects.
+One-click model download for all Aster models (ASR, LLM, TTS).
 
-## Mirror support
-
-The script now defaults to:
-
-```bash
-HF_ENDPOINT=https://hf-mirror.com
-```
-
-This matches the hf-mirror guidance and helps accelerate Hugging Face downloads in mainland China.
-
-## What the script now does automatically
-
-- checks that it is running on macOS
-- checks project structure
-- checks for Homebrew and installs it if missing
-- checks for Python 3.13 / 3.12+ and installs Python 3.13 with Homebrew if needed
-- creates or reuses the project `.venv`
-- upgrades pip/setuptools/wheel in the venv
-- installs Hugging Face CLI tooling if missing
-- supports both `hf` and `huggingface-cli`
-- can optionally install `aria2`
-- can optionally use `hfd` for more robust accelerated downloads
-- creates model directories
-- updates `configs/config.yaml` with intended local model paths
-- downloads the main and draft MLX model repositories
-
-## Default target directories
-
-- `/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-9b-mlx`
-- `/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx`
-
-## Default repo ids in the script
-
-- `mlx-community/Qwen3.5-9B-4bit`
-- `mlx-community/Qwen3.5-0.8B-4bit`
-
-## Simplest command
+## Quick Start
 
 ```bash
 cd /Users/eitan/Documents/Projects/Python/Aster
-bash scripts/download_models.sh
+bash scripts/setup/download_models.sh
 ```
 
-## Optional: use hfd + aria2 path
+This downloads all **required models** (~7.2GB):
+- Qwen3-ASR-0.6B-4bit (0.4GB)
+- Qwen3.5-9B-4bit (5.2GB)
+- Qwen3-TTS-0.6B-Base-4bit (0.5GB)
+
+## What the script does automatically
+
+- Checks macOS + project structure
+- Installs Homebrew if missing
+- Installs Python 3.13 if needed
+- Creates/reuses `.venv`
+- Installs dependencies (PyYAML, huggingface-hub)
+- Installs aria2 for accelerated downloads
+- Downloads hfd helper for fast HF downloads
+- Sets HF mirror to `https://hf-mirror.com` (fast in mainland China)
+- Downloads all models with hfd + aria2 acceleration
+- Verifies downloads
+
+## Common Commands
 
 ```bash
-cd /Users/eitan/Documents/Projects/Python/Aster
-USE_HFD=1 bash scripts/download_models.sh
+# Download all required models (default)
+bash scripts/setup/download_models.sh
+
+# Download all models (required + optional)
+bash scripts/setup/download_models.sh --all
+
+# Download specific group
+bash scripts/setup/download_models.sh --group llm
+bash scripts/setup/download_models.sh --group asr
+bash scripts/setup/download_models.sh --group tts
+
+# Download specific model
+bash scripts/setup/download_models.sh --model qwen3_5_9b
+
+# List available models
+bash scripts/setup/download_models.sh --list
+
+# Verify existing models
+bash scripts/setup/download_models.sh --verify-only
+
+# Force re-download
+bash scripts/setup/download_models.sh --all --force
 ```
 
-## Optional: override repo ids
+## Environment Variables
 
 ```bash
-cd /Users/eitan/Documents/Projects/Python/Aster
-MAIN_REPO="your-main-repo" DRAFT_REPO="your-draft-repo" bash scripts/download_models.sh
+# Use custom HF mirror (default: https://hf-mirror.com)
+HF_ENDPOINT=https://huggingface.co bash scripts/setup/download_models.sh
+
+# Disable hfd acceleration (use standard huggingface-hub)
+USE_HFD=0 bash scripts/setup/download_models.sh
+
+# Skip aria2 installation
+INSTALL_ARIA2=0 bash scripts/setup/download_models.sh
+
+# Pass HF token for gated repos
+HF_TOKEN="hf_your_token" bash scripts/setup/download_models.sh
 ```
 
-## Optional: pass a token for gated repos
+## Download Performance
 
-```bash
-cd /Users/eitan/Documents/Projects/Python/Aster
-HF_TOKEN="hf_your_token" bash scripts/download_models.sh
+With hfd + aria2 (default):
+- **Fast**: ~50-100 MB/s on good connections
+- **Resumable**: Interrupted downloads resume automatically
+- **Parallel**: aria2 uses multiple connections
+
+## Models Downloaded
+
+| Model | Size | Required | Purpose |
+|-------|------|----------|---------|
+| Qwen3-ASR-0.6B | 0.4GB | ✓ | Speech-to-text |
+| Qwen3.5-9B | 5.2GB | ✓ | Main LLM |
+| Qwen3.5-0.8B | 0.6GB | ✗ | Speculative decoding |
+| Qwen3-TTS-Base | 0.5GB | ✓ | Text-to-speech (voice cloning) |
+| Qwen3-TTS-CustomVoice | 0.5GB | ✗ | Text-to-speech (preset voices) |
+
+## After Download
+
+Models are automatically organized in `models/`:
+
+```
+models/
+├── qwen3-asr-0.6b/
+├── qwen3.5-9b-mlx/
+├── qwen3.5-0.8b-mlx/
+├── qwen3-tts-0.6b-base/
+└── qwen3-tts-0.6b-custom/
 ```
 
-## Manual login if needed
+Update `configs/config.yaml` with model paths:
 
-Depending on the installed CLI, use one of:
+```yaml
+model:
+  path: models/qwen3.5-9b-mlx
+  draft_path: models/qwen3.5-0.8b-mlx
+
+audio:
+  asr_model_path: models/qwen3-asr-0.6b
+  tts_model_path: models/qwen3-tts-0.6b-base
+  tts_custom_voice_path: models/qwen3-tts-0.6b-custom
+```
+
+Then start the server:
 
 ```bash
 source .venv/bin/activate
-hf auth login
+python server.py --config configs/config.yaml
 ```
 
-or:
+## Troubleshooting
 
-```bash
-source .venv/bin/activate
-huggingface-cli login
+| Issue | Solution |
+|-------|----------|
+| Download interrupted | Rerun same command (resumes) |
+| aria2 installation fails | Continue without it (slower) |
+| hfd download fails | Set `USE_HFD=0` to use standard download |
+| Slow downloads | Check internet, try off-peak hours |
+| Disk space issues | Need ~8GB free |
+
+## Architecture
+
 ```
-
-## After download
-
-Run:
-
-```bash
-cd /Users/eitan/Documents/Projects/Python/Aster
-source .venv/bin/activate
-python scripts/model_smoke.py --config configs/config.yaml
-python scripts/benchmark_live.py --config configs/config.yaml
+Shell wrapper (download_models.sh)
+    ↓
+Setup (Homebrew, Python, venv, dependencies)
+    ↓
+Configure (HF mirror, hfd, aria2)
+    ↓
+Python downloader (download_models.py)
+    ↓
+hfd + aria2 (fast downloads)
+    ↓
+Verify & report
 ```
