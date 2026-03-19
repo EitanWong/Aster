@@ -1,75 +1,166 @@
 <div align="center">
   <img src="assets/logo.svg" alt="Aster Logo" width="200" height="200">
-  
+
   # Aster
-  
-  **Produktionsorientierte lokale LLM-Inferenzlaufzeit für Apple Silicon**
-  
+
+  **Produktionsorientierte Apple Silicon lokale LLM-Inferenzlaufzeit**
+
   [English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
 </div>
 
-Aster ist eine produktionsorientierte lokale LLM-Inferenzlaufzeit für Apple Silicon, die für Arbeitslasten mit langem Kontext und OpenClaw-ähnliche Agent-Workloads optimiert ist.
+Aster ist eine produktionsorientierte Apple Silicon lokale LLM-Inferenzlaufzeit, die für langkontextuelle, OpenClaw-ähnliche Agent-Workloads optimiert ist.
 
 ## Warum Aster
 
 Aster ist optimiert für:
 
-- Riesige Eingabeaufforderungen und wiederholte lange Präfixe
-- Werkzeugintensive Agent-Eingabeaufforderungen
-- Lange Gespräche
-- Kontinuierliche lokale Hintergrundverwaltung
-- Benchmark-validierte Laufzeit-Richtlinienauswahl
+- riesige Eingabeaufforderungen und wiederholte lange Präfixe
+- werkzeugintensive Agent-Eingabeaufforderungen
+- lange Gespräche
+- kontinuierliche lokale Hintergrundverwaltung
+- durch Benchmarking validierte Laufzeit-Richtlinienauswahl
 - Apple Silicon + MLX-Bereitstellung
 
-Es stellt eine OpenAI-kompatible API bereit und behandelt fortgeschrittene Optimierungen als Kandidatenstrategien, nicht als Dogma. Spekulatives Dekodieren, Präfix-Caching, Batch-Verarbeitung, Planung und Streaming-Kadenz werden alle verglichen und basierend auf gemessener lokaler Leistung und Stabilität ausgewählt.
+Es stellt eine OpenAI-kompatible API bereit und behandelt erweiterte Optimierungen als Kandidatenstrategien, nicht als Dogma. Spekulatives Dekodieren, Präfix-Caching, Batch-Verarbeitung, Planung und Streaming-Kadenz werden alle verglichen und basierend auf gemessenem lokalem Leistung und Stabilität ausgewählt.
 
-## Kernfunktionen
+## Kernideen
 
 - OpenAI-kompatible API mit Streaming- und Nicht-Streaming-Endpunkten
-- Explizite Prefill/Decode-Trennung
-- Adaptiver Scheduler mit warteschlangen-bewusster Batch-Verarbeitung
-- Abstraktion des paginierten KV-Managers
-- Automatisches Präfix-Caching mit deterministischem Hashing
-- Spekulativer Dekodierungscontroller mit automatischem Deaktivierungs-Fallback
-- Benchmark-/Autotuning-Subsystem, das das schnellste stabile Profil beibehält
-- Strukturierte Protokolle, Metriken, Überwachung und Verfügbarkeits-/Gesundheitsberichte
+- explizite Prefill/Decode-Aufteilung
+- adaptiver Scheduler mit warteschlangen-bewusstem Batch-Processing
+- Paged-KV-Manager-Abstraktion
+- automatisches Präfix-Caching mit deterministischem Hashing
+- spekulativer Dekodierungs-Controller mit automatischem Deaktivierungs-Fallback
+- Benchmark/Autotuning-Subsystem, das das schnellste stabile Profil beibehält
+- strukturierte Protokolle, Metriken, Überwachung und Bereitschafts-/Gesundheitsberichte
 
 ## Schnellstart
 
 ```bash
 cd /Users/eitan/Documents/Projects/Python/Aster
-python3.13 -m venv .venv
+
+# Virtuelle Umgebung erstellen
+/opt/homebrew/bin/python3.13 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-cp configs/config.yaml.example configs/config.yaml
+
+# Abhängigkeiten installieren (einschließlich mlx-audio für ASR/TTS)
+python -m pip install -r requirements.txt
+
+# Modelle herunterladen (ASR, LLM, TTS)
+bash scripts/setup/download_models.sh
+
+# Server starten
 python -m aster --config configs/config.yaml
+```
+
+Die API ist unter `http://127.0.0.1:8080` verfügbar
+
+### Installation überprüfen
+
+```bash
+# Gesundheit überprüfen
+curl http://127.0.0.1:8080/health
+
+# LLM-Inferenz testen
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.5-9B",
+    "messages": [{"role": "user", "content": "Hallo"}],
+    "max_tokens": 100
+  }'
+
+# ASR testen (Sprache-zu-Text)
+python scripts/test_audio_cli.py --tts "Hallo Welt" --output test.wav
+python scripts/test_audio_cli.py --asr test.wav
+
+# End-to-End-Pipeline testen
+python scripts/test_audio_cli.py --pipeline "Dies ist ein Test"
 ```
 
 ## Python-Version
 
-Aster zielt auf modernes Python ab und sollte auf Python 3.13.x (falls verfügbar) oder mindestens 3.12+ ausgeführt werden. Das macOS-System-Python wird für dieses Projekt nicht unterstützt.
+Aster zielt auf modernes Python ab und sollte auf Python 3.13.x ausgeführt werden, wenn verfügbar (mindestens 3.12+). Das macOS-System-Python wird für dieses Projekt als nicht unterstützt betrachtet.
 
-## API-Endpunkte
+## API
 
-- `GET /health` - Gesundheitsprüfung
-- `GET /ready` - Bereitschaftsprüfung
-- `GET /metrics` - Prometheus-Metriken
-- `GET /v1/models` - Modelliste
-- `POST /v1/chat/completions` - Chat-Vervollständigung
-- `POST /v1/completions` - Text-Vervollständigung
+- `GET /health`
+- `GET /ready`
+- `GET /metrics`
+- `GET /v1/models`
+- `POST /v1/chat/completions` — LLM-Chat-Inferenz
+- `POST /v1/completions` — LLM-Textvervollständigung
+- `POST /v1/audio/transcriptions` — ASR (Sprache-zu-Text)
+- `POST /v1/audio/speech` — TTS (Text-zu-Sprache)
 
 Kompatibilitätshinweise:
-- Siehe `docs/OPENAI_COMPAT.md` für Asters Standard-Kompatibilitätsvertrag und optionale Debug-Erweiterungen.
+- Siehe `docs/api/OPENAI_COMPAT.md` für Asters Standard-Kompatibilitätsvertrag und optionale Debug-Erweiterungen.
+
+## Audio-Dienste (ASR & TTS)
+
+Aster umfasst integrierte Spracherkennung und Synthese, die von Qwen3-Modellen angetrieben werden:
+
+### ASR (Sprache-zu-Text)
+- Modell: Qwen3-ASR-0.6B (0,66 GB)
+- Unterstützt mehrere Sprachen
+- Schnelle lokale Transkription
+
+### TTS (Text-zu-Sprache)
+- Basismodell: Qwen3-TTS-0.6B (1,59 GB)
+- CustomVoice-Modell: Qwen3-TTS-CustomVoice-0.6B (optional, für Sprachklonen)
+- Einstellbare Sprechgeschwindigkeit
+- Sprachklonen mit Referenzaudio
+
+### Audio-API-Beispiele
+
+**TTS (Text-zu-Sprache):**
+```bash
+curl -X POST http://127.0.0.1:8080/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-TTS-0.6B",
+    "input": "Hallo, dies ist ein Test",
+    "voice": "default",
+    "speed": 1.0
+  }' \
+  --output output.wav
+```
+
+**ASR (Sprache-zu-Text):**
+```bash
+curl -X POST http://127.0.0.1:8080/v1/audio/transcriptions \
+  -F "file=@audio.wav" \
+  -F "model=Qwen3-ASR-0.6B"
+```
+
+### Audio-Test
+
+Verwenden Sie das bereitgestellte CLI-Test-Tool:
+```bash
+# TTS testen
+python scripts/test_audio_cli.py --tts "Hallo Welt" --output output.wav
+
+# ASR testen
+python scripts/test_audio_cli.py --asr output.wav
+
+# End-to-End-Pipeline testen (TTS -> ASR)
+python scripts/test_audio_cli.py --pipeline "Testnachricht"
+
+# Vollständige Test-Suite ausführen
+pytest tests/test_audio_services.py -v -s
+```
+
+Siehe `docs/guides/DEPLOYMENT.md` für detaillierte Audio-Service-Dokumentation.
 
 ## Benchmark-Philosophie
 
-Das Autotuning beim Start kann einen kurzen Aufwärm-Benchmark ausführen, um die schnellste stabile Richtlinie auszuwählen. Das Benchmark-Subsystem vergleicht:
+Das Autotuning beim Start kann einen kurzen Warm-up-Benchmark ausführen, um die schnellste stabile Richtlinie auszuwählen. Das Benchmark-Subsystem vergleicht:
 
-- Spekulatives Dekodieren ein/aus
-- Entwurfs-Token-Anzahl
-- Präfix-Caching ein/aus
+- spekulatives Dekodieren an/aus
+- Anzahl der Entwurfs-Token
+- Präfix-Caching an/aus
 - Batch-Fenster
-- Batch-Limits
+- Batch-Obergrenzen
 - Seitengröße
 - Planungsmodi
 - Streaming-Flush-Kadenz
@@ -78,56 +169,68 @@ Profile werden beibehalten und bei nachfolgenden Starts verwendet.
 
 ## Apple Silicon Tuning-Hinweise
 
-- Bevorzugen Sie Vorallokation und Seiten-Pools gegenüber wiederholten dynamischen Zuordnungen
-- Verwenden Sie MLX-Modell-Residenz sorgfältig, um Unified-Memory-Thrashing zu vermeiden
-- Benchmark-Präfix-Caching und spekulatives Dekodieren pro Maschine
-- Halten Sie Python-Hot-Paths klein; verschieben Sie die Koordination in stabile Schleifen
-- Priorisieren Sie konsistente First-Token-Latenz unter langen Eingabeaufforderungen
+- Präallokation und Seiten-Pools gegenüber wiederholten dynamischen Zuordnungen bevorzugen
+- MLX-Modell-Residenz sorgfältig verwenden, um Unified-Memory-Thrashing zu vermeiden
+- Präfix-Caching und spekulatives Dekodieren pro Maschine benchmarken
+- Python-Hot-Paths klein halten; Koordination in stabile Schleifen verschieben
+- konsistente First-Token-Latenz unter langen Eingabeaufforderungen priorisieren
 
 ## Dynamische Optimierungsphilosophie
 
 Aster aktiviert nur Optimierungen, die sich auf der lokalen Maschine als vorteilhaft erweisen:
 
-- Spekulatives Dekodieren kann global oder pro Request-Klasse deaktiviert werden
-- Präfix-Caching kann reduziert oder deaktiviert werden, wenn die Hit-Rate niedrig ist oder der Speicherdruck steigt
+- spekulatives Dekodieren kann global oder pro Anfrageklasse deaktiviert werden
+- Präfix-Cache kann reduziert oder deaktiviert werden, wenn die Hit-Rate niedrig ist oder der Speicherdruck steigt
 - Batch-Fenster schrumpfen automatisch, wenn die Latenz steigt
-- Fallback-Profile werden ausgewählt, wenn Instabilität oder Regression erkannt wird
+- Fallback-Profile werden ausgewählt, wenn Instabilität oder Regressionen erkannt werden
 
-## Modellpfade
+## Modell-Setup
 
-`model.path` und `model.draft_path` können sein:
-- Absolute lokale Pfade zu MLX-konvertierten Modellverzeichnissen
-- Kompatible Hugging Face-Repository-IDs, die von `mlx-lm` geladen werden können
-
-Für die beabsichtigte Produktionseinrichtung bevorzugen Sie lokal MLX-konvertierte Verzeichnisse für sowohl das 9B-Zielmodell als auch das 0.8B-Entwurfsmodell.
-
-Nützliche Setup- und Validierungsbefehle:
+One-Click-Modell-Download mit hfd + aria2-Beschleunigung:
 
 ```bash
+# Alle erforderlichen Modelle herunterladen (ASR, LLM, TTS)
 bash scripts/setup/download_models.sh
-# oder für einen Download-resistenteren Pfad:
-USE_HFD=1 bash scripts/setup/download_models.sh
-source .venv/bin/activate
-python scripts/dev/model_smoke.py --config configs/config.yaml
-python scripts/dev/benchmark_live.py --config configs/config.yaml
+
+# Oder Python direkt für mehr Kontrolle verwenden
+python scripts/download_models.py --all
+python scripts/download_models.py --group llm
+python scripts/download_models.py --list
+```
+
+Siehe `scripts/setup/README-model-download.md` für detaillierte Anweisungen.
+
+## Modell-Pfade
+
+`model.path` und `model.draft_path` können sein:
+- absolute lokale Pfade zu MLX-konvertierten Modellverzeichnissen
+- kompatible Hugging Face Repo-IDs, die von `mlx-lm` geladen werden können
+
+Für die Produktion bevorzugen Sie lokale MLX-konvertierte Verzeichnisse. Aktualisieren Sie `configs/config.yaml`:
+
+```yaml
+model:
+  path: models/qwen3.5-9b-mlx
+  draft_path: models/qwen3.5-0.8b-mlx
+
+audio:
+  asr_model_path: models/qwen3-asr-0.6b
+  tts_model_path: models/qwen3-tts-0.6b-base
 ```
 
 ## OpenClaw-Integration
 
-Zeigen Sie OpenClaw auf Asters OpenAI-kompatible Basis-URL und Modell-ID. Aster ist für wiederholte System-/Tool-Präfixe und langlebige Agent-Sitzungen konzipiert, daher sollte es besonders von Arbeitslasten mit stabiler Gerüstung und Langkontext-Wiederverwendung profitieren.
+Zeigen Sie OpenClaw auf Asters OpenAI-kompatible Basis-URL und Modell-ID. Aster ist für wiederholte System-/Tool-Präfixe und langlebige Agent-Sitzungen konzipiert, daher sollte es besonders von Workloads mit stabilen Gerüsten und langem Kontext-Reuse profitieren.
 
-## Projektdokumentation
+## Projekt-Leitfäden
 
-- `docs/ROADMAP.md` — Langfristiger Architektur-Evolutionsplan
-- `docs/OPENAI_COMPAT.md` — Kompatibilitätsgrenze und Debug-Erweiterungsregeln
-- `docs/DEBUGGING.md` — Operator-Debugging-Anleitung
-- `docs/OPERATIONS.md` — Tägliche Serviceverwaltung
-- `docs/DEVELOPMENT.md` — Entwicklungsanleitung
-
-## Lizenz
-
-MIT License - Siehe [LICENSE](LICENSE)
-
-## Beitragen
-
-Beiträge sind willkommen! Siehe [CONTRIBUTING.de.md](CONTRIBUTING.de.md) für Beitragsrichtlinien.
+- `docs/guides/QUICK_START_MODELS.md` — Schnellstart-Leitfaden für Modell-Download
+- `docs/reference/MODEL_SETUP.md` — Detaillierte Einrichtung und Fehlerbehebung
+- `docs/development/MODEL_DOWNLOAD_ARCHITECTURE.md` — Systemdesign
+- `docs/reference/ROADMAP.md` — Langfristiger Architektur-Evolutionsplan
+- `docs/api/OPENAI_COMPAT.md` — Kompatibilitätsgrenze und Debug-Erweiterungen
+- `docs/development/DEBUGGING.md` — Operator-Debugging-Leitfaden
+- `docs/operations/OPERATIONS.md` — Tägliche Service-Operationen
+- `docs/guides/BENCHMARK_GUIDE.md` — Performance-Benchmark-Leitfaden
+- `docs/guides/BACKGROUND_SERVICE_SETUP.md` — Hintergrund-Service-Einrichtung
+- `DOCS.md` — Vollständige Dokumentationsnavigation

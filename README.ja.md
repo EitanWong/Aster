@@ -1,133 +1,236 @@
 <div align="center">
   <img src="assets/logo.svg" alt="Aster Logo" width="200" height="200">
-  
+
   # Aster
-  
-  **Apple Silicon用の本番対応ローカルLLM推論ランタイム**
-  
+
+  **本番対応 Apple Silicon ローカル LLM 推論ランタイム**
+
   [English](README.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [한국어](README.ko.md)
 </div>
 
-Asterは、長いコンテキストとOpenClawスタイルのエージェントワークロード向けに最適化されたApple Silicon用のローカルLLM推論ランタイムです。
+Aster は、長いコンテキストと OpenClaw スタイルのエージェント ワークロード向けに最適化された、本番対応の Apple Silicon ローカル LLM 推論ランタイムです。
 
-## Asterを選ぶ理由
+## Aster を選ぶ理由
 
-Asterは以下のシナリオに最適化されています：
+Aster は以下のシナリオに最適化されています：
 
-- 超長いプロンプトと繰り返される長いプレフィックス
-- ツール集約的なエージェントプロンプト
+- 巨大なプロンプトと繰り返される長いプレフィックス
+- ツール集約型エージェント プロンプト
 - 長い会話
-- 継続的なローカルバックグラウンドサービス
-- ベンチマーク検証されたランタイムポリシー選択
-- Apple Silicon + MLXデプロイメント
+- 継続的なローカル バックグラウンド サービス
+- ベンチマーク検証済みのランタイム ポリシー選択
+- Apple Silicon + MLX デプロイメント
 
-OpenAI互換のAPIを提供し、高度な最適化を教義ではなく候補戦略として扱います。推測デコーディング、プレフィックスキャッシング、バッチ処理、スケジューリング、ストリーミングレートはすべてベンチマークされ、測定されたローカルパフォーマンスと安定性に基づいて選択されます。
+OpenAI 互換 API を公開し、高度な最適化を教義ではなく候補戦略として扱います。推測デコーディング、プレフィックス キャッシング、バッチ処理、スケジューリング、ストリーミング ケイデンスはすべてベンチマークされ、測定されたローカル パフォーマンスと安定性に基づいて選択されます。
 
-## コア機能
+## コア アイデア
 
-- OpenAI互換のAPI（ストリーミングおよび非ストリーミングエンドポイント）
-- 明示的なprefill/decode分離
-- キュー認識型の適応スケジューラ
-- ページングKVマネージャー抽象化
-- 決定論的ハッシング付き自動プレフィックスキャッシュ
-- 自動無効化フォールバック付き推測デコーディングコントローラー
-- ベンチマーク/自動チューニングサブシステム
-- 構造化ログ、メトリクス、監視、および準備/ヘルスレポート
+- ストリーミングおよび非ストリーミング エンドポイント付き OpenAI 互換 API
+- 明示的なプリフィル/デコード分割
+- キュー認識バッチ処理を備えた適応型スケジューラー
+- ページング KV マネージャー抽象化
+- 決定論的ハッシング付き自動プレフィックス キャッシュ
+- 自動無効化フォールバック付き推測デコーディング コントローラー
+- 最速の安定したプロファイルを保持するベンチマーク/自動チューニング サブシステム
+- 構造化ログ、メトリクス、監督、および準備/ヘルス レポート
 
-## クイックスタート
+## クイック スタート
 
 ```bash
 cd /Users/eitan/Documents/Projects/Python/Aster
-python3.13 -m venv .venv
+
+# 仮想環境を作成
+/opt/homebrew/bin/python3.13 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-cp configs/config.yaml.example configs/config.yaml
+
+# 依存関係をインストール（ASR/TTS 用 mlx-audio を含む）
+python -m pip install -r requirements.txt
+
+# モデルをダウンロード（ASR、LLM、TTS）
+bash scripts/setup/download_models.sh
+
+# サーバーを起動
 python -m aster --config configs/config.yaml
 ```
 
-## Pythonバージョン
+API は `http://127.0.0.1:8080` で利用可能になります
 
-Asterは最新のPythonを対象としており、Python 3.13.x（利用可能な場合）またはPython 3.12以上で実行する必要があります。macOSシステムPythonはこのプロジェクトではサポートされていません。
-
-## APIエンドポイント
-
-- `GET /health` - ヘルスチェック
-- `GET /ready` - 準備状態チェック
-- `GET /metrics` - Prometheusメトリクス
-- `GET /v1/models` - モデルリスト
-- `POST /v1/chat/completions` - チャット完成
-- `POST /v1/completions` - テキスト完成
-
-互換性に関する注記：
-- `docs/OPENAI_COMPAT.md`を参照して、Asterのデフォルト互換性契約とオプトインデバッグ拡張を確認してください。
-
-## ベンチマーク理念
-
-起動時の自動チューニングは、短い予熱ベンチマークを実行して最速の安定ポリシーを選択できます。ベンチマークサブシステムは以下を比較します：
-
-- 推測デコーディングのオン/オフ
-- ドラフトトークン数
-- プレフィックスキャッシュのオン/オフ
-- バッチウィンドウ
-- バッチキャップ
-- ページサイズ
-- スケジューリングモード
-- ストリーミングフラッシュレート
-
-プロファイルは保存され、後続の起動時に使用されます。
-
-## Apple Silicon チューニングノート
-
-- 繰り返される動的割り当てよりも事前割り当てとページプールを優先する
-- 統一メモリスラッシングを避けるためにMLXモデルの常駐を慎重に使用する
-- マシンごとにプレフィックスキャッシングと推測デコーディングをベンチマークする
-- Pythonホットパスを小さく保つ；調整を安定ループに移動する
-- 長いプロンプトの下での一貫した最初のトークンレイテンシを優先する
-
-## 動的最適化理念
-
-Asterは、ローカルマシンで有益であることが証明された最適化のみを有効にします：
-
-- 推測デコーディングはグローバルに無効にするか、リクエストクラスごとに無効にできます
-- ヒット率が低いか、メモリ圧力が上昇した場合、プレフィックスキャッシュを削減または無効にできます
-- レイテンシが上昇すると、バッチウィンドウが自動的に縮小します
-- 不安定性または回帰が検出されると、フォールバックプロファイルが選択されます
-
-## モデルパス
-
-`model.path`と`model.draft_path`は以下のいずれかです：
-- MLX変換モデルディレクトリへの絶対ローカルパス
-- `mlx-lm`でロード可能な互換性のあるHugging Faceリポジトリ ID
-
-意図された本番設定では、9Bターゲットと0.8Bドラフトモデルの両方にローカルMLX変換ディレクトリを優先してください。
-
-有用なセットアップと検証コマンド：
+### インストールの確認
 
 ```bash
-bash scripts/setup/download_models.sh
-# または、より耐性のあるダウンロードパス：
-USE_HFD=1 bash scripts/setup/download_models.sh
-source .venv/bin/activate
-python scripts/dev/model_smoke.py --config configs/config.yaml
-python scripts/dev/benchmark_live.py --config configs/config.yaml
+# ヘルス チェック
+curl http://127.0.0.1:8080/health
+
+# LLM 推論をテスト
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.5-9B",
+    "messages": [{"role": "user", "content": "こんにちは"}],
+    "max_tokens": 100
+  }'
+
+# ASR（音声テキスト変換）をテスト
+python scripts/test_audio_cli.py --tts "こんにちは世界" --output test.wav
+python scripts/test_audio_cli.py --asr test.wav
+
+# エンドツーエンド パイプラインをテスト
+python scripts/test_audio_cli.py --pipeline "これはテストです"
 ```
 
-## OpenClaw統合
+## Python バージョン
 
-OpenClawをAsterのOpenAI互換ベースURLとモデルIDに指定します。Asterは繰り返されるシステム/ツールプレフィックスと長期エージェントセッション用に構築されているため、安定したスキャフォルディングと長いコンテキスト再利用を備えたワークロードから特に利益を得るはずです。
+Aster は最新の Python を対象としており、Python 3.13.x（利用可能な場合）で実行する必要があります（最小 3.12+）。macOS システム Python はこのプロジェクトではサポートされていません。
 
-## プロジェクトドキュメント
+## API
 
-- `docs/ROADMAP.md` — 長期的なアーキテクチャ進化計画
-- `docs/OPENAI_COMPAT.md` — 互換性の境界とデバッグ拡張ルール
-- `docs/DEBUGGING.md` — オペレーターデバッグガイド
-- `docs/OPERATIONS.md` — 日常的なサービス運用
-- `docs/DEVELOPMENT.md` — 開発ガイド
+- `GET /health`
+- `GET /ready`
+- `GET /metrics`
+- `GET /v1/models`
+- `POST /v1/chat/completions` — LLM チャット推論
+- `POST /v1/completions` — LLM テキスト完成
+- `POST /v1/audio/transcriptions` — ASR（音声テキスト変換）
+- `POST /v1/audio/speech` — TTS（テキスト音声変換）
 
-## ライセンス
+互換性に関する注記：
+- Aster のデフォルト互換性契約とオプトイン デバッグ拡張については、`docs/api/OPENAI_COMPAT.md` を参照してください。
 
-MIT License - [LICENSE](LICENSE)を参照してください
+## オーディオ サービス（ASR & TTS）
 
-## 貢献
+Aster には、Qwen3 モデルによって駆動される統合音声認識と合成が含まれています：
 
-貢献を歓迎します！[CONTRIBUTING.ja.md](CONTRIBUTING.ja.md)を参照して、貢献ガイドラインを確認してください。
+### ASR（音声テキスト変換）
+- モデル：Qwen3-ASR-0.6B（0.66GB）
+- 複数言語をサポート
+- 高速ローカル転写
+
+### TTS（テキスト音声変換）
+- ベース モデル：Qwen3-TTS-0.6B（1.59GB）
+- CustomVoice モデル：Qwen3-TTS-CustomVoice-0.6B（オプション、音声クローン用）
+- 調整可能な音声速度
+- 参照音声を使用した音声クローン
+
+### オーディオ API の例
+
+**TTS（テキスト音声変換）：**
+```bash
+curl -X POST http://127.0.0.1:8080/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-TTS-0.6B",
+    "input": "こんにちは、これはテストです",
+    "voice": "default",
+    "speed": 1.0
+  }' \
+  --output output.wav
+```
+
+**ASR（音声テキスト変換）：**
+```bash
+curl -X POST http://127.0.0.1:8080/v1/audio/transcriptions \
+  -F "file=@audio.wav" \
+  -F "model=Qwen3-ASR-0.6B"
+```
+
+### オーディオ テスト
+
+提供されている CLI テスト ツールを使用します：
+```bash
+# TTS をテスト
+python scripts/test_audio_cli.py --tts "こんにちは世界" --output output.wav
+
+# ASR をテスト
+python scripts/test_audio_cli.py --asr output.wav
+
+# エンドツーエンド パイプラインをテスト（TTS -> ASR）
+python scripts/test_audio_cli.py --pipeline "テスト メッセージ"
+
+# 完全なテスト スイートを実行
+pytest tests/test_audio_services.py -v -s
+```
+
+詳細なオーディオ サービス ドキュメントについては、`docs/guides/DEPLOYMENT.md` を参照してください。
+
+## ベンチマーク哲学
+
+スタートアップ自動チューニングは、短いウォームアップ ベンチマークを実行して、最速の安定したポリシーを選択できます。ベンチマーク サブシステムは以下を比較します：
+
+- 推測デコーディング オン/オフ
+- ドラフト トークン数
+- プレフィックス キャッシュ オン/オフ
+- バッチ ウィンドウ
+- バッチ キャップ
+- ページ サイズ
+- スケジューリング モード
+- ストリーミング フラッシュ ケイデンス
+
+プロファイルは保持され、後続の起動時に使用されます。
+
+## Apple Silicon チューニング ノート
+
+- 繰り返される動的割り当てよりも事前割り当てとページ プールを優先する
+- 統一メモリ スラッシュを避けるために MLX モデル常駐を慎重に使用する
+- マシンごとにプレフィックス キャッシングと推測デコーディングをベンチマークする
+- Python ホット パスを小さく保つ。調整を安定したループに移動する
+- 長いプロンプト下での一貫した最初のトークン レイテンシを優先する
+
+## 動的最適化哲学
+
+Aster は、ローカル マシンで有益であることが証明された最適化のみを有効にします：
+
+- 推測デコーディングはグローバルに無効にすることも、リクエスト クラスごとに無効にすることもできます
+- ヒット率が低い場合またはメモリ圧力が上昇した場合、プレフィックス キャッシュを削減または無効にできます
+- レイテンシが上昇すると、バッチ ウィンドウが自動的に縮小します
+- 不安定性または回帰が検出されると、フォールバック プロファイルが選択されます
+
+## モデル セットアップ
+
+hfd + aria2 アクセラレーション付きのワンクリック モデル ダウンロード：
+
+```bash
+# すべての必要なモデルをダウンロード（ASR、LLM、TTS）
+bash scripts/setup/download_models.sh
+
+# または Python を直接使用してより多くの制御を行う
+python scripts/download_models.py --all
+python scripts/download_models.py --group llm
+python scripts/download_models.py --list
+```
+
+詳細な手順については、`scripts/setup/README-model-download.md` を参照してください。
+
+## モデル パス
+
+`model.path` と `model.draft_path` は以下のいずれかです：
+- MLX 変換モデル ディレクトリへの絶対ローカル パス
+- `mlx-lm` で読み込み可能な互換 Hugging Face リポジトリ ID
+
+本番環境では、ローカル MLX 変換ディレクトリを優先します。`configs/config.yaml` を更新します：
+
+```yaml
+model:
+  path: models/qwen3.5-9b-mlx
+  draft_path: models/qwen3.5-0.8b-mlx
+
+audio:
+  asr_model_path: models/qwen3-asr-0.6b
+  tts_model_path: models/qwen3-tts-0.6b-base
+```
+
+## OpenClaw 統合
+
+OpenClaw を Aster の OpenAI 互換ベース URL とモデル ID にポイントします。Aster は繰り返されるシステム/ツール プレフィックスと長期エージェント セッション用に構築されているため、安定したスキャフォールディングと長いコンテキスト再利用を備えたワークロードから特に利益を得るはずです。
+
+## プロジェクト ガイダンス ドキュメント
+
+- `docs/guides/QUICK_START_MODELS.md` — モデル ダウンロード クイック ガイド
+- `docs/reference/MODEL_SETUP.md` — 詳細なセットアップとトラブルシューティング
+- `docs/development/MODEL_DOWNLOAD_ARCHITECTURE.md` — システム設計
+- `docs/reference/ROADMAP.md` — 長期アーキテクチャ進化計画
+- `docs/api/OPENAI_COMPAT.md` — 互換性の境界とデバッグ拡張
+- `docs/development/DEBUGGING.md` — オペレーター デバッグ ガイド
+- `docs/operations/OPERATIONS.md` — 日常的なサービス運用
+- `docs/guides/BENCHMARK_GUIDE.md` — パフォーマンス ベンチマーク ガイド
+- `docs/guides/BACKGROUND_SERVICE_SETUP.md` — バックグラウンド サービス セットアップ
+- `DOCS.md` — 完全なドキュメント ナビゲーション
