@@ -103,10 +103,10 @@ def load_settings(config_path: str) -> RuntimeSettings:
     if not path.exists():
         raise ConfigurationError(code="config_not_found", message=f"Missing config: {path}")
     raw_data: Any = yaml.safe_load(path.read_text())
-    data: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}
+    data: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}  # type: ignore[assignment]
     env_override = os.getenv("ASTER_CONFIG_OVERRIDE")
     if env_override:
         env_data: Any = yaml.safe_load(env_override)
-        override_dict: dict[str, Any] = env_data if isinstance(env_data, dict) else {}
+        override_dict: dict[str, Any] = env_data if isinstance(env_data, dict) else {}  # type: ignore[assignment]
         data = _deep_merge(data, override_dict)
     return RuntimeSettings.model_validate(data)

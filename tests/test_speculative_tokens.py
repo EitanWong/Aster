@@ -199,7 +199,7 @@ async def main() -> None:
     if non_spec_results and spec_results:
         avg_non_spec_val: float = sum(r["tokens_per_second"] for r in non_spec_results) / len(non_spec_results)  # type: ignore[operator]
         avg_spec_val: float = sum(r["tokens_per_second"] for r in spec_results) / len(spec_results)  # type: ignore[operator]
-        speedup: float = avg_spec_val / avg_non_spec_val if avg_non_spec_val > 0 else 0
+        speedup: float = avg_spec_val / avg_non_spec_val if avg_non_spec_val > 0 else 0.0
         print(f"\nSpeedup: {speedup:.2f}x")
         if speedup > 1:
             print(f"✅ Speculative mode is {(speedup-1)*100:.1f}% faster")

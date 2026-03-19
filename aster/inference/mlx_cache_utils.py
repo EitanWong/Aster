@@ -45,7 +45,7 @@ def prompt_cache_length(prompt_cache: Any | None) -> int:
         try:
             if isinstance(meta_state, dict):
                 for key in ("length", "lengths", "size"):
-                    value = meta_state.get(key)
+                    value: Any = meta_state.get(key)  # type: ignore[union-attr]
                     if isinstance(value, int):
                         return max(0, value)
         except Exception:

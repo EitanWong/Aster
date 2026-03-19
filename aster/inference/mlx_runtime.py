@@ -52,10 +52,10 @@ class MLXRuntime:
         return self._draft
 
     def _load_model(self, name: str, path: str) -> LoadedRuntimeModel:
-        result = load(path, lazy=False, return_config=True)
-        if isinstance(result, tuple) and len(result) == 3:
+        result: Any = load(path, lazy=False, return_config=True)
+        if len(result) == 3:  # type: ignore[arg-type]
             model, tokenizer, config = result  # type: ignore[misc]
-        elif isinstance(result, tuple) and len(result) == 2:
+        elif len(result) == 2:  # type: ignore[arg-type]
             model, tokenizer = result  # type: ignore[misc]
             config = {}
         else:
