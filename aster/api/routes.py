@@ -56,8 +56,10 @@ class RouteBuilder:
         container = request.app.state.container
         models = [
             ModelCard(id=container.settings.model.name).model_dump(),
-            ModelCard(id=container.settings.model.draft_name).model_dump(),
         ]
+        # Only include draft model if speculative decoding is enabled
+        if container.settings.speculative.enabled:
+            models.append(ModelCard(id=container.settings.model.draft_name).model_dump())
         return {"object": "list", "data": models}
 
     async def chat_completions(self, request: Request, body: ChatCompletionRequest) -> Response:
