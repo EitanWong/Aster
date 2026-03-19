@@ -57,11 +57,11 @@ class MLXRuntime:
             model, tokenizer, config = result  # type: ignore[misc]
         elif len(result) == 2:  # type: ignore[arg-type]
             model, tokenizer = result  # type: ignore[misc]
-            config = {}
+            config = {}  # type: ignore[assignment]
         else:
             raise ValueError(f"Unexpected load result type: {type(result)}")
         self.logger.info(f"loaded_model name={name} path={path}")
-        return LoadedRuntimeModel(name=name, path=path, model=model, tokenizer=tokenizer, config=config)
+        return LoadedRuntimeModel(name=name, path=path, model=model, tokenizer=tokenizer, config=config)  # type: ignore[arg-type]
 
     def encode(self, prompt: str) -> list[int]:
         target = self.ensure_target_loaded()
