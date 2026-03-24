@@ -1,0 +1,6 @@
+{
+  "type": "tool-call-delta",
+  "id": "call_123",
+  "name": "lookup_weather",
+  "delta": "{\"city\":\"Shan"
+}

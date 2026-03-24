@@ -3,11 +3,13 @@
 Aster - Unified management CLI for the inference engine
 
 Usage:
-    aster daemon install          # Install as background service
-    aster daemon start            # Start the service
-    aster daemon stop             # Stop the service
-    aster daemon status           # Check service status
-    aster daemon logs             # View service logs
+    aster start                   # Start the service
+    aster stop                    # Stop the service
+    aster restart                 # Restart the service
+    aster status                  # Check service status
+    aster logs                    # View service logs
+    aster install                 # Install the macOS launchd service
+    aster uninstall               # Uninstall the macOS launchd service
     
     aster service list            # List available services
     aster service enable ASR      # Enable ASR service
@@ -26,14 +28,62 @@ import sys
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = PROJECT_ROOT / "scripts" / "ops"
+DEFAULT_CONFIG = PROJECT_ROOT / "configs" / "config.yaml"
+LAUNCHD_PLIST = Path.home() / "Library" / "LaunchAgents" / "com.local.aster.daemon.plist"
 
 
-def run_daemon_command(args: list[str]) -> int:
-    """Run daemon.py command."""
-    cmd = [sys.executable, str(SCRIPTS_DIR / "daemon.py")] + args
+def run_script(script_name: str, config_path: Path) -> int:
+    cmd = ["bash", str(SCRIPTS_DIR / script_name), str(config_path)]
     return subprocess.call(cmd)
+
+
+def run_launchd_action(action: str) -> int:
+    return subprocess.call([sys.executable, str(SCRIPTS_DIR / "daemon.py"), action])
+
+
+def run_daemon_command(action: str, config_path: Path) -> int:
+    if action in {"install", "uninstall", "enable", "disable", "config"}:
+        return run_launchd_action(action)
+
+    if action == "start":
+        _stop_launchd_service_if_present(config_path)
+        return run_script("start.sh", config_path)
+
+    if action == "stop":
+        _stop_launchd_service_if_present(config_path)
+        return run_script("stop.sh", config_path)
+
+    if action == "restart":
+        _stop_launchd_service_if_present(config_path)
+        return run_script("restart.sh", config_path)
+
+    if action == "status":
+        _print_launchd_note(config_path)
+        return run_script("status.sh", config_path)
+
+    if action == "logs":
+        return run_script("tail_logs.sh", config_path)
+    return run_launchd_action(action)
+
+
+def _launchd_service_applies(config_path: Path) -> bool:
+    return LAUNCHD_PLIST.exists() and config_path.resolve() == DEFAULT_CONFIG.resolve()
+
+
+def _stop_launchd_service_if_present(config_path: Path) -> None:
+    if not _launchd_service_applies(config_path):
+        return
+    print("launchd:   installed for the default config; stopping it so this command can manage the runtime directly")
+    run_launchd_action("stop")
+
+
+def _print_launchd_note(config_path: Path) -> None:
+    if _launchd_service_applies(config_path):
+        print("launchd:   installed for the default config")
+        return
+    print("launchd:   not managing this config")
 
 
 def run_service_command(args: list[str]) -> int:
@@ -42,14 +92,30 @@ def run_service_command(args: list[str]) -> int:
     return subprocess.call(cmd)
 
 
-def check_health() -> int:
+def _load_config(config_path: Path) -> dict:
+    import yaml
+
+    with config_path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _base_url_from_config(config_path: Path) -> str:
+    data = _load_config(config_path)
+    api = data.get("api", {})
+    host = api.get("host", "127.0.0.1")
+    port = api.get("port", 8080)
+    return f"http://{host}:{port}"
+
+
+def check_health(config_path: Path) -> int:
     """Check API health."""
     try:
         import httpx
-        
+
+        base_url = _base_url_from_config(config_path)
         print("Checking Aster API health...")
-        response = httpx.get("http://127.0.0.1:8080/health", timeout=5)
-        
+        response = httpx.get(f"{base_url}/health", timeout=5)
+
         if response.status_code == 200:
             data = response.json()
             print(f"✓ API is healthy")
@@ -68,17 +134,17 @@ def check_health() -> int:
             return 1
     except Exception as e:
         print(f"✗ Failed to connect to API: {e}")
-        print(f"  Make sure the service is running: aster daemon start")
+        print(f"  Make sure the service is running: aster start")
         return 1
 
 
-def run_tests() -> int:
+def run_tests(config_path: Path) -> int:
     """Run quick tests."""
     print("Running Aster tests...\n")
     
     # Check health
     print("1. Checking API health...")
-    if check_health() != 0:
+    if check_health(config_path) != 0:
         print("✗ API health check failed")
         return 1
     
@@ -105,12 +171,11 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Install and start the service
-  aster daemon install
-  aster daemon start
+  # Start the service
+  aster start
   
   # Check service status
-  aster daemon status
+  aster status
   
   # Enable ASR service
   aster service enable ASR
@@ -122,17 +187,38 @@ Examples:
   aster test
   
   # View logs
-  aster daemon logs
+  aster logs
         """,
+    )
+    parser.add_argument(
+        "--config",
+        default=str(DEFAULT_CONFIG),
+        help="Path to config file",
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
-    
-    # Daemon subcommand
-    daemon_parser = subparsers.add_parser("daemon", help="Manage background service")
+
+    service_actions = [
+        "start",
+        "stop",
+        "restart",
+        "status",
+        "logs",
+        "install",
+        "uninstall",
+        "enable",
+        "disable",
+        "config",
+    ]
+
+    for action in service_actions:
+        subparsers.add_parser(action, help=f"{action.capitalize()} the service")
+
+    # daemon is a command alias for users who prefer the launchd/service wording.
+    daemon_parser = subparsers.add_parser("daemon", help="Service-management alias")
     daemon_parser.add_argument(
         "action",
-        choices=["install", "uninstall", "start", "stop", "restart", "status", "logs", "enable", "disable", "config"],
+        choices=service_actions,
         help="Daemon action",
     )
     
@@ -157,22 +243,25 @@ Examples:
     subparsers.add_parser("test", help="Run quick tests")
     
     args = parser.parse_args()
+    config_path = Path(args.config).resolve()
     
     if not args.command:
         parser.print_help()
         return 0
     
-    if args.command == "daemon":
-        return run_daemon_command([args.action])
+    if args.command in service_actions:
+        return run_daemon_command(args.command, config_path)
+    elif args.command == "daemon":
+        return run_daemon_command(args.action, config_path)
     elif args.command == "service":
         service_args = [args.action]
         if args.service:
             service_args.append(args.service)
         return run_service_command(service_args)
     elif args.command == "health":
-        return check_health()
+        return check_health(config_path)
     elif args.command == "test":
-        return run_tests()
+        return run_tests(config_path)
     
     return 1
 

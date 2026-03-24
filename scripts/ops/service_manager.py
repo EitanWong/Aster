@@ -102,7 +102,7 @@ class ServiceManager:
         self._save_config()
         print(f"✓ {service.upper()} service enabled")
         print(f"  Restart the service for changes to take effect:")
-        print(f"  python scripts/ops/daemon.py restart")
+        print(f"  python scripts/ops/aster daemon restart")
         return 0
 
     def disable_service(self, service: str) -> int:
@@ -131,7 +131,7 @@ class ServiceManager:
         self._save_config()
         print(f"✓ {service.upper()} service disabled")
         print(f"  Restart the service for changes to take effect:")
-        print(f"  python scripts/ops/daemon.py restart")
+        print(f"  python scripts/ops/aster daemon restart")
         return 0
 
     def show_status(self) -> int:
@@ -163,10 +163,12 @@ class ServiceManager:
         
         print("Audio Services:")
         print(f"  ASR Enabled:  {audio_config.get('asr_enabled', False)}")
+        print(f"  ASR Backend:  {audio_config.get('asr_backend', 'mlx')}")
         print(f"  ASR Model:    {audio_config.get('asr_model', 'N/A')}")
         print(f"  ASR Path:     {audio_config.get('asr_model_path', 'N/A')}")
         print()
         print(f"  TTS Enabled:  {audio_config.get('tts_enabled', False)}")
+        print(f"  TTS Backend:  {audio_config.get('tts_backend', 'mlx')}")
         print(f"  TTS Model:    {audio_config.get('tts_model', 'N/A')}")
         print(f"  TTS Path:     {audio_config.get('tts_model_path', 'N/A')}")
         print()
@@ -176,6 +178,9 @@ class ServiceManager:
         print(f"  Name:         {model_config.get('name', 'N/A')}")
         print(f"  Path:         {model_config.get('path', 'N/A')}")
         print(f"  Runtime:      {model_config.get('runtime', 'N/A')}")
+        vllm_config = self.config.get("vllm_mlx", {})
+        if model_config.get("runtime") == "vllm_mlx":
+            print(f"  vLLM URL:     {vllm_config.get('base_url', 'N/A')}")
         print()
         
         return 0

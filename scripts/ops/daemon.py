@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Aster Daemon Manager - Control background service on macOS
+macOS launchd manager for Aster.
 
 Usage:
     python daemon.py install      # Install as launchd service
@@ -13,12 +13,13 @@ Usage:
     python daemon.py enable       # Enable auto-start on boot
     python daemon.py disable      # Disable auto-start on boot
     python daemon.py config       # Show configuration
+This helper manages the launchd service lifecycle. The higher-level
+scripts/ops/aster CLI exposes the same actions with unified naming.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import subprocess
 import sys
@@ -53,6 +54,14 @@ SERVICE_CONFIG = {
 }
 
 
+def launchd_domain() -> str:
+    return f"gui/{os.getuid()}"
+
+
+def launchd_service_target() -> str:
+    return f"{launchd_domain()}/{LAUNCHD_LABEL}"
+
+
 def ensure_log_dir() -> None:
     """Ensure log directory exists."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -71,7 +80,7 @@ def get_plist_content() -> str:
     <array>
         <string>{PYTHON_BIN}</string>
         <string>-m</string>
-        <string>aster</string>
+        <string>aster.launchd_entry</string>
         <string>--config</string>
         <string>{CONFIG_FILE}</string>
     </array>
@@ -122,6 +131,28 @@ def run_command(cmd: list[str], check: bool = True) -> subprocess.CompletedProce
         raise
 
 
+def service_loaded() -> bool:
+    result = subprocess.run(
+        ["launchctl", "print", launchd_service_target()],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def service_disabled() -> bool:
+    result = subprocess.run(
+        ["launchctl", "print-disabled", launchd_domain()],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return False
+    return f'"{LAUNCHD_LABEL}" => disabled' in result.stdout
+
+
 def install() -> int:
     """Install as launchd service."""
     print("Installing Aster as macOS background service...")
@@ -135,7 +166,7 @@ def install() -> int:
     
     # Load service
     try:
-        run_command(["launchctl", "load", str(LAUNCHD_PLIST)])
+        run_command(["launchctl", "bootstrap", launchd_domain(), str(LAUNCHD_PLIST)])
         print(f"✓ Service installed and loaded")
         print(f"✓ Service will auto-start on next boot")
         return 0
@@ -153,7 +184,7 @@ def uninstall() -> int:
         return 1
     
     try:
-        run_command(["launchctl", "unload", str(LAUNCHD_PLIST)])
+        run_command(["launchctl", "bootout", launchd_domain(), str(LAUNCHD_PLIST)], check=False)
         LAUNCHD_PLIST.unlink()
         print(f"✓ Service uninstalled")
         return 0
@@ -167,7 +198,14 @@ def start() -> int:
     print("Starting Aster service...")
     
     try:
-        run_command(["launchctl", "start", LAUNCHD_LABEL])
+        if not LAUNCHD_PLIST.exists():
+            print("✗ Service not installed")
+            return 1
+        LAUNCHD_PLIST.write_text(get_plist_content())
+        run_command(["launchctl", "enable", launchd_service_target()], check=False)
+        if not service_loaded():
+            run_command(["launchctl", "bootstrap", launchd_domain(), str(LAUNCHD_PLIST)])
+        run_command(["launchctl", "kickstart", "-k", launchd_service_target()])
         print(f"✓ Service started")
         time.sleep(2)
         return status()
@@ -181,7 +219,9 @@ def stop() -> int:
     print("Stopping Aster service...")
     
     try:
-        run_command(["launchctl", "stop", LAUNCHD_LABEL], check=False)
+        if LAUNCHD_PLIST.exists():
+            run_command(["launchctl", "disable", launchd_service_target()], check=False)
+            run_command(["launchctl", "bootout", launchd_domain(), str(LAUNCHD_PLIST)], check=False)
         print(f"✓ Service stopped")
         return 0
     except subprocess.CalledProcessError:
@@ -200,7 +240,12 @@ def restart() -> int:
 def status() -> int:
     """Check service status."""
     try:
-        result = run_command(["launchctl", "list", LAUNCHD_LABEL], check=False)
+        result = subprocess.run(
+            ["launchctl", "print", launchd_service_target()],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         
         if result.returncode == 0:
             print("✓ Service is running")
@@ -218,7 +263,10 @@ def status() -> int:
             
             return 0
         else:
-            print("✗ Service is not running")
+            if service_disabled():
+                print("✗ Service is stopped (disabled in launchd)")
+            else:
+                print("✗ Service is not running")
             return 1
     except subprocess.CalledProcessError:
         print("✗ Service is not installed")
@@ -247,7 +295,10 @@ def enable() -> int:
         return 1
     
     try:
-        run_command(["launchctl", "load", str(LAUNCHD_PLIST)])
+        LAUNCHD_PLIST.write_text(get_plist_content())
+        if not service_loaded():
+            run_command(["launchctl", "bootstrap", launchd_domain(), str(LAUNCHD_PLIST)])
+        run_command(["launchctl", "enable", launchd_service_target()])
         print("✓ Auto-start enabled")
         return 0
     except subprocess.CalledProcessError:
@@ -264,7 +315,8 @@ def disable() -> int:
         return 1
     
     try:
-        run_command(["launchctl", "unload", str(LAUNCHD_PLIST)])
+        run_command(["launchctl", "disable", launchd_service_target()], check=False)
+        run_command(["launchctl", "bootout", launchd_domain(), str(LAUNCHD_PLIST)], check=False)
         print("✓ Auto-start disabled")
         return 0
     except subprocess.CalledProcessError:

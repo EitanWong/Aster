@@ -48,7 +48,7 @@ class MLXRuntime:
 
     def ensure_draft_loaded(self) -> LoadedRuntimeModel:
         if self._draft is None:
-            self._draft = self._load_model(self.settings.model.draft_name, self.settings.model.draft_path)
+            self._draft = self._load_model(self.settings.speculative.draft_name, self.settings.speculative.draft_path)
         return self._draft
 
     def _load_model(self, name: str, path: str) -> LoadedRuntimeModel:

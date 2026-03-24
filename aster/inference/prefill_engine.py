@@ -26,7 +26,7 @@ class PrefillEngine:
         self.kv_cache = kv_cache
         self.prefix_cache = prefix_cache
 
-    async def run(self, request_id: str, model_name: str, prompt_tokens: list[int]) -> PrefillResult:
+    def run(self, request_id: str, model_name: str, prompt_tokens: list[int]) -> PrefillResult:
         start = time.perf_counter()
         entry = self._lookup_best_prefix(model_name, prompt_tokens)
         page_ids = self.kv_cache.allocate(request_id, len(prompt_tokens))

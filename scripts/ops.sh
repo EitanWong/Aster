@@ -15,7 +15,7 @@ case "$cmd" in
   health) bash "$OPS_DIR/health.sh" "$@" ;;
   smoke) bash "$OPS_DIR/smoke_test.sh" "$@" ;;
   logs) bash "$OPS_DIR/tail_logs.sh" "$@" ;;
-  metrics) bash "$OPS_DIR/metrics_summary.sh" "$@" ;;
+  metrics) bash "$SCRIPT_DIR/dev/metrics_summary.sh" "$@" ;;
   *)
     cat <<'EOF'
 Usage: bash scripts/ops.sh <command> [config]

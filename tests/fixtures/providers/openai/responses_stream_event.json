@@ -1,0 +1,5 @@
+{
+  "type": "response.output_text.delta",
+  "response_id": "resp_123",
+  "delta": "Hel"
+}

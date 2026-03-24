@@ -42,6 +42,7 @@ dependencies = [
     "sse-starlette>=3.3.0",
     "orjson>=3.11.0",
     "psutil>=7.0.0",
+    "setproctitle>=1.3.3",
     "numpy>=2.4.0",
     "mlx>=0.31.0",
     "mlx-lm>=0.31.0",
@@ -71,7 +72,10 @@ Issues = "https://github.com/yourusername/aster/issues"
 aster = "aster.__main__:main"
 
 [tool.setuptools]
-packages = ["aster"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["aster*"]
 
 [tool.setuptools.package-data]
 aster = ["py.typed"]

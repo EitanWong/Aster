@@ -186,6 +186,8 @@ Aster enables only optimizations that prove beneficial on the local machine:
 
 ## Model Setup
 
+**New to Aster?** Start with [`MODELS.md`](MODELS.md) — it has a curated list of recommended models, download commands, and performance comparisons.
+
 One-click model download with hfd + aria2 acceleration:
 
 ```bash

@@ -1,0 +1,30 @@
+{
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Hello from Bedrock."
+        },
+        {
+          "toolUse": {
+            "toolUseId": "tooluse_123",
+            "name": "lookup_weather",
+            "input": {
+              "city": "Shanghai"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "stopReason": "tool_use",
+  "usage": {
+    "inputTokens": 9,
+    "outputTokens": 6,
+    "totalTokens": 15
+  },
+  "additionalModelResponseFields": {
+    "vendor": "nova"
+  }
+}

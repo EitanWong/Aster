@@ -5,29 +5,32 @@ IFS=$'\n\t'
 # Aster model download helper for macOS / Apple Silicon.
 #
 # Features:
-# - downloads all required models (ASR, LLM, TTS)
-# - uses hfd + aria2 for fast accelerated downloads
+# - downloads LLM, ASR, TTS, and embedding models
+# - uses hfd + aria2 for fast accelerated parallel downloads
 # - supports HF mirror for mainland China
-# - verifies downloads
-# - one-click setup
+# - one-click environment setup (Homebrew, Python, venv)
 #
 # Usage:
-#   bash scripts/download_models.sh                    # Download all required
-#   bash scripts/download_models.sh --all              # Download all (required + optional)
-#   bash scripts/download_models.sh --group llm        # Download LLM only
-#   bash scripts/download_models.sh --group asr        # Download ASR only
-#   bash scripts/download_models.sh --group tts        # Download TTS only
-#   bash scripts/download_models.sh --list             # List available models
-#   bash scripts/download_models.sh --verify-only      # Verify existing models
+#   bash scripts/setup/download_models.sh                        # interactive menu
+#   bash scripts/setup/download_models.sh --list                 # list all available models
+#   bash scripts/setup/download_models.sh --model llm:qwen35_9b  # download a specific model
+#   bash scripts/setup/download_models.sh --model llm:qwen35_9b --show-config
+#
+# Environment variables:
+#   HF_ENDPOINT    HuggingFace endpoint (default: https://hf-mirror.com for CN mirror)
+#   USE_HFD        Use hfd+aria2 accelerated downloads, 1=yes 0=no (default: 1)
+#   INSTALL_ARIA2  Auto-install aria2 via Homebrew if missing (default: 1)
+#   HF_TOKEN       HuggingFace access token for gated models
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+DOWNLOADER="$SCRIPTS_DIR/setup/download_model_interactive.py"
 MODELS_DIR="$PROJECT_ROOT/models"
 VENV_PATH="$PROJECT_ROOT/.venv"
 TOOLS_DIR="$PROJECT_ROOT/tools"
 HFD_PATH="$TOOLS_DIR/hfd.sh"
 
-# Configuration
+# ── Configuration ───────────────────────────────────────────────────────────
 HF_ENDPOINT_VALUE="${HF_ENDPOINT:-https://hf-mirror.com}"
 USE_HFD="${USE_HFD:-1}"
 INSTALL_ARIA2="${INSTALL_ARIA2:-1}"
@@ -36,29 +39,23 @@ HF_TOKEN="${HF_TOKEN:-}"
 BREW_BIN=""
 PYTHON_BIN=""
 
-log() {
-  printf '\n[Aster] %s\n' "$*"
-}
-
-warn() {
-  printf '[Aster][warn] %s\n' "$*" >&2
-}
-
-err() {
-  printf '[Aster][error] %s\n' "$*" >&2
-}
+# ── Logging ─────────────────────────────────────────────────────────────────
+log()  { printf '\n[Aster] %s\n' "$*"; }
+warn() { printf '[Aster][warn] %s\n' "$*" >&2; }
+err()  { printf '[Aster][error] %s\n' "$*" >&2; }
 
 on_error() {
   local exit_code=$?
   err "Setup failed on line ${BASH_LINENO[0]} with exit code ${exit_code}."
-  err "You can re-run the script after fixing the issue."
+  err "Fix the issue above and re-run the script."
   exit "$exit_code"
 }
 trap on_error ERR
 
+# ── Prerequisite checks ──────────────────────────────────────────────────────
 require_macos() {
   if [[ "$(uname -s)" != "Darwin" ]]; then
-    err "This setup script is intended for macOS only."
+    err "This script is for macOS only."
     exit 1
   fi
 }
@@ -68,68 +65,63 @@ require_project_root() {
     err "Project root not found: $PROJECT_ROOT"
     exit 1
   fi
-  if [[ ! -f "$SCRIPTS_DIR/lib/download_models.py" ]]; then
-    err "Python downloader not found: $SCRIPTS_DIR/lib/download_models.py"
+  if [[ ! -f "$DOWNLOADER" ]]; then
+    err "Python downloader not found: $DOWNLOADER"
+    err "Expected: scripts/setup/download_model_interactive.py"
     exit 1
   fi
 }
 
+# ── Homebrew ─────────────────────────────────────────────────────────────────
 ensure_brew() {
   if command -v brew >/dev/null 2>&1; then
     BREW_BIN="$(command -v brew)"
-    log "Homebrew found at $BREW_BIN"
+    log "Homebrew found: $BREW_BIN"
     return
   fi
 
-  warn "Homebrew not found. Installing Homebrew automatically."
+  warn "Homebrew not found. Installing automatically."
   warn "This may prompt for your macOS password and can take a few minutes."
-
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-  if [[ -x /opt/homebrew/bin/brew ]]; then
-    BREW_BIN="/opt/homebrew/bin/brew"
-  elif [[ -x /usr/local/bin/brew ]]; then
-    BREW_BIN="/usr/local/bin/brew"
+  if   [[ -x /opt/homebrew/bin/brew ]]; then BREW_BIN="/opt/homebrew/bin/brew"
+  elif [[ -x /usr/local/bin/brew    ]]; then BREW_BIN="/usr/local/bin/brew"
   else
-    err "Homebrew installation completed but brew was not found on PATH."
-    err "Try opening a new shell and re-running this script."
+    err "Homebrew installed but 'brew' not found on PATH."
+    err "Open a new shell and re-run this script."
     exit 1
   fi
 
   eval "$($BREW_BIN shellenv)"
-  log "Homebrew installed at $BREW_BIN"
+  log "Homebrew installed: $BREW_BIN"
 }
 
+# ── Python ───────────────────────────────────────────────────────────────────
 python_version_ok() {
-  local py="$1"
-  "$py" - <<'PY'
+  "$1" - <<'PY'
 import sys
 raise SystemExit(0 if sys.version_info >= (3, 12) else 1)
 PY
 }
 
 ensure_python() {
-  local candidates=()
+  local candidates=(
+    python3.13
+    python3.12
+    python3
+    /opt/homebrew/bin/python3.13
+    /opt/homebrew/bin/python3.12
+  )
 
-  if command -v python3.13 >/dev/null 2>&1; then
-    candidates+=("$(command -v python3.13)")
-  fi
-  if command -v python3.12 >/dev/null 2>&1; then
-    candidates+=("$(command -v python3.12)")
-  fi
-  if command -v python3 >/dev/null 2>&1; then
-    candidates+=("$(command -v python3)")
-  fi
-  if [[ -x /opt/homebrew/bin/python3.13 ]]; then
-    candidates+=("/opt/homebrew/bin/python3.13")
-  fi
-  if [[ -x /opt/homebrew/bin/python3.12 ]]; then
-    candidates+=("/opt/homebrew/bin/python3.12")
-  fi
-
-  for py in "${candidates[@]:-}"; do
-    if [[ -n "$py" ]] && python_version_ok "$py"; then
-      PYTHON_BIN="$py"
+  for py in "${candidates[@]}"; do
+    local resolved
+    if [[ "$py" == /* ]]; then
+      resolved="$py"
+    else
+      resolved="$(command -v "$py" 2>/dev/null || true)"
+    fi
+    if [[ -n "$resolved" && -x "$resolved" ]] && python_version_ok "$resolved"; then
+      PYTHON_BIN="$resolved"
       log "Using Python: $PYTHON_BIN ($($PYTHON_BIN --version 2>&1))"
       return
     fi
@@ -139,127 +131,121 @@ ensure_python() {
   ensure_brew
   "$BREW_BIN" install python@3.13
 
-  if [[ -x /opt/homebrew/bin/python3.13 ]]; then
-    PYTHON_BIN="/opt/homebrew/bin/python3.13"
-  elif command -v python3.13 >/dev/null 2>&1; then
-    PYTHON_BIN="$(command -v python3.13)"
-  else
-    err "Python 3.13 installation did not produce a usable executable."
+  for p in /opt/homebrew/bin/python3.13 "$(command -v python3.13 2>/dev/null || true)"; do
+    if [[ -n "$p" && -x "$p" ]] && python_version_ok "$p"; then
+      PYTHON_BIN="$p"
+      break
+    fi
+  done
+
+  if [[ -z "$PYTHON_BIN" ]]; then
+    err "Python 3.13 installed but no usable executable found."
     exit 1
   fi
 
-  if ! python_version_ok "$PYTHON_BIN"; then
-    err "Resolved Python is still below 3.12: $($PYTHON_BIN --version 2>&1)"
-    exit 1
-  fi
-
-  log "Installed and selected Python: $PYTHON_BIN"
+  log "Installed Python: $PYTHON_BIN"
 }
 
+# ── Virtualenv ───────────────────────────────────────────────────────────────
 ensure_venv() {
   if [[ ! -d "$VENV_PATH" ]]; then
-    log "Creating virtual environment at $VENV_PATH"
+    log "Creating virtual environment: $VENV_PATH"
     "$PYTHON_BIN" -m venv "$VENV_PATH"
   fi
 
   # shellcheck disable=SC1090
   source "$VENV_PATH/bin/activate"
-
   log "Active Python: $(python --version 2>&1)"
-  python -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1
+
+  python -m pip install --quiet --upgrade pip setuptools wheel
 }
 
+# ── Python dependencies ───────────────────────────────────────────────────────
 ensure_dependencies() {
-  log "Installing dependencies..."
-  python -m pip install -q PyYAML huggingface-hub
+  log "Installing Python dependencies (PyYAML, huggingface-hub)..."
+  python -m pip install --quiet PyYAML huggingface-hub
 }
 
+# ── HF endpoint ───────────────────────────────────────────────────────────────
 configure_hf_endpoint() {
   export HF_ENDPOINT="$HF_ENDPOINT_VALUE"
-  log "HF_ENDPOINT set to: $HF_ENDPOINT"
+  log "HF_ENDPOINT: $HF_ENDPOINT"
 }
 
-ensure_aria2_if_requested() {
-  if [[ "$INSTALL_ARIA2" != "1" ]]; then
-    return
-  fi
+# ── aria2 ────────────────────────────────────────────────────────────────────
+ensure_aria2() {
   if command -v aria2c >/dev/null 2>&1; then
     log "aria2 already available: $(command -v aria2c)"
     return
   fi
   ensure_brew
-  log "Installing aria2 via Homebrew for accelerated downloads..."
-  "$BREW_BIN" install aria2 || warn "aria2 installation failed; continuing without it"
+  log "Installing aria2 via Homebrew for accelerated parallel downloads..."
+  "$BREW_BIN" install aria2 || warn "aria2 installation failed; downloads will still work, just slower."
 }
 
-ensure_hfd_if_requested() {
-  if [[ "$USE_HFD" != "1" ]]; then
+# ── hfd helper ───────────────────────────────────────────────────────────────
+ensure_hfd() {
+  mkdir -p "$TOOLS_DIR"
+
+  if [[ -f "$HFD_PATH" ]]; then
+    log "hfd helper already present: $HFD_PATH"
     return
   fi
 
-  ensure_aria2_if_requested
-  mkdir -p "$TOOLS_DIR"
-
-  if [[ ! -f "$HFD_PATH" ]]; then
-    log "Downloading hfd helper to $HFD_PATH"
-    curl -fsSL "$HF_ENDPOINT_VALUE/hfd/hfd.sh" -o "$HFD_PATH"
-    chmod +x "$HFD_PATH"
-  else
-    log "hfd helper already present: $HFD_PATH"
+  log "Downloading hfd helper to $HFD_PATH"
+  if ! curl -fsSL "$HF_ENDPOINT_VALUE/hfd/hfd.sh" -o "$HFD_PATH" 2>/dev/null; then
+    # Fallback: fetch directly from GitHub
+    warn "Mirror download failed; falling back to GitHub."
+    curl -fsSL "https://raw.githubusercontent.com/LetheanVPN/hfd/main/hfd.sh" -o "$HFD_PATH"
   fi
+  chmod +x "$HFD_PATH"
+  log "hfd downloaded: $HFD_PATH"
 }
 
+# ── Preflight summary ─────────────────────────────────────────────────────────
 show_preflight() {
   log "Configuration:"
-  log "  Project root:  $PROJECT_ROOT"
-  log "  Models dir:    $MODELS_DIR"
-  log "  HF mirror:     $HF_ENDPOINT_VALUE"
-  log "  Use hfd:       $USE_HFD"
-  log "  Python:        $PYTHON_BIN"
+  printf '  %-16s %s\n' "Project root:"  "$PROJECT_ROOT"
+  printf '  %-16s %s\n' "Models dir:"    "$MODELS_DIR"
+  printf '  %-16s %s\n' "HF endpoint:"   "$HF_ENDPOINT_VALUE"
+  printf '  %-16s %s\n' "Accelerated:"   "$([ "$USE_HFD" = "1" ] && echo "hfd+aria2" || echo "huggingface-hub")"
+  printf '  %-16s %s\n' "Python:"        "$PYTHON_BIN"
+  printf '  %-16s %s\n' "HF token:"      "$([ -n "$HF_TOKEN" ] && echo "set" || echo "not set (gated models may fail)")"
 }
 
+# ── Run Python downloader ─────────────────────────────────────────────────────
 run_downloader() {
-  local args=("$@")
-
-  log "Running model downloader..."
+  log "Launching model downloader..."
   cd "$PROJECT_ROOT"
 
-  # Set environment for hfd if requested
-  if [[ "$USE_HFD" == "1" ]]; then
-    export HFD_PATH="$HFD_PATH"
-  fi
+  [[ -n "$HF_TOKEN" ]] && export HF_TOKEN && log "HF_TOKEN exported."
+  [[ "$USE_HFD" == "1" ]] && export HFD_PATH
 
-  python "$SCRIPTS_DIR/lib/download_models.py" "${args[@]}"
+  python "$DOWNLOADER" "$@"
 }
 
+# ── Main ──────────────────────────────────────────────────────────────────────
 main() {
   require_macos
   require_project_root
 
-  # Parse arguments
-  local args=()
-  if [[ $# -eq 0 ]]; then
-    # Default: download required models only
-    args=("--required-only")
-  else
-    args=("$@")
-  fi
-
-  show_preflight
   ensure_brew
   ensure_python
   ensure_venv
-  configure_hf_endpoint
   ensure_dependencies
-  ensure_aria2_if_requested
-  ensure_hfd_if_requested
+  configure_hf_endpoint
 
-  if [[ "$HF_TOKEN" != "" ]]; then
-    export HF_TOKEN
-    log "HF_TOKEN set from environment"
+  if [[ "$INSTALL_ARIA2" == "1" ]]; then
+    ensure_aria2
+  fi
+  if [[ "$USE_HFD" == "1" ]]; then
+    ensure_hfd
   fi
 
-  run_downloader "${args[@]}"
+  show_preflight
+
+  # No args → interactive menu
+  run_downloader "$@"
 }
 
 main "$@"

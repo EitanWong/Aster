@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from aster.core.config import ModelSettings
+from aster.core.config import ModelSettings, SpeculativeSettings
 
 
 @dataclass(slots=True)
@@ -13,11 +13,12 @@ class LoadedModel:
 
 
 class ModelLoader:
-    def __init__(self, settings: ModelSettings) -> None:
-        self.settings = settings
+    def __init__(self, model: ModelSettings, speculative: SpeculativeSettings) -> None:
+        self.model = model
+        self.speculative = speculative
 
     def load_target(self) -> LoadedModel:
-        return LoadedModel(self.settings.name, self.settings.path, self.settings.runtime)
+        return LoadedModel(self.model.name, self.model.path, self.model.runtime)
 
     def load_draft(self) -> LoadedModel:
-        return LoadedModel(self.settings.draft_name, self.settings.draft_path, self.settings.runtime)
+        return LoadedModel(self.speculative.draft_name, self.speculative.draft_path, self.model.runtime)

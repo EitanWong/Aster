@@ -6,14 +6,14 @@ import time
 from typing import Any
 
 from aster.audio.service import TTSResult, TTSService
-from aster.core.config import AudioSettings
+from aster.core.config import TTSSettings
 from aster.telemetry.logging import get_logger
 
 
 class MLXTTSRuntime(TTSService):
     """TTS service using mlx-audio and Qwen3-TTS models."""
 
-    def __init__(self, settings: AudioSettings) -> None:
+    def __init__(self, settings: TTSSettings) -> None:
         self.settings = settings
         self.logger = get_logger(__name__)
         self._base_model: Any = None
@@ -27,14 +27,14 @@ class MLXTTSRuntime(TTSService):
             from mlx_audio.tts.utils import load_model
 
             # Load Base model
-            self.logger.info(f"Loading TTS Base model from {self.settings.tts_model_path}")
-            self._base_model = load_model(self.settings.tts_model_path or self.settings.tts_model)
+            self.logger.info(f"Loading TTS Base model from {self.settings.model_path}")
+            self._base_model = load_model(self.settings.model_path or self.settings.model)
 
             # Load CustomVoice model if configured
-            if self.settings.tts_custom_voice_model:
-                self.logger.info(f"Loading TTS CustomVoice model from {self.settings.tts_custom_voice_path}")
+            if self.settings.custom_voice_model:
+                self.logger.info(f"Loading TTS CustomVoice model from {self.settings.custom_voice_path}")
                 self._custom_voice_model = load_model(
-                    self.settings.tts_custom_voice_path or self.settings.tts_custom_voice_model
+                    self.settings.custom_voice_path or self.settings.custom_voice_model
                 )
 
             self._healthy = True

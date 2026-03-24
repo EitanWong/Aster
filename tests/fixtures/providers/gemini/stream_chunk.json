@@ -1,0 +1,14 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Gem"
+          }
+        ]
+      },
+      "finishReason": "STOP"
+    }
+  ]
+}

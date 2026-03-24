@@ -88,7 +88,8 @@ class RequestScheduler:
                     "batch_size_target": decision.batch_size,
                 },
             )
-            await asyncio.sleep(decision.window_ms / 1000.0)
+            if decision.window_ms > 0:
+                await asyncio.sleep(decision.window_ms / 1000.0)
             while len(pending) < decision.batch_size and not self._queue.empty():
                 pending.append(self._queue.get_nowait())
             self.metrics.batch_size.observe(len(pending))
@@ -99,38 +100,45 @@ class RequestScheduler:
                     "request_id": first.request.trace_id,
                     "batch_size": len(pending),
                     "queue_depth_after_drain": self._queue.qsize(),
+                    "concurrent_dispatch": self.inference_engine.supports_concurrent_dispatch(),
                 },
             )
-            for item in pending:
-                try:
-                    self.logger.info(
-                        "scheduler_infer_start",
-                        extra={
-                            "request_id": item.request.trace_id,
-                            "request_kind": "chat" if item.request.messages else "prompt",
-                            "stream": item.request.stream,
-                            "max_tokens": item.request.max_tokens,
-                        },
-                    )
-                    result = await self.inference_engine.infer(item.request)
-                    if not item.future.done():
-                        item.future.set_result(result)
-                    self.logger.info(
-                        "scheduler_infer_finish",
-                        extra={
-                            "request_id": result.request_id,
-                            "completion_tokens": result.completion_tokens,
-                            "cache_hit": result.cache_hit,
-                            "speculative_enabled": result.speculative_enabled,
-                        },
-                    )
-                except Exception as exc:
-                    self.logger.exception("scheduler_infer_failed", extra={"request_id": item.request.trace_id})
-                    if not item.future.done():
-                        item.future.set_exception(exc)
+            if self.inference_engine.supports_concurrent_dispatch():
+                await asyncio.gather(*(self._dispatch_item(item) for item in pending))
+            else:
+                for item in pending:
+                    await self._dispatch_item(item)
 
     def is_running(self) -> bool:
         return self._task is not None and not self._task.done()
+
+    async def _dispatch_item(self, item: QueueItem) -> None:
+        try:
+            self.logger.info(
+                "scheduler_infer_start",
+                extra={
+                    "request_id": item.request.trace_id,
+                    "request_kind": "chat" if item.request.messages else "prompt",
+                    "stream": item.request.stream,
+                    "max_tokens": item.request.max_tokens,
+                },
+            )
+            result = await self.inference_engine.infer(item.request)
+            if not item.future.done():
+                item.future.set_result(result)
+            self.logger.info(
+                "scheduler_infer_finish",
+                extra={
+                    "request_id": result.request_id,
+                    "completion_tokens": result.completion_tokens,
+                    "cache_hit": result.cache_hit,
+                    "speculative_enabled": result.speculative_enabled,
+                },
+            )
+        except Exception as exc:
+            self.logger.exception("scheduler_infer_failed", extra={"request_id": item.request.trace_id})
+            if not item.future.done():
+                item.future.set_exception(exc)
 
     def _estimate_request_tokens(self, request: InferenceRequest) -> int:
         if request.prompt:

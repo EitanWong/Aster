@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/_common.sh" "${1:-configs/config.yaml}"
+source "$(dirname "$0")/../ops/_common.sh" "${1:-configs/config.yaml}"
 
 require_venv
 require_config

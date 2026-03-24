@@ -1,0 +1,17 @@
+# Provider Capability Matrix
+
+| Provider | Endpoint family | Text IO | Multimodal input | Streaming | Structured outputs | User tools | Built-in tools | Parallel tool calls | Stateful conversation | Background/deferred | Reasoning controls | Extension fields required | Native adapter status | Test status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OpenAI | `responses` | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes (`previous_response_id`) | Yes | Yes | `text`, `reasoning`, built-in tool payloads | Implemented | Covered by unit/contracts/conformance/streaming |
+| OpenAI | `chat_completions` | Yes | Yes | Yes | Yes | Yes | No | Yes | No | No | Limited | `response_format`, tool-call details | Implemented | Covered by unit/contracts/conformance/streaming |
+| Anthropic | `messages` | Yes | Yes | Yes | Provider-specific only | Yes | No | Provider-managed | No native response lifecycle | No | Provider-specific | `anthropic-beta`, native content blocks | Implemented | Covered by unit/contracts/conformance/streaming |
+| Gemini | `generate_content` | Yes | Yes | Yes | Yes | Yes | No | Provider-managed | Request-local only | No | Yes (`thinking`) | `generationConfig`, `toolConfig`, native parts | Implemented | Covered by unit/contracts/conformance/streaming |
+| Gemini | `openai_chat` | Yes | Yes | Yes | Yes | Yes | No | Provider-managed | No | No | Limited | compatibility-path fields | Implemented | Covered by contract tests |
+| Bedrock | `converse` | Yes | Model-dependent | Model-dependent | Model-dependent/provider-specific | Model-dependent | Model-dependent | Model-dependent | No universal provider-managed state | No | Model-dependent | `additionalModelRequestFields`, `additionalModelResponseFields` | Implemented | Covered by unit/contracts/streaming |
+| Bedrock | `openai_responses` | Yes | Model-dependent | Model-dependent | Model-dependent | Model-dependent | Model-dependent | Model-dependent | No | No | Model-dependent | AWS-compatible response metadata | Implemented | Covered by contract tests |
+| Bedrock | `openai_chat` | Yes | Model-dependent | Model-dependent | Model-dependent | Model-dependent | Model-dependent | Model-dependent | No | No | Model-dependent | AWS-compatible response metadata | Implemented | Covered by contract tests |
+| Mistral | `chat_completions` | Yes | Model-dependent | Yes | Yes | Yes | No | Provider-managed | No | No | Limited | response-format/tool metadata | Implemented | Covered by contract tests |
+| Mistral | `conversations` | Yes | Model-dependent | Beta | Provider-specific | Yes | No | Provider-managed | Yes | No | Limited | conversation lifecycle metadata | Scaffolded | Covered by smoke contract tests |
+| Cohere | `chat_v2` | Yes | Evolving/model-specific | Yes | Provider-specific | Yes | No | Provider-managed | No | No | Limited | event taxonomy/tool stream metadata | Implemented | Covered by unit/contracts/streaming |
+| xAI | `responses` | Yes | Model-dependent | Yes | Yes | Yes | Yes | Provider-managed | Provider-specific | Provider-specific | Provider-specific | citations, reasoning, native tool metadata | Implemented | Covered by unit/contracts/conformance |
+| xAI | `chat_completions` | Yes | Model-dependent | Yes | Yes | Yes | Yes | Provider-managed | No | No | Limited | citations and native tool metadata | Implemented | Covered by unit/contracts/streaming |

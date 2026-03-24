@@ -1,0 +1,26 @@
+{
+  "id": "resp_123",
+  "object": "response",
+  "status": "completed",
+  "model": "gpt-5.1",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Hello from OpenAI."
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 11,
+    "output_tokens": 5,
+    "total_tokens": 16
+  },
+  "native_extra": {
+    "preserved": true
+  }
+}

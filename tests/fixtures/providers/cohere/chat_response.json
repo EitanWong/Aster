@@ -1,0 +1,25 @@
+{
+  "id": "chat_123",
+  "message": {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Hello from Cohere."
+      }
+    ],
+    "tool_calls": [
+      {
+        "id": "call_123",
+        "name": "lookup_weather"
+      }
+    ]
+  },
+  "usage": {
+    "tokens": {
+      "input_tokens": 14,
+      "output_tokens": 6
+    }
+  },
+  "finish_reason": "COMPLETE"
+}
