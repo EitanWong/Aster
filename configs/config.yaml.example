@@ -1,22 +1,53 @@
+# ── API ────────────────────────────────────────────────────────────────────
 api:
   host: 127.0.0.1
   port: 8080
   max_queue_depth: 128
   request_timeout_seconds: 180.0
+
+# ── Primary model ──────────────────────────────────────────────────────────
 model:
   name: Qwen3.5-9B
-  path: /ABSOLUTE/PATH/TO/Qwen3.5-9B-MLX   # or a compatible HF repo id
-  draft_name: Qwen3.5-0.8B
-  draft_path: /ABSOLUTE/PATH/TO/Qwen3.5-0.8B-MLX   # or a compatible HF repo id
-  runtime: mlx
+  path: /ABSOLUTE/PATH/TO/Qwen3.5-9B-MLX
+  runtime: vllm_mlx          # mlx | vllm_mlx
   context_length: 16384
+  enable_thinking: false      # default; callers can override per-request
+
+# ── Speculative decoding (draft model) ─────────────────────────────────────
+speculative:
+  enabled: true
+  draft_name: Qwen3.5-0.8B
+  draft_path: /ABSOLUTE/PATH/TO/Qwen3.5-0.8B-MLX
+  max_draft_tokens: 6
+  min_acceptance_rate: 0.45
+  min_speedup_ratio: 1.05
+  auto_disable_on_regression: true
+
+# ── vLLM-MLX sidecar ───────────────────────────────────────────────────────
+vllm_mlx:
+  base_url: http://127.0.0.1:8000
+  api_key: null
+  timeout_seconds: 300.0
+  # Set to qwen3 / deepseek_r1 / gpt_oss / harmony to activate the sidecar's
+  # reasoning parser. Aster will then inject /think or /no_think automatically.
+  reasoning_parser: null
+  continuous_batching: true
+  use_paged_cache: true
+  enable_prefix_cache: false
+  chunked_prefill_tokens: 0
+  cache_memory_percent: 0.15
+  stream_interval: 1
+
+# ── KV-cache (Aster-side allocator) ────────────────────────────────────────
 cache:
   kv_page_tokens: 128
   kv_max_pages: 8192
   prefix_cache_enabled: true
   prefix_cache_max_entries: 256
-  prefix_cache_max_bytes: 8589934592
+  prefix_cache_max_bytes: 8589934592   # 8 GB
   eviction_policy: lru
+
+# ── Scheduler / batching ───────────────────────────────────────────────────
 batch:
   max_batch_size: 8
   prefill_batch_size: 4
@@ -24,37 +55,53 @@ batch:
   min_batch_window_ms: 1.5
   max_batch_window_ms: 10.0
   latency_target_ms: 250.0
-  scheduler_mode: adaptive
-speculative:
-  enabled: true
-  max_draft_tokens: 6
-  min_acceptance_rate: 0.45
-  min_speedup_ratio: 1.05
-  auto_disable_on_regression: true
+  scheduler_mode: adaptive   # adaptive | throughput | latency
+
+# ── Autotune ───────────────────────────────────────────────────────────────
 autotune:
   enabled: true
   startup_warmup: true
   profile_path: ./configs/autotune_profile.json
   benchmark_prompt_tokens: [4096, 8192, 16384]
   concurrency_levels: [1, 2, 4]
+
+# ── Workers / supervision ──────────────────────────────────────────────────
 workers:
   restart_limit: 5
   heartbeat_timeout_seconds: 30.0
   degraded_after_restarts: 2
+
+# ── Telemetry & logging ────────────────────────────────────────────────────
 telemetry:
   json_logs: true
   metrics_namespace: aster
+
 logging:
   level: INFO
+
+# ── Embeddings ─────────────────────────────────────────────────────────────
+embeddings:
+  enabled: true
+  backend: vllm_mlx          # mlx | vllm_mlx
+  model: mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ
+  model_path: /ABSOLUTE/PATH/TO/Qwen3-Embedding-0.6B-4bit-DWQ
+  dimensions: 1024
+  max_length: 512
+
+# ── Audio ──────────────────────────────────────────────────────────────────
 audio:
-  asr_enabled: true
-  asr_model: mlx-community/Qwen3-ASR-0.6B-4bit
-  asr_model_path: models/qwen3-asr-0.6b
-  tts_enabled: true
-  tts_model: mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit
-  tts_model_path: models/qwen3-tts-0.6b-base
-  tts_custom_voice_model: mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-4bit
-  tts_custom_voice_path: models/qwen3-tts-0.6b-custom
-  tts_default_voice: default
-  audio_cache_enabled: true
-  audio_cache_max_entries: 128
+  asr:
+    enabled: true
+    backend: vllm_mlx        # mlx | vllm_mlx
+    model: Qwen3-ASR-0.6B
+    model_path: /ABSOLUTE/PATH/TO/qwen3-asr-0.6b
+  tts:
+    enabled: true
+    backend: vllm_mlx        # mlx | vllm_mlx
+    model: Qwen3-TTS-0.6B-Base
+    model_path: /ABSOLUTE/PATH/TO/qwen3-tts-0.6b-base
+    custom_voice_model: null
+    custom_voice_path: null
+    default_voice: af_heart
+    cache_enabled: true
+    cache_max_entries: 128
