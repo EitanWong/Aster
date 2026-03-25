@@ -217,3 +217,34 @@ def _port(base_url: str) -> int:
     if parsed.port is not None:
         return int(parsed.port)
     return 443 if parsed.scheme == "https" else 80
+
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    """CLI entry point for running vllm-mlx as a standalone sidecar.
+
+    This is used by launchd_entry.py to start vllm-mlx before Aster.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Start vLLM-MLX sidecar")
+    parser.add_argument("--config", required=True, help="Path to YAML config file")
+    args = parser.parse_args()
+
+    from aster.core.config import load_settings
+
+    settings = load_settings(args.config)
+
+    # Build and execute the vllm-mlx command
+    manager = VLLMSidecarManager(settings)
+    cmd = manager._build_cmd()
+
+    # Exec the vllm-mlx process (replaces current process)
+    os.execvp(cmd[0], cmd)
+
+
+if __name__ == "__main__":
+    main()
