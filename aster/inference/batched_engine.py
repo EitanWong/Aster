@@ -521,6 +521,14 @@ class BatchedEngine:
                 if self._batch_generator is not None and self._running:
                     try:
                         responses = self._batch_generator.next_generated()
+                    except IndexError:
+                        # mlx-lm _next() fails on empty segments — recover by
+                        # aborting all running requests to unblock the loop
+                        self.logger.warning("batch_generator_empty_segments_recovering")
+                        for rid in list(self._running):
+                            self._pending_aborts.add(rid)
+                        await asyncio.sleep(0.01)
+                        continue
                     except Exception as exc:
                         self.logger.warning(
                             "batch_generator_step_failed",
