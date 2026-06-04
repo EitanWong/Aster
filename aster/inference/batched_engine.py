@@ -504,12 +504,9 @@ class BatchedEngine:
         )
 
         # Install chunked prefill for fairness on long prompts
-        try:
-            from aster.inference.chunked_prefill import install_chunked_prefill
-            install_chunked_prefill(self._batch_generator, chunk_size=engine.prefill_token_budget * 2)
-            self.logger.info("chunked_prefill_installed")
-        except Exception as exc:
-            self.logger.warning("chunked_prefill_install_failed", extra={"error": str(exc)})
+        # NOTE: disabled because mlx-lm internal API differs by version
+        # See aster/inference/chunked_prefill.py for the implementation reference
+        self.logger.info("chunked_prefill_disabled_mlx_lm_api_mismatch")
 
         try:
             while self._running_flag:
@@ -816,13 +813,24 @@ class BatchedEngine:
                 try:
                     total_tokens = len(state.prompt_tokens) + state.generated_tokens
                     if total_tokens > 0:
+                        # Estimate bytes from cache tensors
+                        try:
+                            est = 0
+                            for layer in cache_for_store:
+                                for item in (layer if isinstance(layer, (list, tuple)) else [layer]):
+                                    if hasattr(item, "nbytes"):
+                                        est += item.nbytes
+                                    elif hasattr(item, "state") and hasattr(item.state, "nbytes"):
+                                        est += item.state.nbytes
+                        except Exception:
+                            est = 0
                         self.prefix_store.store(
                             model_name=self.settings.model.name,
                             model_fingerprint=self._model_fingerprint,
                             prefix_tokens=state.prompt_tokens,
                             cache_token_count=total_tokens,
                             prompt_cache=cache_for_store,
-                            approx_bytes=0,
+                            approx_bytes=est,
                         )
                 except Exception:
                     pass

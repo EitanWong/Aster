@@ -30,9 +30,6 @@ def install_chunked_prefill(
     if getattr(batch_gen, "_chunked_prefill_installed", False):
         return False
 
-    orig_next = batch_gen._next
-    orig_process_prompts = batch_gen._process_prompts
-
     def _chunked_next(self) -> tuple[list[Any], list[Any]]:
         """Replacement for _next() with chunked prefill.
         
