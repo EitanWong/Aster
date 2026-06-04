@@ -12,7 +12,6 @@ RUN_DIR="$ASTER_ROOT/run"
 LOG_DIR="$ASTER_ROOT/logs"
 PID_FILE="$RUN_DIR/aster.pid"
 LOG_FILE="$LOG_DIR/aster.log"
-VLLM_PID_FILE="$RUN_DIR/vllm-mlx.pid"   # informational only (written by Aster)
 PYTHON_BIN="$ASTER_ROOT/.venv/bin/python"
 CURL_BIN="${CURL_BIN:-curl}"
 
@@ -80,26 +79,6 @@ base_url()    { echo "http://$(api_host):$(api_port)"; }
 model_runtime() { get_config_value model.runtime mlx; }
 model_name()    { get_config_value model.name ""; }
 model_path()    { get_config_value model.path ""; }
-
-vllm_base_url()  { get_config_value vllm_mlx.base_url http://127.0.0.1:8000; }
-vllm_health_url() { echo "$(vllm_base_url | sed 's:/*$::')/health"; }
-
-parse_url_part() {
-  local url="$1" part="$2"
-  "$PYTHON_BIN" - <<'PY' "$url" "$part"
-import sys
-from urllib.parse import urlparse
-url, part = sys.argv[1], sys.argv[2]
-parsed = urlparse(url)
-if part == "host":
-    print(parsed.hostname or "")
-elif part == "port":
-    print(parsed.port or (443 if parsed.scheme == "https" else 80))
-PY
-}
-
-vllm_host() { parse_url_part "$(vllm_base_url)" host; }
-vllm_port() { parse_url_part "$(vllm_base_url)" port; }
 
 # ---------------------------------------------------------------------------
 # Process management
@@ -197,7 +176,4 @@ print_runtime_info() {
   echo "runtime:  $(model_runtime)"
   echo "pid_file: $PID_FILE"
   echo "log_file: $LOG_FILE"
-  if [[ "$(model_runtime)" == "vllm_mlx" ]]; then
-    echo "vllm_url: $(vllm_base_url)"
-  fi
 }

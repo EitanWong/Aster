@@ -1,359 +1,143 @@
-# Aster Benchmark Suite - Performance Testing Guide
+# Engine Benchmark Guide
 
-## Overview
+## Purpose
 
-The Aster Benchmark Suite provides comprehensive performance testing for:
-- **LLM** (Large Language Model) inference
-- **ASR** (Automatic Speech Recognition)
-- **TTS** (Text-to-Speech synthesis)
+The current benchmark path is focused on the text engine itself, not the old
+autotune or worker architecture.
 
-Measures key metrics:
-- **Throughput**: tokens/sec, characters/sec, real-time factor
-- **Latency**: first token time, end-to-end time
-- **Resource Usage**: memory, CPU, power efficiency
-- **System Info**: CPU, memory, platform details
+Use it to validate:
 
-## Quick Start
+- single-request latency
+- repeated-prefix reuse
+- mixed concurrency behavior
+- long-prompt stability
+- decode-step throughput
 
-### Prerequisites
+## Prerequisites
 
-Make sure the Aster service is running:
+Run this on an Apple Silicon machine with the real runtime installed:
 
-```bash
-python scripts/ops/daemon.py status
-```
+- `mlx`
+- `mlx-lm`
+- `PyYAML`
+- `prometheus-client`
 
-### Run Full Benchmark
+Use the same model weights and config you intend to serve with.
 
-```bash
-cd /Users/eitan/Documents/Projects/Python/Aster
-python scripts/benchmark.py
-```
+## Direct Engine Benchmark
 
-### Save Results to File
+The benchmark bypasses HTTP and exercises `InferenceEngine` directly.
 
 ```bash
-python scripts/benchmark.py --output benchmark_results.json
+python scripts/dev/benchmark_live.py --config configs/config.yaml --workload all --concurrency 2
 ```
 
-## Benchmark Tests
-
-### LLM Benchmarks
-
-Tests three different prompt complexities:
-
-1. **Short Prompt** - "What is 2+2?"
-   - Max tokens: 50
-   - Tests: Quick response time
-
-2. **Medium Prompt** - "Explain quantum computing in simple terms."
-   - Max tokens: 100
-   - Tests: Moderate complexity
-
-3. **Long Prompt** - Detailed ML explanation
-   - Max tokens: 150
-   - Tests: Complex reasoning
-
-**Metrics:**
-- `tokens_per_second` - Generation throughput
-- `time_to_first_token_ms` - Latency to first token
-- `total_time_ms` - End-to-end time
-- `memory_peak_mb` - Peak memory usage
-- `cpu_percent_avg` - Average CPU usage
-
-### ASR Benchmarks
-
-Tests speech recognition with real audio file:
-
-- **Audio File**: `/Users/eitan/Desktop/PromptAudio.wav`
-- **Metrics**:
-  - `real_time_factor` - Audio duration / transcription time (higher is better)
-  - `transcription_time_ms` - Total processing time
-  - `audio_duration_sec` - Audio length
-  - `memory_peak_mb` - Peak memory usage
-  - `cpu_percent_avg` - Average CPU usage
-
-**Real-Time Factor Interpretation:**
-- RTF < 1.0 = Faster than real-time (excellent)
-- RTF = 1.0 = Real-time performance
-- RTF > 1.0 = Slower than real-time
-
-### TTS Benchmarks
-
-Tests text-to-speech synthesis with three text lengths:
-
-1. **Short Text** - "Hello world"
-   - Tests: Quick synthesis
-
-2. **Medium Text** - Multi-sentence paragraph
-   - Tests: Moderate complexity
-
-3. **Long Text** - Multi-paragraph text
-   - Tests: Extended synthesis
-
-**Metrics:**
-- `characters_per_second` - Synthesis throughput
-- `synthesis_time_ms` - Total processing time
-- `audio_duration_sec` - Generated audio length
-- `memory_peak_mb` - Peak memory usage
-- `cpu_percent_avg` - Average CPU usage
-
-## Output Format
-
-### Console Output
-
-```
-======================================================================
-  Aster Comprehensive Benchmark Suite
-======================================================================
-
-System Information:
-  CPU Cores:        8
-  CPU Freq:         3.50 GHz
-  Memory:           16.00 GB
-  Available:        8.50 GB
-  Platform:         darwin
-
-Running LLM Benchmarks...
-  Short prompt... ✓ 45.23 tok/s
-  Medium prompt... ✓ 38.15 tok/s
-  Long prompt... ✓ 32.87 tok/s
-
-Running ASR Benchmarks...
-  Testing with PromptAudio.wav... ✓ RTF: 0.85x
-
-Running TTS Benchmarks...
-  Short text... ✓ 125.34 char/s
-  Medium text... ✓ 98.76 char/s
-  Long text... ✓ 87.23 char/s
-
-======================================================================
-  Benchmark Summary
-======================================================================
-
-LLM Performance:
-  Short prompt         45.23 tok/s  TTFT:   125.3ms  Memory:  512.5MB
-  Medium prompt        38.15 tok/s  TTFT:   145.2ms  Memory:  548.3MB
-  Long prompt          32.87 tok/s  TTFT:   167.8ms  Memory:  612.1MB
-
-ASR Performance:
-  ASR Test             RTF:   0.85x  Time:  1850.5ms  Memory:  256.3MB
-
-TTS Performance:
-  Short text          125.34 char/s  Time:    79.5ms  Memory:  128.7MB
-  Medium text          98.76 char/s  Time:   234.2ms  Memory:  145.2MB
-  Long text            87.23 char/s  Time:   456.8ms  Memory:  167.5MB
-```
-
-### JSON Output
-
-```json
-{
-  "system_info": {
-    "cpu_count": 8,
-    "cpu_freq_ghz": 3.5,
-    "memory_gb": 16.0,
-    "memory_available_gb": 8.5,
-    "platform": "darwin",
-    "timestamp": "2026-03-19T17:45:00"
-  },
-  "llm_benchmarks": [
-    {
-      "test_name": "Short prompt",
-      "prompt": "What is 2+2?",
-      "prompt_tokens": 4,
-      "completion_tokens": 8,
-      "total_tokens": 12,
-      "time_to_first_token_ms": 125.3,
-      "total_time_ms": 265.2,
-      "tokens_per_second": 45.23,
-      "memory_peak_mb": 512.5,
-      "memory_avg_mb": 480.2,
-      "cpu_percent_avg": 85.5,
-      "success": true
-    }
-  ],
-  "asr_benchmarks": [...],
-  "tts_benchmarks": [...]
-}
-```
-
-## Performance Interpretation
-
-### LLM Performance
-
-**Good Performance:**
-- `tokens_per_second` > 30 tok/s
-- `time_to_first_token_ms` < 200ms
-- `memory_peak_mb` < 1000MB
-
-**Excellent Performance:**
-- `tokens_per_second` > 50 tok/s
-- `time_to_first_token_ms` < 100ms
-- `memory_peak_mb` < 800MB
-
-### ASR Performance
-
-**Good Performance:**
-- `real_time_factor` < 1.0 (faster than real-time)
-- `transcription_time_ms` < 5000ms for typical audio
-
-**Excellent Performance:**
-- `real_time_factor` < 0.5 (2x faster than real-time)
-- `transcription_time_ms` < 2000ms for typical audio
-
-### TTS Performance
-
-**Good Performance:**
-- `characters_per_second` > 50 char/s
-- `synthesis_time_ms` < 500ms for typical text
-
-**Excellent Performance:**
-- `characters_per_second` > 100 char/s
-- `synthesis_time_ms` < 200ms for typical text
-
-## Advanced Usage
-
-### Custom API URL
+The default benchmark uses the configured runtime kernel. To force the current
+stable path:
 
 ```bash
-python scripts/benchmark.py --api-url http://localhost:9000
+python scripts/dev/benchmark_live.py \
+  --config configs/config.yaml \
+  --workload mixed \
+  --concurrency-levels 1,2,4,8 \
+  --runtime-kernel manual
 ```
 
-### Save Results with Timestamp
+Optional output file:
 
 ```bash
-python scripts/benchmark.py --output "benchmark_$(date +%Y%m%d_%H%M%S).json"
+python scripts/dev/benchmark_live.py \
+  --config configs/config.yaml \
+  --workload all \
+  --concurrency 4 \
+  --output benchmark_results/engine_benchmark.json
 ```
 
-### Run Benchmarks Periodically
+## Workloads
 
-```bash
-# Run every hour
-while true; do
-    python scripts/benchmark.py --output "benchmark_$(date +%Y%m%d_%H%M%S).json"
-    sleep 3600
-done
-```
+### `single`
 
-## Comparing Results
+One interactive request. Use this for baseline latency and TTFT validation.
 
-### Load and Compare JSON Results
+### `reuse`
 
-```python
-import json
-from pathlib import Path
+Repeated prompts with a large shared prefix. Use this to validate:
 
-# Load results
-with open("benchmark_results.json") as f:
-    results = json.load(f)
+- prefix reuse hits
+- reused prompt tokens
+- second-request latency drop
 
-# Extract LLM metrics
-for test in results["llm_benchmarks"]:
-    print(f"{test['test_name']}: {test['tokens_per_second']:.2f} tok/s")
-```
+### `mixed`
 
-### Track Performance Over Time
+Short and long prompts together. Use this to inspect fairness and decode batch
+behavior under local multi-request serving.
 
-```bash
-# Create results directory
-mkdir -p benchmark_results
+### `long`
 
-# Run benchmarks daily
-python scripts/benchmark.py --output "benchmark_results/$(date +%Y%m%d).json"
+Long prompt ingestion with generation. Use this to validate prefill chunking,
+memory pressure response, and sustained responsiveness.
 
-# Compare results
-ls -lh benchmark_results/
-```
+## What To Record
 
-## Troubleshooting
+For each run, capture:
 
-### Service Not Running
+- elapsed wall time
+- average latency
+- p95 latency
+- runtime kernel
+- aggregate completion tokens/sec
+- average generation tokens/sec
+- completion tokens per decode step
+- total completion tokens
+- prefix reuse hits
+- prefix tokens reused
+- decode steps
+- completed, failed, and cancelled request counts
 
-```bash
-# Check service status
-python scripts/ops/daemon.py status
+Also collect:
 
-# Start service
-python scripts/ops/daemon.py start
-```
+- peak memory from MLX or Activity Monitor
+- model name and quantization
+- exact Aster config
+- machine type and RAM size
 
-### Benchmark Fails
+## Recommended Comparison Set
 
-```bash
-# Check API health
-python scripts/ops/daemon.py health
+Run the same workloads against:
 
-# View service logs
-python scripts/ops/daemon.py logs
+1. old Aster MLX baseline, if still available
+2. current native engine
+3. `engine.runtime_kernel=manual`
+4. future `engine.runtime_kernel=batch_generator` once the implementation is
+   enabled
+5. any local historical result already captured before the rewrite
 
-# Restart service
-python scripts/ops/daemon.py restart
-```
+Be explicit about:
 
-### Audio File Not Found
+- model identity
+- prompt set
+- concurrency
+- context length
+- whether prefix reuse was warm or cold
+- runtime kernel
 
-```bash
-# Check if audio file exists
-ls -lh /Users/eitan/Desktop/PromptAudio.wav
+## Interpreting Results
 
-# If not, create a test audio file or update the path in benchmark.py
-```
+Healthy signs:
 
-## Performance Optimization Tips
+- `reuse` shows meaningful reused-token counts and lower latency on later requests
+- `mixed` shows decode batch steps greater than one under concurrency
+- `long` completes without uncontrolled failure growth or repeated admission rejects
 
-### Improve LLM Performance
+Potential next bottleneck:
 
-1. **Reduce max_tokens** - Smaller outputs are faster
-2. **Use shorter prompts** - Less context to process
-3. **Enable speculative decoding** - If available
-4. **Increase batch size** - For multiple requests
+- if decode batch size is greater than one but throughput gains are small, the
+  merge-and-extract cost of temporary batch caches is likely the next hot path
 
-### Improve ASR Performance
+## Current Limitation
 
-1. **Use shorter audio** - Faster processing
-2. **Reduce audio quality** - Lower sample rate if acceptable
-3. **Disable unused services** - Free up resources
+This benchmark is intentionally honest:
 
-### Improve TTS Performance
-
-1. **Use shorter text** - Faster synthesis
-2. **Reduce audio quality** - Lower sample rate if acceptable
-3. **Disable unused services** - Free up resources
-
-## System Requirements
-
-- **CPU**: Multi-core processor (4+ cores recommended)
-- **Memory**: 8GB+ RAM
-- **Storage**: 20GB+ for models
-- **Network**: For API communication (localhost only)
-
-## Benchmark Results Storage
-
-Results are saved to:
-```
-/Users/eitan/Documents/Projects/Python/Aster/benchmark_results/
-```
-
-Each result file contains:
-- System information
-- Benchmark results for each test
-- Timestamps
-- Success/failure status
-
-## Next Steps
-
-1. **Run baseline benchmark** - Establish performance baseline
-2. **Monitor over time** - Track performance changes
-3. **Optimize configuration** - Adjust settings based on results
-4. **Compare with targets** - Set performance goals
-5. **Document findings** - Keep records for reference
-
-## Support
-
-For issues or questions:
-
-1. Check service status: `python scripts/ops/daemon.py status`
-2. View logs: `python scripts/ops/daemon.py logs`
-3. Run health check: `python scripts/ops/daemon.py health`
-4. Review benchmark output for error messages
+- it does not claim wins by itself
+- it prepares the workloads and counters needed to measure the new engine
+- final performance conclusions still require live execution on the target MLX setup

@@ -4,7 +4,6 @@ import asyncio
 import time
 from dataclasses import dataclass
 from itertools import product
-from types import SimpleNamespace
 from typing import Literal
 
 from aster.core.config import RuntimeSettings
@@ -168,41 +167,37 @@ class BenchmarkSuite:
             max_batch_size=candidate.max_batch_size,
             stream_flush_ms=candidate.stream_flush_ms,
         )
-        deps = self._fresh_engine_dep()
-        engine = InferenceEngine(
-            self.settings,
-            self.metrics,
-            kv_cache=deps.kv_cache,
-            prefix_cache=deps.prefix_cache,
-            policy_engine=self.policy_engine,
-        )
+        engine = InferenceEngine(self.settings, self.metrics)
+        await engine.start()
         first_prompt, second_prompt = self._benchmark_prompts(mode)
-
-        started = time.perf_counter()
-        await engine.infer(
-            InferenceRequest(
-                prompt=first_prompt,
-                max_tokens=max_tokens,
-                stream=False,
-                temperature=0.0,
-                top_p=1.0,
-                request_class="benchmark",
+        try:
+            started = time.perf_counter()
+            await engine.infer(
+                InferenceRequest(
+                    prompt=first_prompt,
+                    max_tokens=max_tokens,
+                    stream=False,
+                    temperature=0.0,
+                    top_p=1.0,
+                    request_class="benchmark",
+                )
             )
-        )
-        elapsed = max(time.perf_counter() - started, 1e-6)
+            elapsed = max(time.perf_counter() - started, 1e-6)
 
-        second_started = time.perf_counter()
-        second = await engine.infer(
-            InferenceRequest(
-                prompt=second_prompt,
-                max_tokens=max_tokens,
-                stream=False,
-                temperature=0.0,
-                top_p=1.0,
-                request_class="benchmark",
+            second_started = time.perf_counter()
+            second = await engine.infer(
+                InferenceRequest(
+                    prompt=second_prompt,
+                    max_tokens=max_tokens,
+                    stream=False,
+                    temperature=0.0,
+                    top_p=1.0,
+                    request_class="benchmark",
+                )
             )
-        )
-        second_elapsed = max(time.perf_counter() - second_started, 1e-6)
+            second_elapsed = max(time.perf_counter() - second_started, 1e-6)
+        finally:
+            await engine.aclose()
 
         throughput = second.completion_tokens / second_elapsed
         latency_penalty = (elapsed + second_elapsed) / 2.0
@@ -284,12 +279,3 @@ class BenchmarkSuite:
         first = f"{shared}\nUser: summarize why prefix caching matters."
         second = f"{shared}\nUser: summarize why prefix caching matters for repeated agent prefixes in one sentence."
         return first, second
-
-    def _fresh_engine_dep(self) -> SimpleNamespace:
-        from cache.paged_kv_cache import PagedKVCache
-        from cache.prefix_cache import PrefixCache
-
-        return SimpleNamespace(
-            kv_cache=PagedKVCache(self.settings.cache, self.metrics),
-            prefix_cache=PrefixCache(self.settings.cache, self.metrics),
-        )

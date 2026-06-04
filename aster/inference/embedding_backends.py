@@ -5,13 +5,10 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Any
 
-import mlx.core as mx
-from mlx_lm import load as load_mlx_lm
-
 from aster.core.config import EmbeddingsSettings, RuntimeSettings
 from aster.core.errors import AsterError, ConfigurationError
-from aster.inference.vllm_mlx_client import VLLMMLXClient
 from aster.telemetry.logging import get_logger
+
 
 class EmbeddingBackend(ABC):
     @abstractmethod
@@ -57,6 +54,7 @@ class MLXEmbeddingBackend(EmbeddingBackend):
         self._lock = threading.Lock()
         self._model: Any | None = None
         self._tokenizer: Any | None = None
+        self._mx: Any | None = None
         self._loaded_model_ref: str | None = None
 
     def supports_embeddings(self) -> bool:
@@ -88,7 +86,7 @@ class MLXEmbeddingBackend(EmbeddingBackend):
             )
 
         with self._lock:
-            model, tokenizer = self._ensure_loaded(model_ref)
+            model, tokenizer, mx = self._ensure_loaded(model_ref)
             enc = tokenizer._tokenizer(
                 texts,
                 return_tensors="np",
@@ -123,13 +121,22 @@ class MLXEmbeddingBackend(EmbeddingBackend):
             },
         }
 
-    def _ensure_loaded(self, model_ref: str) -> tuple[Any, Any]:
+    def _ensure_loaded(self, model_ref: str) -> tuple[Any, Any, Any]:
         if self._model is None or self._tokenizer is None or self._loaded_model_ref != model_ref:
-            self.logger.info(
-                "mlx_embedding_model_loading",
-                extra={"model_ref": model_ref},
-            )
+            try:
+                import mlx.core as mx
+                from mlx_lm import load as load_mlx_lm
+            except Exception as exc:  # pragma: no cover - depends on local runtime
+                raise ConfigurationError(
+                    code="mlx_embeddings_unavailable",
+                    message="MLX embeddings dependencies are not installed or importable.",
+                    status_code=500,
+                    details={"error": str(exc)},
+                ) from exc
+
+            self.logger.info("mlx_embedding_model_loading", extra={"model_ref": model_ref})
             self._model, self._tokenizer = load_mlx_lm(model_ref, lazy=False)
+            self._mx = mx
             self._loaded_model_ref = model_ref
             self.logger.info(
                 "mlx_embedding_model_loaded",
@@ -139,51 +146,8 @@ class MLXEmbeddingBackend(EmbeddingBackend):
                     "dimensions": self.settings.dimensions,
                 },
             )
-        return self._model, self._tokenizer
-
-
-class VLLMMLXEmbeddingBackend(EmbeddingBackend):
-    def __init__(self, settings: RuntimeSettings) -> None:
-        self.settings = settings
-        self.client = VLLMMLXClient(settings.vllm_mlx)
-
-    def supports_embeddings(self) -> bool:
-        return self.settings.embeddings.enabled and bool(
-            self.settings.embeddings.model_path
-            or self.settings.embeddings.model
-        )
-
-    def configured_model(self) -> str | None:
-        return self.settings.embeddings.model
-
-    async def embeddings(self, *, model: str | None, input_data: str | list[str]) -> dict[str, Any]:
-        resolved_model = self._resolve_model_name(model)
-        if not resolved_model:
-            raise AsterError(
-                code="embedding_model_not_configured",
-                message="No embedding model configured for vllm_mlx backend",
-                status_code=400,
-            )
-        return await self.client.embeddings(model=resolved_model, input_data=input_data)
-
-    async def aclose(self) -> None:
-        await self.client.aclose()
-
-    def _resolve_model_name(self, requested_model: str | None) -> str | None:
-        configured_path = self.settings.embeddings.model_path
-        configured_alias = self.settings.embeddings.model
-        requested = (requested_model or "").strip()
-
-        if not requested or requested == "default":
-            return configured_path or configured_alias
-
-        if configured_alias and requested == configured_alias:
-            return configured_path or configured_alias
-
-        if configured_path and requested == configured_path:
-            return configured_path
-
-        return requested
+        assert self._mx is not None
+        return self._model, self._tokenizer, self._mx
 
 
 def build_embedding_backend(settings: RuntimeSettings) -> EmbeddingBackend:
@@ -191,8 +155,6 @@ def build_embedding_backend(settings: RuntimeSettings) -> EmbeddingBackend:
         return DisabledEmbeddingBackend()
     if settings.embeddings.backend == "mlx":
         return MLXEmbeddingBackend(settings.embeddings)
-    if settings.embeddings.backend == "vllm_mlx":
-        return VLLMMLXEmbeddingBackend(settings)
     raise ConfigurationError(
         code="unsupported_embedding_backend",
         message=f"Unsupported embeddings backend: {settings.embeddings.backend}",
@@ -203,6 +165,5 @@ __all__ = [
     "EmbeddingBackend",
     "DisabledEmbeddingBackend",
     "MLXEmbeddingBackend",
-    "VLLMMLXEmbeddingBackend",
     "build_embedding_backend",
 ]

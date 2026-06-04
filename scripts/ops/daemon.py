@@ -80,7 +80,7 @@ def get_plist_content() -> str:
     <array>
         <string>{PYTHON_BIN}</string>
         <string>-m</string>
-        <string>aster.launchd_entry</string>
+        <string>aster</string>
         <string>--config</string>
         <string>{CONFIG_FILE}</string>
     </array>

@@ -2,24 +2,29 @@
 
 from __future__ import annotations
 
-import asyncio
 import io
-import sys
-from pathlib import Path
+import os
 
 import httpx
 import pytest
-from pydub import AudioSegment
-
 
 # Test configuration
-API_BASE_URL = "http://127.0.0.1:8080"
+API_BASE_URL = os.getenv("ASTER_SERVER_URL", "http://127.0.0.1:8080")
 TIMEOUT = 30.0
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("ASTER_RUN_AUDIO_SERVICE_TESTS") != "1",
+    reason=(
+        "Requires a running Aster server with audio services enabled. "
+        "Set ASTER_RUN_AUDIO_SERVICE_TESTS=1 to run."
+    ),
+)
 
 
 def generate_test_audio(duration_ms: int = 2000, sample_rate: int = 16000) -> bytes:
     """Generate a simple test audio file (sine wave)."""
     import numpy as np
+    from pydub import AudioSegment
 
     # Generate sine wave
     t = np.linspace(0, duration_ms / 1000, int(sample_rate * duration_ms / 1000))
@@ -179,7 +184,7 @@ class TestAudioPipeline:
 
             print(f"✓ Original text: {original_text}")
             print(f"✓ Transcribed text: {result['text']}")
-            print(f"✓ Pipeline test passed!")
+            print("✓ Pipeline test passed!")
 
 
 class TestHealthAndMetrics:

@@ -47,6 +47,9 @@ python scripts/ops/daemon.py install
 # Uninstall the service
 python scripts/ops/daemon.py uninstall
 
+# Or use the one-shot shell script
+bash scripts/ops/uninstall.sh
+
 # Start the service
 python scripts/ops/daemon.py start
 
@@ -229,6 +232,7 @@ Edit `configs/config.yaml` to customize:
 api:
   host: 127.0.0.1
   port: 8080
+  responses_store_max_entries: 1000  # previous_response_id replay entries
 
 model:
   name: Qwen3.5-9B

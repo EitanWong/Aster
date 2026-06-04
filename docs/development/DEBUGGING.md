@@ -307,6 +307,8 @@ Check:
 - `prefill_cache_hit`
 - `generation_cache_reuse`
 - prefix hit/miss totals in `metrics_summary.sh`
+- Responses replay store entries and hit/miss totals in `status.sh` and
+  `metrics_summary.sh` when debugging `previous_response_id`
 
 ### 4) Scheduler / batching effects
 

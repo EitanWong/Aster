@@ -23,6 +23,7 @@ Scripts for running and managing the Aster service:
 - `start.sh` - Start the Aster server
 - `stop.sh` - Stop the Aster server
 - `restart.sh` - Restart the Aster server
+- `uninstall.sh` - Remove the macOS launchd auto-start service
 - `status.sh` - Check server status
 - `health.sh` - Check server health
 - `tail_logs.sh` - Tail server logs
@@ -32,6 +33,7 @@ Usage:
 ```bash
 bash scripts/ops/start.sh
 bash scripts/ops/status.sh
+bash scripts/ops/uninstall.sh
 bash scripts/ops/stop.sh
 ```
 

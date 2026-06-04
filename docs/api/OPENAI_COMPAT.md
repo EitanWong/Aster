@@ -27,6 +27,7 @@ That means:
 Aster currently implements these API endpoints:
 
 - `GET /v1/models`
+- `POST /v1/responses`
 - `POST /v1/chat/completions`
 - `POST /v1/completions`
 
@@ -35,6 +36,7 @@ Operational endpoints also exist, but they are **not part of the OpenAI API surf
 - `GET /health`
 - `GET /ready`
 - `GET /metrics`
+- `GET /v1/status`
 
 These operational endpoints are intentionally Aster-specific.
 
@@ -120,17 +122,45 @@ X-Request-Id: <client-supplied-id>
 Behavior:
 
 - if present, Aster propagates it through route → scheduler → inference → logs
-- for non-stream responses, Aster echoes it back as the `X-Request-Id` response header
+- Aster echoes it back as the `X-Request-Id` response header on local OpenAI-compatible responses, including Chat/Completions and Responses API tools or structured-output paths
 - if absent, Aster generates a request id internally
 
-This is a safe transport-level extension and does not change the JSON response contract.
+This is a safe transport-level extension and does not change the JSON response contract. JSON response `id` values remain OpenAI-style response identifiers such as `chatcmpl-...`, `cmpl-...`, or `resp_...`; they are not the request tracing id. For `/v1/responses`, clients must pass the returned JSON `id` as `previous_response_id`; `X-Request-Id` is only for tracing.
+
+---
+
+## Responses replay history
+
+`/v1/responses` supports `previous_response_id` using an in-memory replay
+store. The store is process-local and provider-scoped: if Aster is run with
+multiple worker processes, a follow-up request must hit the same process and
+provider-facing endpoint that created the original `resp_...` id or it will
+return `response_not_found`. For example, a response created through
+`/v1/responses` is not replayable through `/xai/v1/responses`.
+
+`previous_response_id` must be a string when provided. Non-string values are
+rejected with `invalid_previous_response_id` instead of being treated as a new
+conversation.
+
+Operators can inspect the current process store via `GET /v1/status`:
+
+```json
+"responses_store": {
+  "entries": 1,
+  "max_entries": 1000,
+  "scope": "process/provider"
+}
+```
+
+The capacity is controlled by `api.responses_store_max_entries`; the default is
+`1000`, matching vllm-mlx's in-process store size.
 
 ---
 
 ## Current response shape notes
 
 ### `/v1/chat/completions`
-Aster currently returns an OpenAI-style response body with:
+Aster returns an OpenAI-style response body with:
 
 - `id`
 - `object`
@@ -139,7 +169,7 @@ Aster currently returns an OpenAI-style response body with:
 - `choices`
 - `usage`
 
-It also currently includes an additional top-level object:
+When `X-Aster-Debug: 1` is present, Aster adds an extension object:
 
 ```json
 "aster": {
@@ -149,18 +179,14 @@ It also currently includes an additional top-level object:
 ```
 
 ### `/v1/completions`
-Likewise, Aster returns an OpenAI-style completion body plus the same `aster` metadata object.
+Likewise, Aster returns an OpenAI-style completion body by default and adds the same `aster` metadata object only when `X-Aster-Debug: 1` is present.
 
 ### Practical status
 
 This means Aster is currently:
 
-- **OpenAI-compatible in practice for many clients**
-- but **not strictly byte-for-byte identical** to OpenAI responses because of the extra `aster` object
-
-This is acceptable only if the extra fields do not break clients.
-
-If stricter compatibility becomes necessary, Aster should move these fields behind an explicit opt-in mechanism similar to `X-Aster-Debug: 1`.
+- OpenAI-compatible by default for these response shapes
+- able to expose Aster-specific debug metadata through explicit opt-in
 
 ---
 
@@ -213,7 +239,7 @@ They should not assume that ordinary OpenAI clients will ever see these fields.
 If strict compatibility matters more over time, the next tightening step should be:
 
 1. keep default JSON bodies limited to OpenAI fields only
-2. move the current top-level `aster` JSON field behind explicit debug opt-in
+2. keep `/v1/responses` history replay keyed by returned response IDs, not request trace headers
 3. reserve all Aster-specific metadata for:
    - debug headers
    - operational endpoints

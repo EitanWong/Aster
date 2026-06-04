@@ -1,0 +1,2296 @@
+{
+  "created_at": "2026-05-22T07:34:05.751755+00:00",
+  "environment": {
+    "platform": "macOS-26.4.1-arm64-arm-64bit-Mach-O",
+    "python": "3.13.12"
+  },
+  "config": {
+    "aster_url": "http://127.0.0.1:18080",
+    "vllm_url": "http://127.0.0.1:18000",
+    "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+    "embedding_model": null,
+    "max_tokens": 8,
+    "timeout": 180.0,
+    "requests": 2,
+    "concurrency": [
+      1
+    ],
+    "skip_embeddings": true,
+    "skip_performance": true,
+    "skip_prefix_observation": true,
+    "include_lifecycle": false,
+    "lifecycle_timeout_seconds": 0.001,
+    "lifecycle_close_after_events": 2,
+    "lifecycle_stream_max_tokens": 128,
+    "lifecycle_unknown_request_id": "compat-missing-request",
+    "include_mixed_scheduling": true,
+    "mixed_runs": 1,
+    "mixed_long_prompt_words": 512,
+    "mixed_long_requests": 1,
+    "mixed_long_max_tokens": 8,
+    "mixed_short_requests": 4,
+    "mixed_short_max_tokens": 8,
+    "mixed_short_start_delay": 0.05,
+    "mixed_short_interval": 0.05,
+    "mixed_run_gap": 0.25
+  },
+  "cases": [
+    {
+      "name": "health",
+      "path": "/health",
+      "method": "GET",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.05123983300291002,
+          "payload": {
+            "status": "ok",
+            "degraded": false,
+            "details": {
+              "engine_healthy": true,
+              "status": "running",
+              "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+              "uptime_s": 21.4,
+              "steps_executed": 0,
+              "num_running": 0,
+              "num_waiting": 0,
+              "total_requests_processed": 0,
+              "total_prompt_tokens": 0,
+              "total_completion_tokens": 0,
+              "requests": [],
+              "engine_running": true,
+              "pending_requests": 0,
+              "prefill_requests": 0,
+              "decode_requests": 0,
+              "snapshot_entries": 0,
+              "snapshot_bytes": 0,
+              "prefix_reuse_attempts": 0,
+              "prefix_reuse_hits": 0,
+              "prefix_tokens_reused": 0,
+              "prefill_steps": 0,
+              "decode_steps": 0,
+              "completed_requests": 0,
+              "failed_requests": 0,
+              "cancelled_requests": 0,
+              "admission_rejections": 0,
+              "timed_out_requests": 0,
+              "runtime_cache_clear_attempts": 0,
+              "runtime_cache_clear_failures": 0,
+              "cancelled_prefill_checkpoints": 0,
+              "prefill_yield_rotations": 0,
+              "active_estimated_bytes": 0,
+              "runtime_kernel": "manual",
+              "runtime_kernel_continuous_batching": false,
+              "runtime_kernel_available": true,
+              "decode_batch_diagnostics": {
+                "batch_attempts": 0,
+                "batch_successes": 0,
+                "batch_fallbacks": 0,
+                "batch_items": 0,
+                "batch_fallback_items": 0,
+                "single_steps": 0,
+                "batch_fallback_rate": 0.0,
+                "last_batch_fallback_error": null
+              },
+              "engine_timing": {
+                "prefill_model_seconds": 0.0,
+                "prefill_model_tokens": 0,
+                "prompt_tps": 0.0,
+                "max_prefill_step_seconds": 0.0,
+                "decode_runner_seconds": 0.0,
+                "decode_runner_batches": 0,
+                "decode_runner_items": 0,
+                "decode_runner_tokens": 0,
+                "generation_tps": 0.0,
+                "avg_decode_batch_size": 0.0,
+                "avg_decode_batch_seconds": 0.0,
+                "max_decode_batch_seconds": 0.0
+              },
+              "scheduler": {
+                "mode": "decode_first_chunked_prefill",
+                "max_active_requests": 4,
+                "max_decode_batch": 2,
+                "prefill_admission_batch_size": 1,
+                "prefill_token_budget": 1024
+              }
+            }
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.0077357089903671294,
+          "payload": {
+            "status": "healthy",
+            "model_loaded": true,
+            "model_name": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "available_models": [
+              "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit"
+            ],
+            "model_type": "mllm",
+            "engine_type": "batched",
+            "mcp": null
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "models",
+      "path": "/v1/models",
+      "method": "GET",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.008521416020812467,
+          "payload": {
+            "object": "list",
+            "data": [
+              {
+                "id": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "object": "model",
+                "owned_by": "aster"
+              }
+            ]
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.007486791990231723,
+          "payload": {
+            "object": "list",
+            "data": [
+              {
+                "id": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "object": "model",
+                "created": 1779435238,
+                "owned_by": "vllm-mlx"
+              }
+            ]
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "cache_stats",
+      "path": "/v1/cache/stats",
+      "method": "GET",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.0073879169940482825,
+          "payload": {
+            "object": "cache.stats",
+            "engine_cache": {
+              "prefix_cache": {
+                "enabled": false,
+                "entries": 0,
+                "pinned_entries": 0,
+                "evictable_entries": 0,
+                "bytes": 0,
+                "pinned_bytes": 0,
+                "evictable_bytes": 0,
+                "budget_bytes": 8589934592,
+                "max_entries": 100,
+                "min_prefix_tokens": 64,
+                "memory_utilization": 0.0,
+                "cached_tokens": 0,
+                "avg_entry_bytes": 0.0,
+                "max_entry_bytes": 0,
+                "lookups": 0,
+                "hits": 0,
+                "misses": 0,
+                "hit_rate": 0.0,
+                "tokens_saved": 0,
+                "stores": 0,
+                "evictions": 0,
+                "evicted_bytes": 0,
+                "exact_hits": 0,
+                "prefix_hits": 0,
+                "lcp_hits": 0,
+                "unsafe_lcp_skips": 0,
+                "last_match_type": null
+              },
+              "runtime_kernel": "manual",
+              "active_estimated_bytes": 0
+            }
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.007692542014410719,
+          "payload": {
+            "engine_cache": {
+              "prefix_cache": {
+                "hits": 0,
+                "misses": 0,
+                "hit_rate": 0.0,
+                "evictions": 0,
+                "tokens_saved": 0,
+                "current_memory_mb": 0.0,
+                "max_memory_mb": 0.0,
+                "memory_utilization": 0.0,
+                "entry_count": 0
+              },
+              "vision_embedding_cache": {
+                "pixel_cache_hits": 0,
+                "pixel_cache_misses": 0,
+                "pixel_hit_rate": 0.0,
+                "encoding_cache_hits": 0,
+                "encoding_cache_misses": 0,
+                "encoding_hit_rate": 0.0,
+                "total_time_saved": 0.0,
+                "total_images_processed": 0,
+                "pixel_cache_size": 0,
+                "pixel_only_cache_size": 0,
+                "encoding_cache_size": 0
+              }
+            },
+            "error": "Cache stats not available (mlx_vlm not loaded)"
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "chat_nonstream",
+      "path": "/v1/chat/completions",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.5437102080031764,
+          "payload": {
+            "id": "chatcmpl-8f2ae270",
+            "object": "chat.completion",
+            "created": 1779435238,
+            "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "Thinking Process of the thought experiment:\n"
+                },
+                "finish_reason": "length"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 28,
+              "completion_tokens": 8,
+              "total_tokens": 36
+            }
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.24270733300363645,
+          "payload": {
+            "id": "chatcmpl-92519e07",
+            "object": "chat.completion",
+            "created": 1779435239,
+            "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "Thinking Process of the thought that leads to"
+                },
+                "finish_reason": "length"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 28,
+              "completion_tokens": 8,
+              "total_tokens": 36
+            }
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "chat_stream",
+      "path": "/v1/chat/completions",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.3442723339830991,
+          "ttft_s": 0.011555874982150272,
+          "done": true,
+          "closed_early": false,
+          "event_count": 12,
+          "first_events": [
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "delta": {
+                      "role": "assistant"
+                    },
+                    "index": 0,
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "delta": {
+                      "content": "Thinking"
+                    },
+                    "index": 0,
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "delta": {
+                      "content": " Process"
+                    },
+                    "index": 0,
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "delta": {
+                      "content": " of"
+                    },
+                    "index": 0,
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "delta": {
+                      "content": " the"
+                    },
+                    "index": 0,
+                    "finish_reason": null
+                  }
+                ]
+              }
+            }
+          ],
+          "last_events": [
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "delta": {},
+                    "index": 0,
+                    "finish_reason": "length"
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-ecf10955",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [],
+                "usage": {
+                  "prompt_tokens": 28,
+                  "completion_tokens": 8,
+                  "total_tokens": 36
+                }
+              }
+            },
+            {
+              "data": "[DONE]"
+            }
+          ]
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.1076609589799773,
+          "ttft_s": 0.009319333999883384,
+          "done": true,
+          "closed_early": false,
+          "event_count": 11,
+          "first_events": [
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "role": "assistant"
+                    },
+                    "finish_reason": null
+                  }
+                ],
+                "usage": null
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "content": "Thinking"
+                    },
+                    "finish_reason": null
+                  }
+                ],
+                "usage": null
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "content": " Process"
+                    },
+                    "finish_reason": null
+                  }
+                ],
+                "usage": null
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "content": " of"
+                    },
+                    "finish_reason": null
+                  }
+                ],
+                "usage": null
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "content": " the"
+                    },
+                    "finish_reason": null
+                  }
+                ],
+                "usage": null
+              }
+            }
+          ],
+          "last_events": [
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "delta": {
+                      "content": " to"
+                    },
+                    "finish_reason": "length"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 28,
+                  "completion_tokens": 8,
+                  "total_tokens": 36
+                }
+              }
+            },
+            {
+              "data": {
+                "id": "chatcmpl-c8b78c8d",
+                "object": "chat.completion.chunk",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [],
+                "usage": {
+                  "prompt_tokens": 28,
+                  "completion_tokens": 8,
+                  "total_tokens": 36
+                }
+              }
+            },
+            {
+              "data": "[DONE]"
+            }
+          ]
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "terminal_done": true,
+          "event_count": 12,
+          "ttft_s": 0.011555874982150272
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "terminal_done": true,
+          "event_count": 11,
+          "ttft_s": 0.009319333999883384
+        }
+      }
+    },
+    {
+      "name": "completion_nonstream",
+      "path": "/v1/completions",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.3055170419975184,
+          "payload": {
+            "id": "cmpl-7c9cf281",
+            "object": "text_completion",
+            "created": 1779435239,
+            "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "choices": [
+              {
+                "index": 0,
+                "text": "\n- 100%\n",
+                "finish_reason": "length"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 7,
+              "completion_tokens": 8,
+              "total_tokens": 15
+            }
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.12024562500300817,
+          "payload": {
+            "id": "cmpl-88250df6",
+            "object": "text_completion",
+            "created": 1779435239,
+            "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "choices": [
+              {
+                "index": 0,
+                "text": "- 100%",
+                "finish_reason": "length"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 7,
+              "completion_tokens": 8,
+              "total_tokens": 15
+            }
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "completion_stream",
+      "path": "/v1/completions",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.29610137501731515,
+          "ttft_s": 0.2413544580049347,
+          "done": true,
+          "closed_early": false,
+          "event_count": 9,
+          "first_events": [
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "\n",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "-",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": " 1",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "0",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "0",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            }
+          ],
+          "last_events": [
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "\n",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-5b1c2930",
+                "object": "text_completion",
+                "created": 1779435239,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "",
+                    "finish_reason": "length"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 7,
+                  "completion_tokens": 8,
+                  "total_tokens": 15
+                }
+              }
+            },
+            {
+              "data": "[DONE]"
+            }
+          ]
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.08619950001593679,
+          "ttft_s": 0.030970833002356812,
+          "done": true,
+          "closed_early": false,
+          "event_count": 9,
+          "first_events": [
+            {
+              "data": {
+                "id": "cmpl-83e0e006",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "\n",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-7c4024bf",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "-",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-13eca049",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": " ",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-f526a90e",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "1",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-a40c4811",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "0",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            }
+          ],
+          "last_events": [
+            {
+              "data": {
+                "id": "cmpl-9ab8550a",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "%",
+                    "finish_reason": null
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "id": "cmpl-3441b610",
+                "object": "text_completion",
+                "created": 1779435240,
+                "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                "choices": [
+                  {
+                    "index": 0,
+                    "text": "\n",
+                    "finish_reason": "length"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 7,
+                  "completion_tokens": 8,
+                  "total_tokens": 15
+                }
+              }
+            },
+            {
+              "data": "[DONE]"
+            }
+          ]
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "terminal_done": true,
+          "event_count": 9,
+          "ttft_s": 0.2413544580049347
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "terminal_done": true,
+          "event_count": 9,
+          "ttft_s": 0.030970833002356812
+        }
+      }
+    },
+    {
+      "name": "responses_nonstream",
+      "path": "/v1/responses",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.28301195800304413,
+          "payload": {
+            "id": "resp_7c6801e1a9c842d9a5a4c2435f3875f1",
+            "object": "response",
+            "created_at": 0,
+            "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "background": false,
+            "error": null,
+            "incomplete_details": null,
+            "instructions": null,
+            "max_output_tokens": 8,
+            "max_tool_calls": null,
+            "metadata": {},
+            "parallel_tool_calls": true,
+            "previous_response_id": null,
+            "text": {
+              "format": {
+                "type": "text"
+              }
+            },
+            "tool_choice": "auto",
+            "tools": [],
+            "top_p": 0.95,
+            "temperature": 0.0,
+            "truncation": "disabled",
+            "user": null,
+            "store": true,
+            "status": "completed",
+            "output": [
+              {
+                "id": "msg_resp_7c6801e1a9c842d9a5a4c2435f3875f1",
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                  {
+                    "type": "output_text",
+                    "text": "I am an AI assistant.",
+                    "annotations": []
+                  }
+                ]
+              }
+            ],
+            "output_text": "I am an AI assistant.",
+            "usage": {
+              "input_tokens": 18,
+              "output_tokens": 7,
+              "total_tokens": 25,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.11481845899834298,
+          "payload": {
+            "id": "resp_584068f0cb68492190b975116c770ba2",
+            "object": "response",
+            "created_at": 1779435240,
+            "status": "incomplete",
+            "background": false,
+            "error": null,
+            "incomplete_details": {
+              "reason": "max_output_tokens"
+            },
+            "instructions": null,
+            "max_output_tokens": 8,
+            "max_tool_calls": null,
+            "metadata": {},
+            "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+            "output": [
+              {
+                "id": "msg_e82c9d49727d42379b60f1d745a8178f",
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                  {
+                    "type": "output_text",
+                    "text": "Thinking Process of the thought experiment:",
+                    "annotations": [],
+                    "logprobs": []
+                  }
+                ],
+                "status": "completed"
+              }
+            ],
+            "parallel_tool_calls": true,
+            "previous_response_id": null,
+            "text": {
+              "format": {
+                "type": "text"
+              }
+            },
+            "tool_choice": "auto",
+            "tools": [],
+            "top_p": 0.9,
+            "temperature": 0.0,
+            "truncation": "disabled",
+            "usage": {
+              "input_tokens": 16,
+              "output_tokens": 8,
+              "total_tokens": 24,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            },
+            "user": null,
+            "store": true,
+            "output_text": "Thinking Process of the thought experiment:"
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "responses_stream",
+      "path": "/v1/responses",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.31832770799519494,
+          "ttft_s": 0.00741004099836573,
+          "done": true,
+          "closed_early": false,
+          "event_count": 14,
+          "first_events": [
+            {
+              "data": {
+                "type": "response.created",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 1,
+                "response": {
+                  "id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                  "object": "response",
+                  "created_at": 1779435240,
+                  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                  "background": false,
+                  "error": null,
+                  "incomplete_details": null,
+                  "instructions": null,
+                  "max_output_tokens": 8,
+                  "max_tool_calls": null,
+                  "metadata": {},
+                  "parallel_tool_calls": true,
+                  "previous_response_id": null,
+                  "text": {
+                    "format": {
+                      "type": "text"
+                    }
+                  },
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_p": 0.95,
+                  "temperature": 0.0,
+                  "truncation": "disabled",
+                  "user": null,
+                  "store": true,
+                  "status": "in_progress",
+                  "output": [],
+                  "output_text": ""
+                }
+              },
+              "event": "response.created"
+            },
+            {
+              "data": {
+                "type": "response.in_progress",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 2,
+                "response": {
+                  "id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                  "object": "response",
+                  "created_at": 1779435240,
+                  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                  "background": false,
+                  "error": null,
+                  "incomplete_details": null,
+                  "instructions": null,
+                  "max_output_tokens": 8,
+                  "max_tool_calls": null,
+                  "metadata": {},
+                  "parallel_tool_calls": true,
+                  "previous_response_id": null,
+                  "text": {
+                    "format": {
+                      "type": "text"
+                    }
+                  },
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_p": 0.95,
+                  "temperature": 0.0,
+                  "truncation": "disabled",
+                  "user": null,
+                  "store": true,
+                  "status": "in_progress",
+                  "output": [],
+                  "output_text": ""
+                }
+              },
+              "event": "response.in_progress"
+            },
+            {
+              "data": {
+                "type": "response.output_item.added",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 3,
+                "output_index": 0,
+                "item": {
+                  "id": "msg_resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                  "type": "message",
+                  "role": "assistant",
+                  "status": "in_progress",
+                  "content": []
+                }
+              },
+              "event": "response.output_item.added"
+            },
+            {
+              "data": {
+                "type": "response.content_part.added",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 4,
+                "item_id": "msg_resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "output_index": 0,
+                "content_index": 0,
+                "part": {
+                  "type": "output_text",
+                  "text": "",
+                  "annotations": []
+                }
+              },
+              "event": "response.content_part.added"
+            },
+            {
+              "data": {
+                "type": "response.output_text.delta",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 5,
+                "item_id": "msg_resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "output_index": 0,
+                "content_index": 0,
+                "delta": "I",
+                "logprobs": []
+              },
+              "event": "response.output_text.delta"
+            }
+          ],
+          "last_events": [
+            {
+              "data": {
+                "type": "response.content_part.done",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 12,
+                "item_id": "msg_resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "output_index": 0,
+                "content_index": 0,
+                "part": {
+                  "type": "output_text",
+                  "text": "I am an AI assistant.",
+                  "annotations": []
+                }
+              },
+              "event": "response.content_part.done"
+            },
+            {
+              "data": {
+                "type": "response.output_item.done",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 13,
+                "output_index": 0,
+                "item": {
+                  "id": "msg_resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                  "type": "message",
+                  "role": "assistant",
+                  "status": "completed",
+                  "content": [
+                    {
+                      "type": "output_text",
+                      "text": "I am an AI assistant.",
+                      "annotations": []
+                    }
+                  ]
+                }
+              },
+              "event": "response.output_item.done"
+            },
+            {
+              "data": {
+                "type": "response.completed",
+                "response_id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                "sequence_number": 14,
+                "response": {
+                  "id": "resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                  "object": "response",
+                  "created_at": 1779435240,
+                  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                  "background": false,
+                  "error": null,
+                  "incomplete_details": null,
+                  "instructions": null,
+                  "max_output_tokens": 8,
+                  "max_tool_calls": null,
+                  "metadata": {},
+                  "parallel_tool_calls": true,
+                  "previous_response_id": null,
+                  "text": {
+                    "format": {
+                      "type": "text"
+                    }
+                  },
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_p": 0.95,
+                  "temperature": 0.0,
+                  "truncation": "disabled",
+                  "user": null,
+                  "store": true,
+                  "status": "completed",
+                  "output": [
+                    {
+                      "id": "msg_resp_701e8c9ea9214ac1bc797ae10f28bb28",
+                      "type": "message",
+                      "role": "assistant",
+                      "status": "completed",
+                      "content": [
+                        {
+                          "type": "output_text",
+                          "text": "I am an AI assistant.",
+                          "annotations": []
+                        }
+                      ]
+                    }
+                  ],
+                  "output_text": "I am an AI assistant.",
+                  "usage": {
+                    "input_tokens": 18,
+                    "output_tokens": 7,
+                    "total_tokens": 25,
+                    "input_tokens_details": {
+                      "cached_tokens": 0
+                    },
+                    "output_tokens_details": {
+                      "reasoning_tokens": 0
+                    }
+                  }
+                }
+              },
+              "event": "response.completed"
+            }
+          ]
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.14822158301831223,
+          "ttft_s": 0.008246208017226309,
+          "done": true,
+          "closed_early": false,
+          "event_count": 16,
+          "first_events": [
+            {
+              "data": {
+                "sequence_number": 1,
+                "type": "response.created",
+                "response": {
+                  "id": "resp_511c84b43a424ecf9a6309d0d74171d6",
+                  "object": "response",
+                  "created_at": 1779435241,
+                  "status": "in_progress",
+                  "background": false,
+                  "error": null,
+                  "incomplete_details": null,
+                  "instructions": null,
+                  "max_output_tokens": 8,
+                  "max_tool_calls": null,
+                  "metadata": {},
+                  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                  "output": [],
+                  "parallel_tool_calls": true,
+                  "previous_response_id": null,
+                  "text": {
+                    "format": {
+                      "type": "text"
+                    }
+                  },
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_p": 0.9,
+                  "temperature": 0.0,
+                  "truncation": "disabled",
+                  "usage": null,
+                  "user": null,
+                  "store": true,
+                  "output_text": ""
+                }
+              },
+              "event": "response.created"
+            },
+            {
+              "data": {
+                "sequence_number": 2,
+                "type": "response.in_progress",
+                "response": {
+                  "id": "resp_511c84b43a424ecf9a6309d0d74171d6",
+                  "object": "response",
+                  "created_at": 1779435241,
+                  "status": "in_progress",
+                  "background": false,
+                  "error": null,
+                  "incomplete_details": null,
+                  "instructions": null,
+                  "max_output_tokens": 8,
+                  "max_tool_calls": null,
+                  "metadata": {},
+                  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                  "output": [],
+                  "parallel_tool_calls": true,
+                  "previous_response_id": null,
+                  "text": {
+                    "format": {
+                      "type": "text"
+                    }
+                  },
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_p": 0.9,
+                  "temperature": 0.0,
+                  "truncation": "disabled",
+                  "usage": null,
+                  "user": null,
+                  "store": true,
+                  "output_text": ""
+                }
+              },
+              "event": "response.in_progress"
+            },
+            {
+              "data": {
+                "sequence_number": 3,
+                "type": "response.output_item.added",
+                "output_index": 0,
+                "item": {
+                  "id": "msg_78ce08f7556e43f891ba43a969bd0a33",
+                  "type": "message",
+                  "role": "assistant",
+                  "content": [],
+                  "status": "in_progress"
+                }
+              },
+              "event": "response.output_item.added"
+            },
+            {
+              "data": {
+                "sequence_number": 4,
+                "type": "response.content_part.added",
+                "item_id": "msg_78ce08f7556e43f891ba43a969bd0a33",
+                "output_index": 0,
+                "content_index": 0,
+                "part": {
+                  "type": "output_text",
+                  "text": "",
+                  "annotations": [],
+                  "logprobs": []
+                }
+              },
+              "event": "response.content_part.added"
+            },
+            {
+              "data": {
+                "sequence_number": 5,
+                "type": "response.output_text.delta",
+                "item_id": "msg_78ce08f7556e43f891ba43a969bd0a33",
+                "output_index": 0,
+                "content_index": 0,
+                "delta": "Thinking",
+                "logprobs": []
+              },
+              "event": "response.output_text.delta"
+            }
+          ],
+          "last_events": [
+            {
+              "data": {
+                "sequence_number": 14,
+                "type": "response.content_part.done",
+                "item_id": "msg_78ce08f7556e43f891ba43a969bd0a33",
+                "output_index": 0,
+                "content_index": 0,
+                "part": {
+                  "type": "output_text",
+                  "text": "Thinking Process of the thought experiment:\n",
+                  "annotations": [],
+                  "logprobs": []
+                }
+              },
+              "event": "response.content_part.done"
+            },
+            {
+              "data": {
+                "sequence_number": 15,
+                "type": "response.output_item.done",
+                "output_index": 0,
+                "item": {
+                  "id": "msg_78ce08f7556e43f891ba43a969bd0a33",
+                  "type": "message",
+                  "role": "assistant",
+                  "content": [
+                    {
+                      "type": "output_text",
+                      "text": "Thinking Process of the thought experiment:\n",
+                      "annotations": [],
+                      "logprobs": []
+                    }
+                  ],
+                  "status": "completed"
+                }
+              },
+              "event": "response.output_item.done"
+            },
+            {
+              "data": {
+                "sequence_number": 16,
+                "type": "response.completed",
+                "response": {
+                  "id": "resp_511c84b43a424ecf9a6309d0d74171d6",
+                  "object": "response",
+                  "created_at": 1779435241,
+                  "status": "incomplete",
+                  "background": false,
+                  "error": null,
+                  "incomplete_details": {
+                    "reason": "max_output_tokens"
+                  },
+                  "instructions": null,
+                  "max_output_tokens": 8,
+                  "max_tool_calls": null,
+                  "metadata": {},
+                  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+                  "output": [
+                    {
+                      "id": "msg_78ce08f7556e43f891ba43a969bd0a33",
+                      "type": "message",
+                      "role": "assistant",
+                      "content": [
+                        {
+                          "type": "output_text",
+                          "text": "Thinking Process of the thought experiment:\n",
+                          "annotations": [],
+                          "logprobs": []
+                        }
+                      ],
+                      "status": "completed"
+                    }
+                  ],
+                  "parallel_tool_calls": true,
+                  "previous_response_id": null,
+                  "text": {
+                    "format": {
+                      "type": "text"
+                    }
+                  },
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_p": 0.9,
+                  "temperature": 0.0,
+                  "truncation": "disabled",
+                  "usage": {
+                    "input_tokens": 16,
+                    "output_tokens": 8,
+                    "total_tokens": 24,
+                    "input_tokens_details": {
+                      "cached_tokens": 0
+                    },
+                    "output_tokens_details": {
+                      "reasoning_tokens": 0
+                    }
+                  },
+                  "user": null,
+                  "store": true,
+                  "output_text": "Thinking Process of the thought experiment:\n"
+                }
+              },
+              "event": "response.completed"
+            }
+          ]
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "terminal_done": true,
+          "event_count": 14,
+          "ttft_s": 0.00741004099836573
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "terminal_done": true,
+          "event_count": 16,
+          "ttft_s": 0.008246208017226309
+        }
+      }
+    },
+    {
+      "name": "invalid_excessive_max_tokens",
+      "path": "/v1/chat/completions",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": false,
+          "status_code": 400,
+          "elapsed_s": 0.013856416975613683,
+          "payload": {
+            "error": {
+              "type": "max_tokens_exceeded",
+              "code": "max_tokens_exceeded",
+              "message": "max_tokens exceeds server limit (2048)",
+              "details": {
+                "max_tokens": 999999999,
+                "max_request_tokens": 2048
+              }
+            }
+          }
+        },
+        "vllm_mlx": {
+          "ok": false,
+          "status_code": 400,
+          "elapsed_s": 0.008871833008015528,
+          "payload": {
+            "detail": "max_tokens exceeds server limit (2048)"
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": false,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": false,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "rerank_endpoint_presence",
+      "path": "/v1/rerank",
+      "method": "POST",
+      "services": {
+        "aster": {
+          "ok": false,
+          "status_code": 404,
+          "elapsed_s": 0.009100499999476597,
+          "payload": {
+            "detail": "No reranker model loaded. Start the server with --rerank-model to enable the /v1/rerank endpoint."
+          }
+        },
+        "vllm_mlx": {
+          "ok": false,
+          "status_code": 404,
+          "elapsed_s": 0.017419833020539954,
+          "payload": {
+            "detail": "No reranker model loaded. Start the server with --rerank-model to enable the /v1/rerank endpoint."
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": false,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": false,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    },
+    {
+      "name": "mcp_tools_presence",
+      "path": "/v1/mcp/tools",
+      "method": "GET",
+      "services": {
+        "aster": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.007678583002416417,
+          "payload": {
+            "tools": [],
+            "count": 0
+          }
+        },
+        "vllm_mlx": {
+          "ok": true,
+          "status_code": 200,
+          "elapsed_s": 0.010710458009270951,
+          "payload": {
+            "tools": [],
+            "count": 0
+          }
+        }
+      },
+      "checks": {
+        "aster": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        },
+        "vllm_mlx": {
+          "passed": true,
+          "missing_keys": [],
+          "expected_object": null
+        }
+      }
+    }
+  ],
+  "prefix_observation": {},
+  "performance": {},
+  "mixed_scheduling": {
+    "aster": {
+      "runs": 1,
+      "elapsed_s": 2.7186926669965032,
+      "status_before": {
+        "ok": true,
+        "status_code": 200,
+        "elapsed_s": 0.007877833995735273,
+        "payload": {
+          "status": "running",
+          "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+          "uptime_s": 24.4,
+          "steps_executed": 52,
+          "num_running": 0,
+          "num_waiting": 0,
+          "total_requests_processed": 6,
+          "total_prompt_tokens": 106,
+          "total_completion_tokens": 46,
+          "requests": [],
+          "engine_running": true,
+          "pending_requests": 0,
+          "prefill_requests": 0,
+          "decode_requests": 0,
+          "snapshot_entries": 0,
+          "snapshot_bytes": 0,
+          "prefix_reuse_attempts": 0,
+          "prefix_reuse_hits": 0,
+          "prefix_tokens_reused": 0,
+          "prefill_steps": 6,
+          "decode_steps": 46,
+          "completed_requests": 6,
+          "failed_requests": 0,
+          "cancelled_requests": 0,
+          "admission_rejections": 0,
+          "timed_out_requests": 0,
+          "runtime_cache_clear_attempts": 0,
+          "runtime_cache_clear_failures": 0,
+          "cancelled_prefill_checkpoints": 0,
+          "prefill_yield_rotations": 0,
+          "active_estimated_bytes": 0,
+          "runtime_kernel": "manual",
+          "runtime_kernel_continuous_batching": false,
+          "runtime_kernel_available": true,
+          "decode_batch_diagnostics": {
+            "batch_attempts": 0,
+            "batch_successes": 0,
+            "batch_fallbacks": 0,
+            "batch_items": 0,
+            "batch_fallback_items": 0,
+            "single_steps": 46,
+            "batch_fallback_rate": 0.0,
+            "last_batch_fallback_error": null
+          },
+          "engine_timing": {
+            "prefill_model_seconds": 0.215084,
+            "prefill_model_tokens": 100,
+            "prompt_tps": 464.935,
+            "max_prefill_step_seconds": 0.112938,
+            "decode_runner_seconds": 0.459837,
+            "decode_runner_batches": 46,
+            "decode_runner_items": 46,
+            "decode_runner_tokens": 46,
+            "generation_tps": 100.035,
+            "avg_decode_batch_size": 1.0,
+            "avg_decode_batch_seconds": 0.009996,
+            "max_decode_batch_seconds": 0.016769
+          },
+          "scheduler": {
+            "mode": "decode_first_chunked_prefill",
+            "max_active_requests": 4,
+            "max_decode_batch": 2,
+            "prefill_admission_batch_size": 1,
+            "prefill_token_budget": 1024
+          },
+          "responses_store": {
+            "entries": 2,
+            "max_entries": 1000,
+            "scope": "process/provider"
+          }
+        }
+      },
+      "status_after": {
+        "ok": true,
+        "status_code": 200,
+        "elapsed_s": 0.007797166996169835,
+        "payload": {
+          "status": "running",
+          "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+          "uptime_s": 27.1,
+          "steps_executed": 80,
+          "num_running": 0,
+          "num_waiting": 0,
+          "total_requests_processed": 11,
+          "total_prompt_tokens": 3363,
+          "total_completion_tokens": 86,
+          "requests": [],
+          "engine_running": true,
+          "pending_requests": 0,
+          "prefill_requests": 0,
+          "decode_requests": 0,
+          "snapshot_entries": 0,
+          "snapshot_bytes": 0,
+          "prefix_reuse_attempts": 0,
+          "prefix_reuse_hits": 0,
+          "prefix_tokens_reused": 0,
+          "prefill_steps": 11,
+          "decode_steps": 69,
+          "completed_requests": 11,
+          "failed_requests": 0,
+          "cancelled_requests": 0,
+          "admission_rejections": 0,
+          "timed_out_requests": 0,
+          "runtime_cache_clear_attempts": 0,
+          "runtime_cache_clear_failures": 0,
+          "cancelled_prefill_checkpoints": 0,
+          "prefill_yield_rotations": 0,
+          "active_estimated_bytes": 0,
+          "runtime_kernel": "manual",
+          "runtime_kernel_continuous_batching": false,
+          "runtime_kernel_available": true,
+          "decode_batch_diagnostics": {
+            "batch_attempts": 17,
+            "batch_successes": 17,
+            "batch_fallbacks": 0,
+            "batch_items": 34,
+            "batch_fallback_items": 0,
+            "single_steps": 52,
+            "batch_fallback_rate": 0.0,
+            "last_batch_fallback_error": null
+          },
+          "engine_timing": {
+            "prefill_model_seconds": 1.222629,
+            "prefill_model_tokens": 3352,
+            "prompt_tps": 2741.634,
+            "max_prefill_step_seconds": 0.882226,
+            "decode_runner_seconds": 0.925923,
+            "decode_runner_batches": 69,
+            "decode_runner_items": 86,
+            "decode_runner_tokens": 86,
+            "generation_tps": 92.88,
+            "avg_decode_batch_size": 1.246,
+            "avg_decode_batch_seconds": 0.013419,
+            "max_decode_batch_seconds": 0.038075
+          },
+          "scheduler": {
+            "mode": "decode_first_chunked_prefill",
+            "max_active_requests": 4,
+            "max_decode_batch": 2,
+            "prefill_admission_batch_size": 1,
+            "prefill_token_budget": 1024
+          },
+          "responses_store": {
+            "entries": 2,
+            "max_entries": 1000,
+            "scope": "process/provider"
+          }
+        }
+      },
+      "summary": {
+        "long": {
+          "requests": 1,
+          "successes": 1,
+          "failures": 0,
+          "latency_avg_s": 2.2871851249947213,
+          "latency_p50_s": 2.2871851249947213,
+          "latency_p95_s": 2.2871851249947213,
+          "latency_p99_s": 2.2871851249947213,
+          "completion_tokens": 8
+        },
+        "short": {
+          "requests": 4,
+          "successes": 4,
+          "failures": 0,
+          "latency_avg_s": 2.501149791496573,
+          "latency_p50_s": 2.5075886039994657,
+          "latency_p95_s": 2.5192272874788615,
+          "latency_p99_s": 2.5206912574783202,
+          "completion_tokens": 32
+        },
+        "records": 5
+      },
+      "rounds": [
+        {
+          "run": 0,
+          "elapsed_s": 2.7106576249934733,
+          "summary": {
+            "long": {
+              "requests": 1,
+              "successes": 1,
+              "failures": 0,
+              "latency_avg_s": 2.2871851249947213,
+              "latency_p50_s": 2.2871851249947213,
+              "latency_p95_s": 2.2871851249947213,
+              "latency_p99_s": 2.2871851249947213,
+              "completion_tokens": 8
+            },
+            "short": {
+              "requests": 4,
+              "successes": 4,
+              "failures": 0,
+              "latency_avg_s": 2.501149791496573,
+              "latency_p50_s": 2.5075886039994657,
+              "latency_p95_s": 2.5192272874788615,
+              "latency_p99_s": 2.5206912574783202,
+              "completion_tokens": 32
+            },
+            "records": 5
+          },
+          "records": [
+            {
+              "run": 0,
+              "kind": "long",
+              "index": 0,
+              "scheduled_delay_s": 0.0,
+              "started_at_s": 0.0003015830006916076,
+              "finished_at_s": 2.287528207991272,
+              "elapsed_s": 2.2871851249947213,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-38f32c99",
+              "finish_reason": "length",
+              "prompt_tokens": 3113,
+              "total_tokens": 3121,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 0,
+              "scheduled_delay_s": 0.05,
+              "started_at_s": 0.05145454200101085,
+              "finished_at_s": 2.57255641699885,
+              "elapsed_s": 2.5210572499781847,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-0535afa3",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 1,
+              "scheduled_delay_s": 0.1,
+              "started_at_s": 0.12298479198943824,
+              "finished_at_s": 2.6293396670080256,
+              "elapsed_s": 2.5063197080162354,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-565cf828",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 2,
+              "scheduled_delay_s": 0.15000000000000002,
+              "started_at_s": 0.18533391700475477,
+              "finished_at_s": 2.6537297919858247,
+              "elapsed_s": 2.468364708009176,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-1cc596e5",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 3,
+              "scheduled_delay_s": 0.2,
+              "started_at_s": 0.20170962499105372,
+              "finished_at_s": 2.710603749990696,
+              "elapsed_s": 2.508857499982696,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-46304e03",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            }
+          ]
+        }
+      ]
+    },
+    "vllm_mlx": {
+      "runs": 1,
+      "elapsed_s": 1.7590210419730283,
+      "status_before": {
+        "ok": true,
+        "status_code": 200,
+        "elapsed_s": 0.007428833021549508,
+        "payload": {
+          "status": "running",
+          "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+          "residency": null,
+          "uptime_s": 17.1,
+          "steps_executed": 0,
+          "num_running": 0,
+          "num_waiting": 0,
+          "total_requests_processed": 6,
+          "total_prompt_tokens": 102,
+          "total_completion_tokens": 48,
+          "generation_tps": 127.07335193122954,
+          "prompt_tps": 174.61593590000712,
+          "metal": {
+            "active_memory_gb": 0.63,
+            "peak_memory_gb": 0.74,
+            "cache_memory_gb": 0.03
+          },
+          "cache": {
+            "hits": 0,
+            "misses": 0,
+            "hit_rate": 0.0,
+            "evictions": 0,
+            "tokens_saved": 0,
+            "current_memory_mb": 0.0,
+            "max_memory_mb": 0.0,
+            "memory_utilization": 0.0,
+            "entry_count": 0
+          },
+          "mtp": {
+            "enabled": false
+          },
+          "requests": []
+        }
+      },
+      "status_after": {
+        "ok": true,
+        "status_code": 200,
+        "elapsed_s": 0.009683416981715709,
+        "payload": {
+          "status": "running",
+          "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+          "residency": null,
+          "uptime_s": 18.8,
+          "steps_executed": 0,
+          "num_running": 0,
+          "num_waiting": 0,
+          "total_requests_processed": 11,
+          "total_prompt_tokens": 3359,
+          "total_completion_tokens": 88,
+          "generation_tps": 96.40640542914699,
+          "prompt_tps": 1110.5102476079423,
+          "metal": {
+            "active_memory_gb": 0.63,
+            "peak_memory_gb": 2.23,
+            "cache_memory_gb": 0.02
+          },
+          "cache": {
+            "hits": 0,
+            "misses": 0,
+            "hit_rate": 0.0,
+            "evictions": 0,
+            "tokens_saved": 0,
+            "current_memory_mb": 0.0,
+            "max_memory_mb": 0.0,
+            "memory_utilization": 0.0,
+            "entry_count": 0
+          },
+          "mtp": {
+            "enabled": false
+          },
+          "requests": []
+        }
+      },
+      "summary": {
+        "long": {
+          "requests": 1,
+          "successes": 1,
+          "failures": 0,
+          "latency_avg_s": 1.6380400420166552,
+          "latency_p50_s": 1.6380400420166552,
+          "latency_p95_s": 1.6380400420166552,
+          "latency_p99_s": 1.6380400420166552,
+          "completion_tokens": 8
+        },
+        "short": {
+          "requests": 4,
+          "successes": 4,
+          "failures": 0,
+          "latency_avg_s": 1.5834121980078635,
+          "latency_p50_s": 1.572918687510537,
+          "latency_p95_s": 1.630550108056923,
+          "latency_p99_s": 1.636442688018724,
+          "completion_tokens": 32
+        },
+        "records": 5
+      },
+      "rounds": [
+        {
+          "run": 0,
+          "elapsed_s": 1.7514334160077851,
+          "summary": {
+            "long": {
+              "requests": 1,
+              "successes": 1,
+              "failures": 0,
+              "latency_avg_s": 1.6380400420166552,
+              "latency_p50_s": 1.6380400420166552,
+              "latency_p95_s": 1.6380400420166552,
+              "latency_p99_s": 1.6380400420166552,
+              "completion_tokens": 8
+            },
+            "short": {
+              "requests": 4,
+              "successes": 4,
+              "failures": 0,
+              "latency_avg_s": 1.5834121980078635,
+              "latency_p50_s": 1.572918687510537,
+              "latency_p95_s": 1.630550108056923,
+              "latency_p99_s": 1.636442688018724,
+              "completion_tokens": 32
+            },
+            "records": 5
+          },
+          "records": [
+            {
+              "run": 0,
+              "kind": "long",
+              "index": 0,
+              "scheduled_delay_s": 0.0,
+              "started_at_s": 0.00021100000594742596,
+              "finished_at_s": 1.6383139159879647,
+              "elapsed_s": 1.6380400420166552,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-01993811",
+              "finish_reason": "length",
+              "prompt_tokens": 3113,
+              "total_tokens": 3121,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 0,
+              "scheduled_delay_s": 0.05,
+              "started_at_s": 0.05125499999849126,
+              "finished_at_s": 1.689317625015974,
+              "elapsed_s": 1.637915833009174,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-c977a6ea",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 1,
+              "scheduled_delay_s": 0.1,
+              "started_at_s": 0.10127987500163727,
+              "finished_at_s": 1.6901469159929547,
+              "elapsed_s": 1.5888109999941662,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-b8e66186",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 2,
+              "scheduled_delay_s": 0.15000000000000002,
+              "started_at_s": 0.15129425001214258,
+              "finished_at_s": 1.708422708004946,
+              "elapsed_s": 1.5570263750269078,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-28542a34",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            },
+            {
+              "run": 0,
+              "kind": "short",
+              "index": 3,
+              "scheduled_delay_s": 0.2,
+              "started_at_s": 0.20127004099776968,
+              "finished_at_s": 1.7512647910043597,
+              "elapsed_s": 1.5498955840012059,
+              "ok": true,
+              "status_code": 200,
+              "completion_tokens": 8,
+              "error": null,
+              "failure_payload": null,
+              "response_id": "chatcmpl-e219aab4",
+              "finish_reason": "length",
+              "prompt_tokens": 36,
+              "total_tokens": 44,
+              "content_preview": "Thinking Process:\n\n1.  **",
+              "content_length": 25
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -59,6 +59,11 @@ queue_depth = val('_queue_depth')
 kv_pages_used = val('_kv_pages_used')
 prefix_hits = val('_prefix_cache_hits_total', default=0.0)
 prefix_misses = val('_prefix_cache_misses_total', default=0.0)
+responses_store_hits = val('_responses_store_hits_total', default=0.0)
+responses_store_misses = val('_responses_store_misses_total', default=0.0)
+responses_store_writes = val('_responses_store_writes_total', default=0.0)
+responses_store_evictions = val('_responses_store_evictions_total', default=0.0)
+responses_store_entries = val('_responses_store_entries', default='n/a')
 worker_restarts = val('_worker_restarts_total', default=0.0)
 spec_accept_avg = avg('_speculative_acceptance_ratio_sum', '_speculative_acceptance_ratio_count')
 
@@ -70,6 +75,12 @@ for key, value in values.items():
 hit_rate = 'n/a'
 if (prefix_hits + prefix_misses) > 0:
     hit_rate = round(prefix_hits / (prefix_hits + prefix_misses), 4)
+
+responses_store_hit_rate = 'n/a'
+if (responses_store_hits + responses_store_misses) > 0:
+    responses_store_hit_rate = round(
+        responses_store_hits / (responses_store_hits + responses_store_misses), 4
+    )
 
 print('--- Aster Metrics Summary ---')
 print(f'request_count              {request_count}')
@@ -83,6 +94,12 @@ print(f'kv_pages_used              {kv_pages_used}')
 print(f'prefix_cache_hits_total    {prefix_hits}')
 print(f'prefix_cache_misses_total  {prefix_misses}')
 print(f'prefix_cache_hit_rate      {hit_rate}')
+print(f'responses_store_entries    {responses_store_entries}')
+print(f'responses_store_hits       {responses_store_hits}')
+print(f'responses_store_misses     {responses_store_misses}')
+print(f'responses_store_hit_rate   {responses_store_hit_rate}')
+print(f'responses_store_writes     {responses_store_writes}')
+print(f'responses_store_evictions  {responses_store_evictions}')
 print(f'spec_acceptance_avg        {spec_accept_avg}')
 print(f'worker_restarts_total      {worker_restarts}')
 print(f'errors_total               {round(error_total, 4)}')

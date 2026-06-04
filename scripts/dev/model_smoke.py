@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 
-from core.config import load_settings
-from inference.mlx_runtime import MLXRuntime
+from aster.core.config import load_settings
+from aster.inference.contracts import InferenceRequest
+from aster.inference.engine import InferenceEngine
+from aster.telemetry.metrics import MetricsRegistry
 
 
 def main() -> None:
@@ -17,31 +19,33 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = load_settings(args.config)
-    runtime = MLXRuntime(settings)
-    prompt_tokens = runtime.encode(args.prompt)
-    prefilled = runtime.prefill_prompt(prompt_tokens)
+    metrics = MetricsRegistry(settings.telemetry.metrics_namespace)
+    engine = InferenceEngine(settings, metrics)
 
-    print(f"target={settings.model.path}")
-    print(f"draft={settings.model.draft_path}")
-    print(f"prompt_tokens={len(prompt_tokens)}")
-    print(f"prefill_seconds={prefilled.prefill_seconds:.4f}")
+    async def _run() -> None:
+        await engine.start()
+        try:
+            result = await engine.infer(
+                InferenceRequest(
+                    prompt=args.prompt,
+                    max_tokens=args.max_tokens,
+                    temperature=0.0,
+                    top_p=1.0,
+                )
+            )
+        finally:
+            await engine.aclose()
 
-    chunks: list[str] = []
-    for response in runtime.stream_tokens(
-        prompt_tokens,
-        prefilled.prompt_cache,
-        max_tokens=args.max_tokens,
-        temperature=0.0,
-        top_p=1.0,
-        use_speculative=False,
-        num_draft_tokens=0,
-    ):
-        if response.finish_reason is not None:
-            break
-        chunks.append(response.text)
+        print(f"model={settings.model.path}")
+        print(f"prompt_tokens={result.prompt_tokens}")
+        print(f"prompt_tps={result.prompt_tps:.4f}")
+        print(f"generation_tps={result.generation_tps:.4f}")
+        print("completion=")
+        print(result.text)
 
-    print("completion=")
-    print("".join(chunks))
+    import asyncio
+
+    asyncio.run(_run())
 
 
 if __name__ == "__main__":

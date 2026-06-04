@@ -28,12 +28,20 @@ class ChatMessage(BaseModel):
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: list[ChatMessage]
-    max_tokens: int = 256
+    max_tokens: int | None = Field(default=None, gt=0)
+    max_completion_tokens: int | None = Field(default=None, gt=0)
     stream: bool = False
     temperature: float = 0.7
     top_p: float = 0.95
+    top_k: int = 0
+    min_p: float = 0.0
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
+    repetition_penalty: float = 1.0
     n: int | None = None
     stop: str | list[str] | None = None
+    stop_token_ids: list[int] | None = None
+    timeout: float | None = Field(default=None, gt=0)
     stream_options: dict[str, Any] | None = None
     tools: list[dict[str, Any]] | None = None
     tool_choice: str | dict[str, Any] | None = None
@@ -41,6 +49,8 @@ class ChatCompletionRequest(BaseModel):
     response_format: dict[str, Any] | None = None
     user: str | None = None
     enable_thinking: bool | None = None
+    chat_template_kwargs: dict[str, Any] | None = None
+    thinking_token_budget: int | None = Field(default=None, gt=0)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="allow")
@@ -48,11 +58,19 @@ class ChatCompletionRequest(BaseModel):
 
 class CompletionRequest(BaseModel):
     model: str
-    prompt: str
-    max_tokens: int = 256
+    prompt: str | list[str]
+    max_tokens: int | None = Field(default=None, gt=0)
     stream: bool = False
     temperature: float = 0.7
     top_p: float = 0.95
+    top_k: int = 0
+    min_p: float = 0.0
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
+    repetition_penalty: float = 1.0
+    stop: str | list[str] | None = None
+    stop_token_ids: list[int] | None = None
+    timeout: float | None = Field(default=None, gt=0)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="allow")

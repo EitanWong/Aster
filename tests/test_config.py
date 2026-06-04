@@ -11,13 +11,33 @@ def test_load_settings(tmp_path: Path) -> None:
     settings = load_settings(str(path))
     assert settings.logging.level == "DEBUG"
     assert settings.model.runtime == "mlx"
-    assert settings.audio.asr_backend == "mlx"
-    assert settings.audio.tts_backend == "mlx"
+    assert settings.engine.runtime_kernel == "manual"
+    assert settings.api.api_key is None
+    assert settings.api.rate_limit_per_minute == 0
+    assert settings.api.responses_store_max_entries == 1000
+    assert settings.audio.asr.backend == "mlx"
+    assert settings.audio.tts.backend == "mlx"
     assert settings.embeddings.backend == "mlx"
     assert settings.embeddings.model == "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ"
 
 
-def test_load_settings_with_vllm_mlx_runtime(tmp_path: Path) -> None:
+def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        "\n".join(
+            [
+                "api:",
+                "  responses_store_max_entries: 3",
+            ]
+        )
+    )
+
+    settings = load_settings(str(path))
+
+    assert settings.api.responses_store_max_entries == 3
+
+
+def test_load_settings_preserves_legacy_runtime_as_ignored_metadata(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(
         "\n".join(
@@ -31,10 +51,15 @@ def test_load_settings_with_vllm_mlx_runtime(tmp_path: Path) -> None:
     )
     settings = load_settings(str(path))
     assert settings.model.runtime == "vllm_mlx"
-    assert settings.vllm_mlx.base_url == "http://127.0.0.1:9000"
+    assert settings.engine.prefill_token_budget == 1024
+    assert settings.deprecation_warnings == (
+        "model.runtime is legacy metadata and is ignored by Aster's built-in "
+        "vllm-mlx-compatible runtime.",
+        "vllm_mlx.* settings are deprecated and only used as engine shims.",
+    )
 
 
-def test_load_settings_with_mixed_audio_backends(tmp_path: Path) -> None:
+def test_load_settings_normalizes_legacy_audio_backends(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(
         "\n".join(
@@ -46,11 +71,11 @@ def test_load_settings_with_mixed_audio_backends(tmp_path: Path) -> None:
         )
     )
     settings = load_settings(str(path))
-    assert settings.audio.asr_backend == "vllm_mlx"
-    assert settings.audio.tts_backend == "mlx"
+    assert settings.audio.asr.backend == "mlx"
+    assert settings.audio.tts.backend == "mlx"
 
 
-def test_load_settings_with_vllm_embeddings_backend(tmp_path: Path) -> None:
+def test_load_settings_normalizes_legacy_embeddings_backend(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(
         "\n".join(
@@ -62,5 +87,5 @@ def test_load_settings_with_vllm_embeddings_backend(tmp_path: Path) -> None:
         )
     )
     settings = load_settings(str(path))
-    assert settings.embeddings.backend == "vllm_mlx"
+    assert settings.embeddings.backend == "mlx"
     assert settings.embeddings.model == "local-embedder"

@@ -1,136 +1,94 @@
 # Aster Architecture
 
-## Design goal
+## Runtime Shape
 
-Aster is an Apple Silicon-first local inference runtime for long-context, tool-heavy, OpenClaw-style workloads. It is designed around measured performance, stable background serving, and graceful fallback when an optimization regresses.
+Aster now runs text inference through one engine-owned MLX runtime.
 
-## High-level flow
+Top-level runtime concepts:
 
-API Gateway
-→ Request Queue
-→ Scheduler
-→ Prefill Engine
-→ Decode Engine
-→ Streaming Layer
-→ Metrics / Telemetry
-→ Worker Supervisor
+- `InferenceEngine`: admission, scheduling, cancellation, streaming, metrics
+- `ModelRunner`: model load, tokenization, prefill, one-step batched decode
+- `PrefixStore`: immutable prompt checkpoints under a byte budget
+- `RequestState`: explicit per-request lifecycle and decode state
 
-## Key modules
+There is no sidecar, worker supervisor, paged KV allocator, or separate scheduler
+process in the serving path.
 
-### api/
-OpenAI-compatible surface:
-- `POST /v1/chat/completions`
-- `POST /v1/completions`
-- `GET /v1/models`
-- `GET /health`
-- `GET /ready`
-- `GET /metrics`
+## Request Lifecycle
 
-### scheduler/
-Queue-aware adaptive scheduling:
-- separates intake from execution
-- chooses batching windows dynamically
-- guards queue depth and overload behavior
-- leaves room for future prefill/decode lane separation
+Requests move through:
 
-### inference/
-Execution path:
-- `prefill_engine.py` handles prompt ingestion and prefix reuse lookup
-- `decode_engine.py` handles token streaming cadence
-- `speculative.py` controls speculative enable/disable decisions
-- `speculative_pipeline.py` models draft/verify flow and rollback accounting
-- `engine.py` coordinates all inference stages
+- `submitted`
+- `admitted`
+- `prefix_lookup`
+- `prefill_wait`
+- `prefilling`
+- `decode_ready`
+- `decoding`
+- `completed` or `cancelled` or `failed`
 
-### cache/
-Long-context reuse:
-- `prefix_cache.py` hashes repeated prefixes deterministically
-- `paged_kv_cache.py` models page-based KV allocation rather than monolithic request allocation
-- designed so shared-prefix reuse and eviction policy can become more sophisticated without rewriting the server surface
+The engine owns every transition. API handlers only submit requests and consume
+responses or stream chunks.
 
-### autotune/
-Measured policy selection:
-- benchmarks multiple candidate runtime policies
-- scores latency, throughput, and stability
-- persists selected profile
-- re-applies the fastest stable profile at startup
+## Scheduler Model
 
-### telemetry/
-Observability:
-- Prometheus-compatible metrics
-- JSON logging
-- tracks request latency, prefill, decode, batching, cache hits, speculative acceptance, KV page use, and worker restarts
+The scheduler is intentionally small and lives in `engine.py`.
 
-### workers/
-Long-lived service stability:
-- heartbeat-based worker supervision
-- restart accounting
-- degraded-state hooks for crash recovery and future isolation improvements
+- Submission queue admission is bounded by `api.max_queue_depth`
+- Active execution is bounded by `engine.max_active_requests`
+- Decode is scheduled before prefill on every engine loop iteration
+- Decode requests are served round-robin from `_decode_queue`
+- Each decode step advances up to `engine.max_decode_batch` requests together
+- Prefill remains chunked and cooperative, but decode no longer advances as
+  independent per-request generators
 
-## Why hybrid rather than full multi-process today
+This is the smallest change that makes the engine materially more batch-capable
+without introducing a second scheduler abstraction.
 
-The current implementation uses a robust hybrid architecture:
-- separate lifecycle domains for API, scheduler, and worker supervision
-- one Python process for lower coordination complexity initially
-- clear interfaces so the inference worker can be promoted to a separate process later
+## Decode Execution
 
-This is the right tradeoff for a serious first production-oriented codebase because it preserves modularity without prematurely adding IPC overhead and operational complexity.
+Decode batching is handled by `ModelRunner.decode_batch_step(...)`.
 
-## Dynamic optimization policy
+- Each request contributes its live cache, next input token, sampler, detokenizer,
+  and token budget
+- For multi-request decode, caches are merged into a temporary batch cache
+- One model forward pass advances the batch by one token
+- Per-request samplers run on each row of logits
+- Updated per-request caches are extracted back out of the merged cache
+- Finished requests are removed by the engine after the step
 
-Aster does not assume an optimization is good.
+If a cache type cannot be merged safely, the runner falls back to sequential
+single-request decode for that step instead of adding more architectural
+machinery.
 
-Candidate features are benchmarked and policy-selected:
-- speculative decoding
-- draft token count
-- batch window size
-- max batch size
-- streaming flush cadence
+## Prefix Reuse
 
-Future benchmark dimensions fit naturally into the same system:
-- prefix cache modes
-- page sizes
-- prefill/decode scheduling modes
-- concurrency classes
+Prefix reuse is checkpoint-based.
 
-## Fallback behavior
+- Reuse entries are immutable cache snapshots
+- Requests never share mutable live decode KV
+- The store keeps exact checkpoints at safe boundaries:
+  - full prompt completion
+  - chat-template boundaries that remain exact prefixes
+  - periodic long-prefill checkpoints
+- Lookup is longest-prefix exact matching over known checkpoint lengths
 
-If an optimization underperforms or destabilizes service behavior, Aster falls back by policy:
-- speculative can be disabled
-- aggressive draft lengths can be reduced
-- batch windows can shrink
-- max batch size can be lowered
-- previously selected stable tuning profile can be reused
+This keeps reuse deterministic and useful for repeated system prompts, recurring
+chat scaffolds, and branch-from-shared-history workloads without importing
+page-table complexity.
 
-## OpenClaw-oriented advantages
+## What Was Intentionally Avoided
 
-Aster is designed for workloads with:
-- repeated system prompts
-- repeated tool definitions
-- long prompt scaffolding
-- multi-turn agent sessions
-- 4k–16k prompt lengths
+- no `vllm-mlx` runtime dependency
+- no fake distributed workers
+- no CUDA-style paged KV subsystem
+- no speculative decode in the core runtime
+- no separate scheduler package for policy that already lives cleanly in the engine
+- no persistent opaque batch object owning request lifecycle
 
-That makes prefix caching and cache-aware prefill especially important. The architecture keeps correctness first: prefix reuse is explicit and deterministic, not approximate.
+## Current Tradeoff
 
-## Current implementation status
-
-Implemented now:
-- full scaffold
-- config system
-- API routes
-- scheduler
-- policy engine
-- prefix cache
-- paged KV abstraction
-- speculative controller and pipeline abstraction
-- telemetry and logs
-- supervisor
-- autotune scaffolding and persisted tuning profile selection
-- startup scripts and tests
-
-Planned next hardening pass:
-- real MLX model/tokenizer binding
-- true paged KV residency tied to MLX tensors
-- multiprocess inference worker isolation
-- realistic benchmark harness against Qwen3.5-9B + Qwen3.5-0.8B
-- deeper backpressure and memory-pressure adaptation
+The engine now has true batched decode stepping, but it still reconstructs a
+temporary batch cache for each decode step. That is simpler and more explicit
+than a long-lived batch executor, but it may become the next performance ceiling
+once live MLX benchmarking is available.

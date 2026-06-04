@@ -4,72 +4,56 @@ api:
   port: 8080
   max_queue_depth: 128
   request_timeout_seconds: 180.0
+  max_request_tokens: 32768
+  api_key: null                 # set to require Authorization: Bearer <key>
+  rate_limit_per_minute: 0      # 0 disables in-memory per-client limiting
+  responses_store_max_entries: 1000  # in-memory previous_response_id replay history
 
 # ── Primary model ──────────────────────────────────────────────────────────
 model:
   name: Qwen3.5-9B
   path: /ABSOLUTE/PATH/TO/Qwen3.5-9B-MLX
-  runtime: vllm_mlx          # mlx | vllm_mlx
   context_length: 16384
   enable_thinking: false      # default; callers can override per-request
 
 # ── Speculative decoding (draft model) ─────────────────────────────────────
 speculative:
-  enabled: true
+  enabled: false
   draft_name: Qwen3.5-0.8B
   draft_path: /ABSOLUTE/PATH/TO/Qwen3.5-0.8B-MLX
-  max_draft_tokens: 6
+  max_draft_tokens: 0
   min_acceptance_rate: 0.45
   min_speedup_ratio: 1.05
   auto_disable_on_regression: true
 
-# ── vLLM-MLX sidecar ───────────────────────────────────────────────────────
-vllm_mlx:
-  base_url: http://127.0.0.1:8000
-  api_key: null
-  timeout_seconds: 300.0
-  # Set to qwen3 / deepseek_r1 / gpt_oss / harmony to activate the sidecar's
-  # reasoning parser. Aster will then inject /think or /no_think automatically.
-  reasoning_parser: null
-  continuous_batching: true
-  use_paged_cache: true
-  enable_prefix_cache: false
-  chunked_prefill_tokens: 0
-  cache_memory_percent: 0.15
-  stream_interval: 1
-
-# ── KV-cache (Aster-side allocator) ────────────────────────────────────────
-cache:
-  kv_page_tokens: 128
-  kv_max_pages: 8192
+# ── Engine ─────────────────────────────────────────────────────────────────
+engine:
+  runtime_kernel: manual       # manual today; batch_generator is an experimental boundary
+  max_active_requests: 16
+  max_decode_batch: 8
+  prefill_token_budget: 1024
+  idle_prefill_token_limit: 4096
+  pressure_prefill_token_budget: 512
+  snapshot_budget_bytes: 8589934592   # 8 GB
+  snapshot_min_prefix_tokens: 64
+  snapshot_max_entries: 256
   prefix_cache_enabled: true
-  prefix_cache_max_entries: 256
-  prefix_cache_max_bytes: 8589934592   # 8 GB
-  eviction_policy: lru
-
-# ── Scheduler / batching ───────────────────────────────────────────────────
-batch:
-  max_batch_size: 8
-  prefill_batch_size: 4
-  decode_batch_size: 8
-  min_batch_window_ms: 1.5
-  max_batch_window_ms: 10.0
-  latency_target_ms: 250.0
-  scheduler_mode: adaptive   # adaptive | throughput | latency
+  prefix_cache_persist_path: null  # e.g. ./data/prefix-cache.pkl
+  prefix_cache_load_on_warmup: true
+  prefix_cache_save_on_shutdown: true
+  warm_prompts_path: null          # JSON list of chat message arrays
+  warm_prompts_max_tokens: 1
+  warm_prompts_concurrency: 1
+  stream_interval_tokens: 1
+  memory_headroom_ratio: 0.10
 
 # ── Autotune ───────────────────────────────────────────────────────────────
 autotune:
-  enabled: true
-  startup_warmup: true
+  enabled: false
+  startup_warmup: false
   profile_path: ./configs/autotune_profile.json
   benchmark_prompt_tokens: [4096, 8192, 16384]
   concurrency_levels: [1, 2, 4]
-
-# ── Workers / supervision ──────────────────────────────────────────────────
-workers:
-  restart_limit: 5
-  heartbeat_timeout_seconds: 30.0
-  degraded_after_restarts: 2
 
 # ── Telemetry & logging ────────────────────────────────────────────────────
 telemetry:
@@ -82,7 +66,7 @@ logging:
 # ── Embeddings ─────────────────────────────────────────────────────────────
 embeddings:
   enabled: true
-  backend: vllm_mlx          # mlx | vllm_mlx
+  backend: mlx
   model: mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ
   model_path: /ABSOLUTE/PATH/TO/Qwen3-Embedding-0.6B-4bit-DWQ
   dimensions: 1024
@@ -90,14 +74,16 @@ embeddings:
 
 # ── Audio ──────────────────────────────────────────────────────────────────
 audio:
+  max_audio_upload_mb: 25
+  max_tts_input_chars: 4096
   asr:
     enabled: true
-    backend: vllm_mlx        # mlx | vllm_mlx
+    backend: mlx
     model: Qwen3-ASR-0.6B
     model_path: /ABSOLUTE/PATH/TO/qwen3-asr-0.6b
   tts:
     enabled: true
-    backend: vllm_mlx        # mlx | vllm_mlx
+    backend: mlx
     model: Qwen3-TTS-0.6B-Base
     model_path: /ABSOLUTE/PATH/TO/qwen3-tts-0.6b-base
     custom_voice_model: null

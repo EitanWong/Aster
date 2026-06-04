@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # Start Aster.
-#
-# When model.runtime is vllm_mlx, Aster spawns and manages the vllm-mlx
-# sidecar internally — no separate process to start or track.
 set -euo pipefail
 source "$(dirname "$0")/_common.sh" "${1:-configs/config.yaml}"
 
@@ -40,7 +37,7 @@ nohup "$PYTHON_BIN" server.py --config "$CONFIG_PATH_ABS" >>"$LOG_FILE" 2>&1 &
 pid=$!
 echo "$pid" > "$PID_FILE"
 
-# Wait up to 5 minutes — vllm-mlx model loading can be slow on first start.
+# Wait up to 5 minutes for the MLX engine to load weights and become healthy.
 echo -n "waiting for /health"
 for _ in {1..300}; do
   sync_pid_file

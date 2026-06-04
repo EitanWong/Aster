@@ -15,6 +15,7 @@ class AsterError(Exception):
         return {
             "error": {
                 "type": self.code,
+                "code": self.code,
                 "message": self.message,
                 "details": self.details or {},
             }

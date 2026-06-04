@@ -178,9 +178,6 @@ class ServiceManager:
         print(f"  Name:         {model_config.get('name', 'N/A')}")
         print(f"  Path:         {model_config.get('path', 'N/A')}")
         print(f"  Runtime:      {model_config.get('runtime', 'N/A')}")
-        vllm_config = self.config.get("vllm_mlx", {})
-        if model_config.get("runtime") == "vllm_mlx":
-            print(f"  vLLM URL:     {vllm_config.get('base_url', 'N/A')}")
         print()
         
         return 0

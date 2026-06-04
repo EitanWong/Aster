@@ -123,8 +123,10 @@ export ASTER_CONFIG_PATH=configs/config.yaml
 - whether the PID is alive
 - `/health`
 - `/ready`
-- `/v1/models`
-- last 20 lines of the log file
+- `/v1/status`, including Responses replay store entries/capacity/scope.
+  The replay store is process-local and provider-scoped, so `previous_response_id`
+  follow-ups must reach the same worker and provider-facing endpoint.
+- last 15 lines of the log file
 
 `metrics_summary.sh` reports:
 
@@ -135,6 +137,7 @@ export ASTER_CONFIG_PATH=configs/config.yaml
 - queue depth
 - KV pages used
 - prefix cache hits / misses / hit rate
+- Responses replay store entries / hits / misses / hit rate / writes / evictions
 - speculative acceptance average
 - worker restarts
 - total errors

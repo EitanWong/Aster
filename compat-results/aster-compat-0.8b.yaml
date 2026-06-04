@@ -1,0 +1,70 @@
+api:
+  host: 127.0.0.1
+  port: 18080
+  max_queue_depth: 32
+  request_timeout_seconds: 120.0
+  max_request_tokens: 2048
+  rate_limit_per_minute: 0
+
+model:
+  name: Qwen3.5-0.8B
+  path: /Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit
+  runtime: mlx
+  context_length: 2048
+  enable_thinking: false
+
+speculative:
+  enabled: false
+  draft_name: Qwen3.5-0.8B
+  draft_path: /Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit
+  max_draft_tokens: 0
+
+engine:
+  runtime_kernel: manual
+  max_active_requests: 4
+  max_decode_batch: 2
+  prefill_token_budget: 512
+  idle_prefill_token_limit: 1024
+  pressure_prefill_token_budget: 256
+  snapshot_budget_bytes: 1073741824
+  snapshot_min_prefix_tokens: 16
+  snapshot_max_entries: 64
+  prefix_cache_enabled: true
+  stream_interval_tokens: 1
+  memory_headroom_ratio: 0.10
+
+autotune:
+  enabled: false
+  startup_warmup: false
+
+telemetry:
+  json_logs: true
+  metrics_namespace: aster
+
+logging:
+  level: INFO
+
+embeddings:
+  enabled: false
+  backend: mlx
+  model: mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ
+  model_path: /Users/eitan/Documents/Projects/Python/Aster/models/qwen3-embedding-0.6b-4bit-dwq
+  dimensions: 1024
+  max_length: 512
+
+audio:
+  max_audio_upload_mb: 25
+  max_tts_input_chars: 4096
+  asr:
+    enabled: false
+    backend: mlx
+    model: Qwen3-ASR-0.6B
+    model_path: /Users/eitan/Documents/Projects/Python/Aster/models/qwen3-asr-0.6b
+  tts:
+    enabled: false
+    backend: mlx
+    model: Qwen3-TTS-0.6B-Base
+    model_path: /Users/eitan/Documents/Projects/Python/Aster/models/qwen3-tts-0.6b-base
+    default_voice: af_heart
+    cache_enabled: true
+    cache_max_entries: 32

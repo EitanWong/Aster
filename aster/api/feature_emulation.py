@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
 from aster.core.errors import AsterError
+from aster.inference.reasoning_parsers import parse_reasoning_output
+from aster.inference.structured_schema import normalize_json_schema
+from aster.inference.tool_parsers import AutoToolParser
+
+_REPAIR_FAILED = object()
 
 
 @dataclass(slots=True)
@@ -43,8 +49,65 @@ class DecodedLocalOutput:
     mode: str
     raw_text: str
     assistant_text: str | None = None
+    reasoning_text: str | None = None
     tool_calls: list[ToolCallResult] = field(default_factory=list)
     structured_data: Any | None = None
+
+
+class StreamingJsonFenceStripper:
+    _OPENINGS = ("```json\n", "```json", "```\n", "```")
+    _TAIL_HOLDBACK = 5
+
+    def __init__(self) -> None:
+        self._buffer = ""
+        self._past_opening = False
+
+    def feed(self, delta: str) -> str:
+        if not delta:
+            return ""
+        self._buffer += delta
+        if not self._past_opening:
+            stripped = self._buffer.lstrip()
+            if not stripped:
+                return ""
+            if any(opening.startswith(stripped) and len(stripped) < len(opening) for opening in self._OPENINGS):
+                return ""
+            opening = next((candidate for candidate in self._OPENINGS if stripped.startswith(candidate)), None)
+            self._buffer = stripped[len(opening) :].lstrip() if opening is not None else stripped
+            self._past_opening = True
+
+        buffer = self._buffer
+        tail_start = len(buffer)
+        while tail_start > 0 and (buffer[tail_start - 1] == "`" or buffer[tail_start - 1].isspace()):
+            tail_start -= 1
+        safe_end = min(tail_start, len(buffer) - self._TAIL_HOLDBACK)
+        if safe_end <= 0:
+            return ""
+        emitted = buffer[:safe_end]
+        self._buffer = buffer[safe_end:]
+        return emitted
+
+    def finalize(self) -> str:
+        tail = self._buffer
+        self._buffer = ""
+        if not tail:
+            return ""
+        if not self._past_opening:
+            stripped = tail.lstrip()
+            if any(opening.startswith(stripped) and len(stripped) < len(opening) for opening in self._OPENINGS):
+                stripped = ""
+            else:
+                opening = next((candidate for candidate in self._OPENINGS if stripped.startswith(candidate)), None)
+                if opening is not None:
+                    stripped = stripped[len(opening) :].lstrip()
+            tail = stripped
+            self._past_opening = True
+
+        stripped_tail = tail.rstrip()
+        for closing in ("\n```", "```"):
+            if stripped_tail.endswith(closing):
+                return stripped_tail[: -len(closing)].rstrip()
+        return tail
 
 
 def apply_feature_plan(
@@ -66,21 +129,52 @@ def apply_feature_plan(
 
 
 def decode_local_output(text: str, plan: FeaturePlan) -> DecodedLocalOutput:
+    reasoning_text, output_text = _extract_reasoning_text(text)
     if plan.mode == "plain":
-        return DecodedLocalOutput(mode="plain", raw_text=text, assistant_text=text)
+        return DecodedLocalOutput(
+            mode="plain",
+            raw_text=text,
+            assistant_text=output_text,
+            reasoning_text=reasoning_text,
+        )
     if plan.mode == "tools":
         try:
-            payload = _extract_json_payload(text)
+            payload = _extract_json_payload(output_text)
         except AsterError:
+            decoded = _decode_auto_tool_output(output_text, plan, raw_text=text)
+            decoded.reasoning_text = reasoning_text
             if plan.tool_choice.mode in {"auto", "none"}:
-                return DecodedLocalOutput(mode="tools", raw_text=text, assistant_text=text, tool_calls=[])
+                return decoded
+            if decoded.tool_calls:
+                return decoded
             raise
-        return _decode_tool_output(text, payload, plan)
-    payload = _extract_json_payload(text)
+        try:
+            return _decode_tool_output(text, payload, plan, reasoning_text=reasoning_text)
+        except AsterError as exc:
+            decoded = _decode_auto_tool_output(output_text, plan, raw_text=text)
+            decoded.reasoning_text = reasoning_text
+            if decoded.tool_calls:
+                return decoded
+            raise exc
+    payload = _extract_json_payload(output_text)
     if plan.mode == "structured":
         _validate_schema(payload, plan.structured_schema or {})
-        return DecodedLocalOutput(mode="structured", raw_text=text, assistant_text=json.dumps(payload, ensure_ascii=True), structured_data=payload)
+        return DecodedLocalOutput(
+            mode="structured",
+            raw_text=text,
+            assistant_text=json.dumps(payload, ensure_ascii=True),
+            reasoning_text=reasoning_text,
+            structured_data=payload,
+        )
     raise AsterError(code="invalid_feature_mode", message=f"Unknown feature mode '{plan.mode}'", status_code=500)
+
+
+def validate_structured_output_text(text: str, plan: FeaturePlan, *, allow_repair: bool = True) -> tuple[str, Any]:
+    if plan.mode != "structured":
+        raise AsterError(code="invalid_feature_mode", message="Structured validation requires a structured feature plan.", status_code=500)
+    payload = _extract_json_payload(text, allow_repair=allow_repair)
+    _validate_schema(payload, plan.structured_schema or {})
+    return json.dumps(payload, ensure_ascii=True), payload
 
 
 def parse_openai_tools(value: Any) -> tuple[list[ToolSpec], ToolChoice, bool]:
@@ -287,8 +381,43 @@ def build_tool_plan(
     )
 
 
+def tool_request_from_plan(plan: FeaturePlan) -> dict[str, Any]:
+    return {
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.parameters,
+                },
+            }
+            for tool in plan.tools
+        ]
+    }
+
+
+def validate_tool_call_arguments(tool_call: ToolCallResult, plan: FeaturePlan) -> None:
+    tool = next((item for item in plan.tools if item.name == tool_call.name), None)
+    if tool is None or not tool.parameters:
+        return
+    try:
+        _validate_schema(tool_call.arguments, tool.parameters, path="$")
+    except AsterError as exc:
+        raise AsterError(
+            code="tool_arguments_invalid",
+            message=f"Tool '{tool_call.name}' arguments failed validation: {exc.message}",
+            status_code=422,
+            details={"tool_name": tool_call.name},
+        ) from exc
+
+
 def build_structured_plan(schema: dict[str, Any], *, name: str | None = None) -> FeaturePlan:
-    return FeaturePlan(mode="structured", structured_schema=schema, structured_name=name)
+    return FeaturePlan(
+        mode="structured",
+        structured_schema=normalize_json_schema(schema),
+        structured_name=name,
+    )
 
 
 def _feature_system_prompt(plan: FeaturePlan) -> str:
@@ -329,9 +458,17 @@ def _feature_system_prompt(plan: FeaturePlan) -> str:
     return ""
 
 
-def _decode_tool_output(raw_text: str, payload: Any, plan: FeaturePlan) -> DecodedLocalOutput:
+def _decode_tool_output(
+    raw_text: str,
+    payload: Any,
+    plan: FeaturePlan,
+    *,
+    reasoning_text: str | None = None,
+) -> DecodedLocalOutput:
     if not isinstance(payload, dict):
         raise AsterError(code="tool_output_invalid", message="Tool-calling output must be a JSON object.", status_code=422)
+    if "tool_calls" not in payload and {"name", "arguments"}.issubset(payload):
+        return _decode_auto_tool_output(raw_text, plan, reasoning_text=reasoning_text)
     assistant_text = payload.get("assistant_text")
     tool_calls_payload = payload.get("tool_calls")
     if assistant_text is not None and not isinstance(assistant_text, str):
@@ -351,7 +488,81 @@ def _decode_tool_output(raw_text: str, payload: Any, plan: FeaturePlan) -> Decod
             raise AsterError(code="tool_output_invalid", message="Tool call arguments must be a JSON object.", status_code=422)
         tool_calls.append(ToolCallResult(call_id=f"call_{uuid.uuid4().hex[:12]}", name=name, arguments=arguments))
     _validate_tool_choice(tool_calls, plan)
-    return DecodedLocalOutput(mode="tools", raw_text=raw_text, assistant_text=assistant_text, tool_calls=tool_calls)
+    return DecodedLocalOutput(
+        mode="tools",
+        raw_text=raw_text,
+        assistant_text=assistant_text,
+        reasoning_text=reasoning_text,
+        tool_calls=tool_calls,
+    )
+
+
+def _decode_auto_tool_output(
+    text: str,
+    plan: FeaturePlan,
+    *,
+    raw_text: str | None = None,
+    reasoning_text: str | None = None,
+) -> DecodedLocalOutput:
+    parsed = AutoToolParser().extract_tool_calls(text)
+    stored_raw_text = raw_text or text
+    if not parsed.tools_called:
+        _validate_tool_choice([], plan)
+        return DecodedLocalOutput(
+            mode="tools",
+            raw_text=stored_raw_text,
+            assistant_text=text,
+            reasoning_text=reasoning_text,
+            tool_calls=[],
+        )
+
+    allowed_tools = {tool.name for tool in plan.tools}
+    tool_calls: list[ToolCallResult] = []
+    for item in parsed.tool_calls:
+        name = item.get("name")
+        if not isinstance(name, str) or name not in allowed_tools:
+            raise AsterError(code="tool_output_invalid", message=f"Unknown tool '{name}'.", status_code=422)
+        tool_calls.append(
+            ToolCallResult(
+                call_id=str(item.get("id") or f"call_{uuid.uuid4().hex[:12]}"),
+                name=name,
+                arguments=_coerce_tool_arguments(item.get("arguments")),
+            )
+        )
+    _validate_tool_choice(tool_calls, plan)
+    return DecodedLocalOutput(
+        mode="tools",
+        raw_text=stored_raw_text,
+        assistant_text=parsed.content,
+        reasoning_text=reasoning_text,
+        tool_calls=tool_calls,
+    )
+
+
+def _extract_reasoning_text(text: str) -> tuple[str | None, str]:
+    parsed = parse_reasoning_output(text)
+    return parsed.reasoning_content or None, parsed.content
+
+
+def _coerce_tool_arguments(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise AsterError(
+                code="tool_output_invalid",
+                message="Tool call arguments must be a JSON object.",
+                status_code=422,
+            ) from exc
+        if isinstance(parsed, dict):
+            return parsed
+    raise AsterError(
+        code="tool_output_invalid",
+        message="Tool call arguments must be a JSON object.",
+        status_code=422,
+    )
 
 
 def _validate_tool_choice(tool_calls: list[ToolCallResult], plan: FeaturePlan) -> None:
@@ -366,7 +577,7 @@ def _validate_tool_choice(tool_calls: list[ToolCallResult], plan: FeaturePlan) -
         raise AsterError(code="tool_choice_violation", message="Parallel tool calls are disabled for this request.", status_code=422)
 
 
-def _extract_json_payload(text: str) -> Any:
+def _extract_json_payload(text: str, *, allow_repair: bool = True) -> Any:
     stripped = text.strip()
     if not stripped:
         raise AsterError(code="empty_model_output", message="The local model returned an empty response.", status_code=422)
@@ -375,6 +586,11 @@ def _extract_json_payload(text: str) -> Any:
             return json.loads(candidate)
         except json.JSONDecodeError:
             continue
+    if allow_repair:
+        for fragment in _truncated_json_fragments(stripped):
+            repaired = _repair_truncated_json(fragment)
+            if repaired is not _REPAIR_FAILED:
+                return repaired
     raise AsterError(code="invalid_json_output", message="The local model did not return valid JSON.", status_code=422)
 
 
@@ -388,6 +604,11 @@ def _json_candidates(text: str) -> list[str]:
                 cleaned = cleaned[4:].strip()
             if cleaned:
                 candidates.append(cleaned)
+    for index, char in enumerate(text):
+        if char in {"{", "["}:
+            candidate = _scan_balanced_json(text, index)
+            if candidate is not None:
+                candidates.append(candidate)
     start_object = text.find("{")
     end_object = text.rfind("}")
     if start_object != -1 and end_object != -1 and end_object > start_object:
@@ -405,7 +626,146 @@ def _json_candidates(text: str) -> list[str]:
     return deduped
 
 
+def _scan_balanced_json(text: str, start: int) -> str | None:
+    if start < 0 or start >= len(text) or text[start] not in {"{", "["}:
+        return None
+
+    expected_closers: list[str] = []
+    in_string = False
+    escaped = False
+    pairs = {"{": "}", "[": "]"}
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+            continue
+        if char in pairs:
+            expected_closers.append(pairs[char])
+            continue
+        if char in {"}", "]"}:
+            if not expected_closers or expected_closers[-1] != char:
+                return None
+            expected_closers.pop()
+            if not expected_closers:
+                return text[start : index + 1]
+    return None
+
+
+def _truncated_json_fragments(text: str) -> list[str]:
+    fragments: list[str] = []
+    fenced_match = re.search(r"```(?:json)?\s*\n?([\s\S]*)$", text)
+    if fenced_match is not None:
+        fenced = fenced_match.group(1).strip()
+        if fenced.endswith("```"):
+            fenced = fenced[:-3].strip()
+        if fenced:
+            fragments.append(fenced)
+    for index, char in enumerate(text):
+        if char in {"{", "["}:
+            fragments.append(text[index:].strip())
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for fragment in fragments:
+        if fragment not in seen:
+            seen.add(fragment)
+            deduped.append(fragment)
+    return deduped
+
+
+def _repair_truncated_json(fragment: str) -> Any:
+    if not fragment:
+        return _REPAIR_FAILED
+
+    opener_stack: list[str] = []
+    in_string = False
+    escaped = False
+    for char in fragment:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in {"{", "["}:
+            opener_stack.append(char)
+        elif char in {"}", "]"} and opener_stack:
+            expected = "{" if char == "}" else "["
+            if opener_stack[-1] == expected:
+                opener_stack.pop()
+
+    if not opener_stack and not in_string:
+        return _REPAIR_FAILED
+
+    def close_json(text: str) -> str:
+        for opener in reversed(opener_stack):
+            text += "}" if opener == "{" else "]"
+        return text
+
+    base = fragment
+    if in_string:
+        if escaped:
+            base = base[:-1]
+        base += '"'
+
+    candidates = [close_json(base)]
+    stripped_separator = re.sub(r"[,:\s]+$", "", base)
+    if stripped_separator != base:
+        candidates.append(close_json(stripped_separator))
+    if opener_stack and opener_stack[-1] == "{":
+        without_dangling_key = re.sub(r',?\s*"[^"]*"\s*:?\s*$', "", stripped_separator)
+        if without_dangling_key != stripped_separator:
+            candidates.append(close_json(without_dangling_key))
+    without_partial_scalar = re.sub(
+        r",?\s*(?:-?\d+(?:\.\d*)?(?:[eE][+-]?\d*)?|t|tr|tru|f|fa|fal|fals|n|nu|nul)$",
+        "",
+        stripped_separator,
+    )
+    if without_partial_scalar != stripped_separator:
+        candidates.append(close_json(without_partial_scalar))
+
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    return _REPAIR_FAILED
+
+
 def _validate_schema(value: Any, schema: dict[str, Any], *, path: str = "$") -> None:
+    all_of = schema.get("allOf")
+    if isinstance(all_of, list):
+        for index, child_schema in enumerate(all_of):
+            if isinstance(child_schema, dict):
+                _validate_schema(value, child_schema, path=f"{path}.allOf[{index}]")
+
+    any_of = schema.get("anyOf")
+    if isinstance(any_of, list) and any_of:
+        if not any(_schema_accepts(value, child_schema, path=path) for child_schema in any_of if isinstance(child_schema, dict)):
+            raise AsterError(code="structured_output_invalid", message=f"{path} does not match any allowed schema.", status_code=422)
+
+    one_of = schema.get("oneOf")
+    if isinstance(one_of, list) and one_of:
+        matches = sum(
+            1
+            for child_schema in one_of
+            if isinstance(child_schema, dict) and _schema_accepts(value, child_schema, path=path)
+        )
+        if matches != 1:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must match exactly one allowed schema.", status_code=422)
+
     schema_type = schema.get("type")
     if isinstance(schema_type, list):
         allowed_types = schema_type
@@ -420,6 +780,39 @@ def _validate_schema(value: Any, schema: dict[str, Any], *, path: str = "$") -> 
     enum_values = schema.get("enum")
     if isinstance(enum_values, list) and value not in enum_values:
         raise AsterError(code="structured_output_invalid", message=f"{path} is not one of the allowed enum values.", status_code=422)
+
+    if isinstance(value, str):
+        min_length = schema.get("minLength")
+        if isinstance(min_length, int) and not isinstance(min_length, bool) and len(value) < min_length:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must contain at least {min_length} characters.", status_code=422)
+        max_length = schema.get("maxLength")
+        if isinstance(max_length, int) and not isinstance(max_length, bool) and len(value) > max_length:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must contain at most {max_length} characters.", status_code=422)
+        pattern = schema.get("pattern")
+        if isinstance(pattern, str) and re.search(pattern, value) is None:
+            raise AsterError(code="structured_output_invalid", message=f"{path} does not match required pattern.", status_code=422)
+
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        minimum = schema.get("minimum")
+        if isinstance(minimum, (int, float)) and not isinstance(minimum, bool) and value < minimum:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must be greater than or equal to {minimum}.", status_code=422)
+        maximum = schema.get("maximum")
+        if isinstance(maximum, (int, float)) and not isinstance(maximum, bool) and value > maximum:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must be less than or equal to {maximum}.", status_code=422)
+        exclusive_minimum = schema.get("exclusiveMinimum")
+        if (
+            isinstance(exclusive_minimum, (int, float))
+            and not isinstance(exclusive_minimum, bool)
+            and value <= exclusive_minimum
+        ):
+            raise AsterError(code="structured_output_invalid", message=f"{path} must be greater than {exclusive_minimum}.", status_code=422)
+        exclusive_maximum = schema.get("exclusiveMaximum")
+        if (
+            isinstance(exclusive_maximum, (int, float))
+            and not isinstance(exclusive_maximum, bool)
+            and value >= exclusive_maximum
+        ):
+            raise AsterError(code="structured_output_invalid", message=f"{path} must be less than {exclusive_maximum}.", status_code=422)
 
     if isinstance(value, dict):
         required = schema.get("required")
@@ -438,10 +831,24 @@ def _validate_schema(value: Any, schema: dict[str, Any], *, path: str = "$") -> 
             if extra_keys:
                 raise AsterError(code="structured_output_invalid", message=f"{path} contains unexpected keys: {sorted(extra_keys)}", status_code=422)
     elif isinstance(value, list):
+        min_items = schema.get("minItems")
+        if isinstance(min_items, int) and not isinstance(min_items, bool) and len(value) < min_items:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must contain at least {min_items} items.", status_code=422)
+        max_items = schema.get("maxItems")
+        if isinstance(max_items, int) and not isinstance(max_items, bool) and len(value) > max_items:
+            raise AsterError(code="structured_output_invalid", message=f"{path} must contain at most {max_items} items.", status_code=422)
         items = schema.get("items")
         if isinstance(items, dict):
             for index, item in enumerate(value):
                 _validate_schema(item, items, path=f"{path}[{index}]")
+
+
+def _schema_accepts(value: Any, schema: dict[str, Any], *, path: str) -> bool:
+    try:
+        _validate_schema(value, schema, path=path)
+    except AsterError:
+        return False
+    return True
 
 
 def _matches_type(value: Any, schema_type: str) -> bool:
