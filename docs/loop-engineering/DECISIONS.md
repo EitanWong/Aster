@@ -52,3 +52,27 @@
 - Evidence: seven interleaved staggered trials per side with identical 272-token outputs showed short-request p95 `2.4447s -> 2.7454s` (`+12.3%`), aggregate elapsed `4.2352s -> 4.1885s` (`-1.1%`), and completion throughput `64.223 -> 64.940 tok/s` (`+1.1%`). All bootstrap intervals crossed zero.
 - Reason: aggregate throughput did not improve materially and the protected short-request metric regressed in the measured workload. Unit-level fairness behavior is insufficient to retain a runtime policy without a stable end-to-end gain.
 - Retained work: keep the deterministic/resource-aware/staggered benchmark harness and all raw artifacts for future scheduler candidates.
+
+## 2026-07-14: Keep Persistent Pool and Tiled Attention Experimental
+
+- Decision: retain `094fc43`, `0927844`, and `f062efc` as an experimental
+  persistent-pool and block-indexed attention boundary; do not route serving
+  traffic through it.
+- Evidence: the pool removes per-call block packing and the tiled path matches
+  native FP16 attention within `3.1e-05` on the 512/2K/8K Qwen3.5-shaped
+  probes. The corrected randomized A/B run measured paged/native median ratios
+  of `1.56x`, `3.42x`, and `7.44x`, respectively, so no 3% performance gate
+  was met.
+- Root cause of the intermediate correctness failure: MLX custom-kernel grids
+  are expressed in threads, while the tiled kernel indexes threadgroup
+  positions. The dispatch now launches 32 threads per query, with a regression
+  test covering the tiled dimension path.
+- Dependency result: the target MLX and serving packages were already at their
+  current compatible PyPI versions; upgrading Transformers to `5.13.1` would
+  violate the current `mlx-audio` compatibility bound, so no package commit
+  was made.
+- Rollback: revert `094fc43`, `0927844`, and `f062efc`; the production manual
+  runtime remains unchanged.
+- Next experiment: compare a production-shaped long-context workload against
+  native attention, then choose between a more specialized decode kernel and
+  hybrid-cache bundle lifecycle/reclamation.

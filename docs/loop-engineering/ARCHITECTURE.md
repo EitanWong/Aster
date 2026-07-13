@@ -25,20 +25,21 @@ owned by the runtime kernel. `PagedCache` exists as a separate component, but
 the production manual kernel does not yet expose a complete paged KV execution
 path.
 
-`aster.inference.paged_kv_adapter.PagedKVCacheLayer` now defines an experimental
-lossless boundary: full-attention K/V fragments are owned by fixed physical
-blocks, block-table forks use reference counts and COW, and
-`PagedAttentionView` exposes the physical layout. The current MLX-LM attention
-API still requires contiguous K/V, so the adapter materializes a fallback view
-and is not enabled in production. A future MLX/Metal block-indexed kernel must
-consume that view directly before this boundary can reduce active KV memory or
-improve long-context throughput.
+`aster.inference.paged_kv_adapter.PagedKVCacheLayer` defines an experimental
+lossless boundary: full-attention K/V fragments are owned by a persistent
+per-layer physical pool, block-table forks use reference counts and COW, and
+`PagedAttentionView` exposes the pool plus logical-to-physical indices. The
+current MLX-LM attention API still requires contiguous K/V, so the adapter
+materializes a fallback view and is not enabled in production. Pool capacity is
+grown geometrically and is currently owned by the layer; bundle-level release
+and reclamation are not complete.
 
-The first block-indexed proof kernel now exists in
-`aster.inference.metal_paged_attention`, but it is deliberately outside the
-production runtime. It validates the ABI and causal/GQA semantics; it does not
-yet provide the tiled execution or persistent GPU pool needed for a useful
-performance result.
+`aster.inference.metal_paged_attention` provides a block-indexed proof path and
+a tiled 32-lane SIMD path. The tiled path shares Q/K work across value lanes and
+updates online-softmax state once per SIMD group, while preserving the generic
+fallback for unsupported dimensions. It validates the ABI and causal/GQA
+semantics, but current 512/2K/8K measurements remain slower than native MLX
+attention, so the entire boundary stays outside production serving.
 
 ## Reference Comparison
 

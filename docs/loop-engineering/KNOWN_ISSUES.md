@@ -2,12 +2,12 @@
 
 - Benchmark sampling is now explicit and defaults to greedy `temperature=0.0`; non-greedy runs remain intentionally stochastic.
 - Randomized A/B is available in the recorded harness runs; future candidates must use it rather than grouped execution.
-- Direct benchmark records include RSS, swap deltas, prompt token counts, prefix-store counters, admission rejections, overall MLX peak, and prefill active/peak memory for completed responses, but not energy or allocator peaks for failed requests.
+- Direct benchmark records include RSS, swap deltas, prompt token counts, prefix-store counters, admission rejections, overall MLX peak, and prefill active/peak memory for completed responses, but not energy or allocator peaks for failed requests. The paged-attention probe separately records randomized A/B timing and allocator peaks.
 - `BatchGeneratorRuntimeKernel.available` is false; continuous batching is implemented by the manual scheduler and decode batch runner only.
 - 9B hybrid memory accounting and bounded prefix snapshots now allow 30K prompts to complete at about 1.38 tok/s with 1.10 GiB swap growth in the best measured run; 32K mixed-agent, 35B, cancellation pressure, and 30-minute stability evidence remain incomplete.
 - The admission-before-prefill scheduler experiment was rolled back: randomized mixed and staggered A/B did not meet a reliable performance gate.
 - Paged KV, SSD cache, KV-cache quantization, structured-output black-box parity, and full tool parser parity remain open.
 - Experimental KV quantization is not enabled: 4-bit KV failed fixed greedy token parity and 8-bit has no demonstrated material gain.
 - `kv_cache_step_tokens` reduces native KV growth copies but does not reduce retained KV memory; a true paged attention path remains unimplemented.
-- The experimental `PagedKVCacheLayer` is lossless and COW-capable, but its current MLX integration materializes contiguous K/V on every update and batch merge falls back to native contiguous caches; it is intentionally disabled in production paths.
-- The experimental block-indexed Metal kernel is numerically correct on Qwen3.5-shaped FP16 input but is `85.96x` slower than native attention because it repeats Q/K work per output dimension; it is not a serving path.
+- The experimental `PagedKVCacheLayer` is lossless and COW-capable, and its block pool no longer repacks with `mx.stack` on every view. Its MLX integration still materializes contiguous K/V on every update and batch merge falls back to native contiguous caches; it is intentionally disabled in production paths.
+- The experimental block-indexed Metal kernel is numerically correct on Qwen3.5-shaped FP16 input after the threadgroup-grid fix, but the corrected median benchmark is `1.56x/3.42x/7.44x` slower than native at 512/2K/8K in the recorded run. Pool reclamation and hybrid bundle lifecycle are incomplete, so it is not a serving path.
