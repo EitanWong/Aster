@@ -1035,7 +1035,12 @@ class InferenceEngine:
         if logical_prefix_tokens == len(state.prompt_tokens):
             checkpoints.add(logical_prefix_tokens)
         prefill_budget = max(self.settings.engine.prefill_token_budget, 1)
-        if state.cache_token_count > 0 and state.cache_token_count % prefill_budget == 0:
+        chunk_checkpoint_max_tokens = self.settings.engine.snapshot_chunk_checkpoint_max_tokens
+        if (
+            state.cache_token_count > 0
+            and state.cache_token_count % prefill_budget == 0
+            and logical_prefix_tokens <= chunk_checkpoint_max_tokens
+        ):
             checkpoints.add(logical_prefix_tokens)
 
         for prefix_tokens in sorted(checkpoints):

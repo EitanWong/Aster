@@ -893,6 +893,32 @@ def test_engine_checkpoints_completed_prefill_chunks_at_cache_budget() -> None:
     asyncio.run(scenario())
 
 
+def test_engine_limits_periodic_checkpoints_but_keeps_explicit_reuse_points() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(
+            engine_overrides={"snapshot_chunk_checkpoint_max_tokens": 4}
+        )
+        state = RequestState(
+            request_id="bounded-chunk-checkpoint",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6, 7],
+            reuse_points=(6,),
+            cache_token_count=5,
+            prompt_cache={"cache_tokens": 5},
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._maybe_checkpoint(state)
+        finally:
+            await engine.aclose()
+
+        assert state.checkpoints_created == {6}
+        assert runner.clone_cache_token_counts == [5]
+
+    asyncio.run(scenario())
+
+
 def test_engine_prefill_targets_earliest_pending_reuse_point() -> None:
     async def scenario() -> None:
         engine, runner = _make_engine()
