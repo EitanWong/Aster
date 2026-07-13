@@ -138,6 +138,40 @@ def test_clone_cache_trims_oversized_arrays_at_matching_offset() -> None:
     assert cache[0].keys.shape == (1, 2, 8, 4)
 
 
+def test_estimate_request_bytes_accounts_for_nested_hybrid_attention_config() -> None:
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._loaded = True
+    runner._config = {
+        "text_config": {
+            "dtype": "bfloat16",
+            "hidden_size": 4096,
+            "head_dim": 256,
+            "num_key_value_heads": 4,
+            "num_hidden_layers": 32,
+            "layer_types": [
+                "linear_attention",
+                "full_attention",
+                "linear_attention",
+                "full_attention",
+            ],
+            "linear_conv_kernel_dim": 4,
+            "linear_key_head_dim": 128,
+            "linear_num_key_heads": 16,
+            "linear_num_value_heads": 32,
+            "linear_value_head_dim": 128,
+        }
+    }
+
+    # The test config has two full-attention and two linear-attention layers.
+    full_attention_bytes = 2 * 4 * 256 * 2 * 2 * (100 + 20)
+    linear_state_bytes = 2 * 32 * 128 * 128 * 4
+    linear_conv_bytes = 2 * 3 * (16 * 128 * 2 + 32 * 128) * 2
+
+    assert runner.estimate_request_bytes(100, 20) == (
+        full_attention_bytes + linear_state_bytes + linear_conv_bytes
+    )
+
+
 def test_chat_template_kwargs_reach_tokenizer_and_keep_core_flags_authoritative() -> None:
     runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
     runner._loaded = True

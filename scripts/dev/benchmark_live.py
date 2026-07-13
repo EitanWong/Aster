@@ -30,6 +30,7 @@ class BenchmarkRecord:
     python_version: str
     mlx_lm_version: str
     system_memory_total_bytes: int
+    mlx_peak_memory_gb: float
     process_rss_peak_bytes: int
     swap_used_bytes_before: int
     swap_used_bytes_after: int
@@ -109,6 +110,15 @@ def _prefix_cache_counter_delta(
         return int(value) if isinstance(value, (int, float)) else 0
 
     return read(after) - read(before)
+
+
+def _max_response_peak_memory_gb(responses: list[object]) -> float:
+    values = [
+        float(value)
+        for response in responses
+        if isinstance((value := getattr(response, "peak_memory_gb", 0.0)), (int, float))
+    ]
+    return max(values, default=0.0)
 
 
 def _collect_runtime_metadata() -> dict[str, int | str]:
@@ -340,6 +350,7 @@ async def benchmark_workload(
         python_version=str(runtime_metadata["python_version"]),
         mlx_lm_version=str(runtime_metadata["mlx_lm_version"]),
         system_memory_total_bytes=int(runtime_metadata["system_memory_total_bytes"]),
+        mlx_peak_memory_gb=_max_response_peak_memory_gb(responses),
         process_rss_peak_bytes=max(rss_samples),
         swap_used_bytes_before=int(runtime_metadata["swap_used_bytes"]),
         swap_used_bytes_after=int(after_metadata["swap_used_bytes"]),

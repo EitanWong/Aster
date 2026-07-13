@@ -360,16 +360,59 @@ class ModelRunner:
         }
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
-        layers = int(self._config.get("num_hidden_layers", self._config.get("n_layers", 32)))
-        hidden_size = int(self._config.get("hidden_size", self._config.get("dim", 4096)))
-        attn_heads = int(self._config.get("num_attention_heads", self._config.get("n_heads", 32)))
-        kv_heads = int(
-            self._config.get("num_key_value_heads", self._config.get("n_kv_heads", attn_heads))
+        config = self._config
+        text_config = config.get("text_config")
+        if isinstance(text_config, dict):
+            config = {**config, **text_config}
+
+        layers = int(config.get("num_hidden_layers", config.get("n_layers", 32)))
+        hidden_size = int(config.get("hidden_size", config.get("dim", 4096)))
+        attn_heads = int(config.get("num_attention_heads", config.get("n_heads", 32)))
+        kv_heads = int(config.get("num_key_value_heads", config.get("n_kv_heads", attn_heads)))
+        head_dim = int(config.get("head_dim", hidden_size // max(attn_heads, 1)))
+        dtype = str(config.get("dtype", "float16")).lower()
+        bytes_per_scalar = 4 if "32" in dtype else 2
+
+        layer_types = config.get("layer_types")
+        if isinstance(layer_types, list) and layer_types:
+            full_attention_layers = sum(layer == "full_attention" for layer in layer_types)
+            linear_attention_layers = max(len(layer_types) - full_attention_layers, 0)
+        else:
+            full_attention_layers = layers
+            linear_attention_layers = 0
+
+        sequence_tokens = max(prompt_tokens + max_tokens, 1)
+        full_attention_per_token = (
+            full_attention_layers
+            * kv_heads
+            * head_dim
+            * 2
+            * bytes_per_scalar
         )
-        head_dim = max(hidden_size // max(attn_heads, 1), 1)
-        bytes_per_scalar = 2
-        per_token = layers * kv_heads * head_dim * 2 * bytes_per_scalar
-        return per_token * max(prompt_tokens + max_tokens, 1)
+        if linear_attention_layers == 0:
+            return full_attention_per_token * sequence_tokens
+
+        linear_state_bytes = (
+            linear_attention_layers
+            * int(config.get("linear_num_value_heads", 0))
+            * int(config.get("linear_value_head_dim", 0))
+            * int(config.get("linear_key_head_dim", 0))
+            * 4
+        )
+        linear_conv_dim = (
+            2
+            * int(config.get("linear_num_key_heads", 0))
+            * int(config.get("linear_key_head_dim", 0))
+            + int(config.get("linear_num_value_heads", 0))
+            * int(config.get("linear_value_head_dim", 0))
+        )
+        linear_conv_bytes = (
+            linear_attention_layers
+            * max(int(config.get("linear_conv_kernel_dim", 1)) - 1, 0)
+            * linear_conv_dim
+            * bytes_per_scalar
+        )
+        return full_attention_per_token * sequence_tokens + linear_state_bytes + linear_conv_bytes
 
     def current_peak_memory_gb(self) -> float:
         mx = self._mx

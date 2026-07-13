@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 
 from scripts.dev.benchmark_live import (
     _build_workload,
     _collect_runtime_metadata,
     _extract_staggered_latency_metrics,
+    _max_response_peak_memory_gb,
     _prefix_cache_counter_delta,
     _run_requests,
 )
@@ -81,6 +83,15 @@ def test_prefix_cache_counter_delta_reads_nested_status_stats() -> None:
     after = {"prefix_cache_stats": {"exact_hits": 3}}
 
     assert _prefix_cache_counter_delta(before, after, "exact_hits") == 2
+
+
+def test_max_response_peak_memory_uses_allocator_metric() -> None:
+    responses = [
+        SimpleNamespace(peak_memory_gb=6.25),
+        SimpleNamespace(peak_memory_gb=7.5),
+    ]
+
+    assert _max_response_peak_memory_gb(responses) == 7.5
 
 
 def test_run_requests_can_serialize_prefix_reuse_requests() -> None:
