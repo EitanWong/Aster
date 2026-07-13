@@ -1,0 +1,215 @@
+[
+  {
+    "variant": "native",
+    "prompt_tokens": 8373,
+    "chunks": [
+      {
+        "target": 1024,
+        "capacity": [],
+        "peak_memory_gb": 1.490766228
+      },
+      {
+        "target": 2048,
+        "capacity": [],
+        "peak_memory_gb": 1.461250374
+      },
+      {
+        "target": 3072,
+        "capacity": [],
+        "peak_memory_gb": 1.46315911
+      },
+      {
+        "target": 4096,
+        "capacity": [],
+        "peak_memory_gb": 1.49236771
+      },
+      {
+        "target": 5120,
+        "capacity": [],
+        "peak_memory_gb": 1.430477098
+      },
+      {
+        "target": 6144,
+        "capacity": [],
+        "peak_memory_gb": 1.372625186
+      },
+      {
+        "target": 7168,
+        "capacity": [],
+        "peak_memory_gb": 1.444976938
+      },
+      {
+        "target": 8192,
+        "capacity": [],
+        "peak_memory_gb": 1.466997026
+      },
+      {
+        "target": 8373,
+        "capacity": [],
+        "peak_memory_gb": 0.963101548
+      }
+    ],
+    "final_capacity": [],
+    "native_kv_shapes": [
+      [
+        1,
+        2,
+        10240,
+        256
+      ],
+      [
+        1,
+        2,
+        10240,
+        256
+      ],
+      [
+        1,
+        2,
+        10240,
+        256
+      ],
+      [
+        1,
+        2,
+        10240,
+        256
+      ],
+      [
+        1,
+        2,
+        10240,
+        256
+      ],
+      [
+        1,
+        2,
+        10240,
+        256
+      ]
+    ]
+  },
+  {
+    "variant": "paged",
+    "prompt_tokens": 8373,
+    "chunks": [
+      {
+        "target": 1024,
+        "capacity": [
+          1024,
+          1024,
+          1024,
+          1024,
+          1024,
+          1024
+        ],
+        "peak_memory_gb": 2.041700232
+      },
+      {
+        "target": 2048,
+        "capacity": [
+          2048,
+          2048,
+          2048,
+          2048,
+          2048,
+          2048
+        ],
+        "peak_memory_gb": 1.887518546
+      },
+      {
+        "target": 3072,
+        "capacity": [
+          3072,
+          3072,
+          3072,
+          3072,
+          3072,
+          3072
+        ],
+        "peak_memory_gb": 1.868226374
+      },
+      {
+        "target": 4096,
+        "capacity": [
+          4096,
+          4096,
+          4096,
+          4096,
+          4096,
+          4096
+        ],
+        "peak_memory_gb": 1.933086574
+      },
+      {
+        "target": 5120,
+        "capacity": [
+          5120,
+          5120,
+          5120,
+          5120,
+          5120,
+          5120
+        ],
+        "peak_memory_gb": 1.839738666
+      },
+      {
+        "target": 6144,
+        "capacity": [
+          6144,
+          6144,
+          6144,
+          6144,
+          6144,
+          6144
+        ],
+        "peak_memory_gb": 1.804955434
+      },
+      {
+        "target": 7168,
+        "capacity": [
+          7168,
+          7168,
+          7168,
+          7168,
+          7168,
+          7168
+        ],
+        "peak_memory_gb": 1.854238506
+      },
+      {
+        "target": 8192,
+        "capacity": [
+          8192,
+          8192,
+          8192,
+          8192,
+          8192,
+          8192
+        ],
+        "peak_memory_gb": 1.903521578
+      },
+      {
+        "target": 8373,
+        "capacity": [
+          8373,
+          8373,
+          8373,
+          8373,
+          8373,
+          8373
+        ],
+        "peak_memory_gb": 1.360435564
+      }
+    ],
+    "final_capacity": [
+      8373,
+      8373,
+      8373,
+      8373,
+      8373,
+      8373
+    ],
+    "native_kv_shapes": []
+  }
+]

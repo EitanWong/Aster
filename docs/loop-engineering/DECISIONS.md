@@ -149,3 +149,21 @@
 - Rollback: disable `engine.paged_cache_enabled` or revert `6772425`.
 - Next experiment: benchmark direct attention over the persistent pool, with
   the same parity, lifecycle, memory, and randomized 3% gates.
+
+## 2026-07-14: Bound Paged KV Fallback Growth
+
+- Decision: retain `89dc086` inside the existing opt-in paged boundary; do not
+  change the production default.
+- Root cause: geometric doubling expanded the final 8K chunked-prefill fallback
+  from 8,192 to 16,384 tokens, creating unnecessary memory pressure.
+- Change: grow by `max(step, overflow)` so normal appends reuse capacity while
+  the final partial step does not double.
+- Evidence: randomized 8K 3×3 A/B measured paged/native elapsed medians of
+  `5.4259s/5.4353s` (`-0.17%`), throughput `23.591/23.550` tok/s (`+0.17%`),
+  and peak memory `2.286/2.297 GB` (`-0.46%`). All requests completed with
+  zero swap delta and current greedy parity remained exact.
+- Gate: the 3% speed improvement gate was not met, so this is recorded as a
+  memory and allocation improvement rather than a global performance win.
+- Rollback: disable `engine.paged_cache_enabled` or revert `89dc086`.
+- Next experiment: improve the direct pool attention kernel and integrate it
+  only if it clears parity, memory, lifecycle, and randomized end-to-end gates.
