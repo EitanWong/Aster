@@ -8,7 +8,11 @@ from aster.core.config import RuntimeSettings
 from aster.core.errors import ConfigurationError
 from aster.inference.constrained import ThinkingAwareJsonLogitsProcessor
 from aster.inference.contracts import InferenceRequest
-from aster.inference.model_runner import DecodeResult, DecodeWorkItem, ModelRunner
+from aster.inference.model_runner import (
+    DecodeResult,
+    DecodeWorkItem,
+    ModelRunner,
+)
 from aster.inference.paged_cache import PagedCacheManager
 from aster.inference.thinking_processor import ThinkingAwareLogitsProcessor
 from mlx_lm.models.cache import ArraysCache, KVCache
@@ -520,6 +524,111 @@ def test_decode_batch_fallback_preserves_per_item_failures() -> None:
     assert diagnostics["batch_fallback_items"] == 2
     assert diagnostics["batch_fallback_rate"] == 1.0
     assert diagnostics["last_batch_fallback_error"] == "RuntimeError: batched decode unsupported"
+
+
+def test_decode_batch_cache_reuses_stable_membership_and_remerges_after_change() -> None:
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    merge_inputs: list[tuple[object, ...]] = []
+    extracted: list[tuple[object, int]] = []
+
+    def merge(caches: list[object]) -> list[object]:
+        merged = [f"merged-{len(merge_inputs) + 1}"]
+        merge_inputs.append(tuple(caches))
+        return merged
+
+    def extract(merged: list[object], index: int) -> list[object]:
+        extracted.append((merged[0], index))
+        return [f"extracted-{merged[0]}-{index}"]
+
+    runner._merge_prompt_caches = merge  # type: ignore[method-assign]
+    runner._extract_prompt_cache = extract  # type: ignore[method-assign]
+
+    first_items = [
+        DecodeWorkItem(
+            prompt_cache="cache-a",
+            input_token=1,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=4,
+            request_id="request-a",
+        ),
+        DecodeWorkItem(
+            prompt_cache="cache-b",
+            input_token=2,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=4,
+            request_id="request-b",
+        ),
+    ]
+
+    first_merged, first_state = runner._get_decode_batch_cache(first_items)
+    assert first_state is not None
+    assert merge_inputs == [("cache-a", "cache-b")]
+
+    stable_items = [
+        DecodeWorkItem(
+            prompt_cache=runner._decode_cache_ref(first_state, 0),  # type: ignore[attr-defined]
+            input_token=1,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=4,
+            request_id="request-a",
+        ),
+        DecodeWorkItem(
+            prompt_cache=runner._decode_cache_ref(first_state, 1),  # type: ignore[attr-defined]
+            input_token=2,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=4,
+            request_id="request-b",
+        ),
+    ]
+
+    stable_merged, stable_state = runner._get_decode_batch_cache(stable_items)
+    assert stable_merged is first_merged
+    assert stable_state is first_state
+    assert merge_inputs == [("cache-a", "cache-b")]
+    assert extracted == []
+
+    changed_items = [
+        stable_items[0],
+        DecodeWorkItem(
+            prompt_cache="cache-c",
+            input_token=3,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=4,
+            request_id="request-c",
+        ),
+    ]
+
+    changed_merged, changed_state = runner._get_decode_batch_cache(changed_items)
+    assert changed_state is not None
+    assert changed_state is not first_state
+    assert changed_merged is not first_merged
+    assert merge_inputs == [("cache-a", "cache-b"), (["extracted-merged-1-0"], "cache-c")]
+    assert extracted == [("merged-1", 0)]
 
 
 def test_decode_result_counts_stop_token_without_emitting_text() -> None:

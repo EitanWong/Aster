@@ -898,6 +898,7 @@ class InferenceEngine:
             logits_processor_tokens=logits_processor_tokens,
             completion_tokens=state.completion_tokens,
             max_tokens=state.request.max_tokens,
+            request_id=state.request_id,
         )
 
     def _validate_context_budget(self, state: RequestState) -> None:

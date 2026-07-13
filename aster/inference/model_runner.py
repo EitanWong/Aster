@@ -55,6 +55,19 @@ class DecodeWorkItem:
     logits_processor_tokens: list[int]
     completion_tokens: int
     max_tokens: int
+    request_id: str | None = None
+
+
+@dataclass(slots=True)
+class _DecodeBatchCacheState:
+    request_ids: tuple[str, ...]
+    merged_cache: list[Any]
+
+
+@dataclass(frozen=True, slots=True)
+class _DecodeCacheRef:
+    state: _DecodeBatchCacheState
+    index: int
 
 
 @dataclass(slots=True)
@@ -103,6 +116,9 @@ class ModelRunner:
         self._decode_batch_fallback_items = 0
         self._decode_single_steps = 0
         self._last_decode_batch_fallback_error: str | None = None
+        self._decode_batch_cache_state: _DecodeBatchCacheState | None = None
+        self._decode_batch_cache_reuses = 0
+        self._decode_batch_cache_rebuilds = 0
 
     def warmup(self) -> None:
         self._ensure_loaded()
@@ -267,6 +283,7 @@ class ModelRunner:
         if not items:
             return []
         if len(items) == 1:
+            self._decode_batch_cache_state = None
             self._decode_single_steps += 1
             return [self._decode_single(items[0])]
         self._decode_batch_attempts += 1
@@ -278,6 +295,7 @@ class ModelRunner:
         except MemoryError:
             raise
         except Exception as exc:
+            self._decode_batch_cache_state = None
             self._decode_batch_fallbacks += 1
             self._decode_batch_fallback_items += len(items)
             self._last_decode_batch_fallback_error = f"{exc.__class__.__name__}: {exc}"
@@ -374,6 +392,8 @@ class ModelRunner:
             "single_steps": self._decode_single_steps,
             "batch_fallback_rate": round(fallback_rate, 6),
             "last_batch_fallback_error": self._last_decode_batch_fallback_error,
+            "batch_cache_reuses": self._decode_batch_cache_reuses,
+            "batch_cache_rebuilds": self._decode_batch_cache_rebuilds,
         }
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
@@ -677,7 +697,7 @@ class ModelRunner:
         model = self._model
         assert mx is not None and model is not None
 
-        merged_cache = self._merge_prompt_caches([item.prompt_cache for item in items])
+        merged_cache, batch_cache_state = self._get_decode_batch_cache(items)
         input_tokens = mx.array([[item.input_token] for item in items], dtype=mx.uint32)
         logits = model(input_tokens, cache=merged_cache)
         logits = logits[:, -1, :]
@@ -696,7 +716,11 @@ class ModelRunner:
             )
             logprobs = row - mx.logsumexp(row, axis=-1, keepdims=True)
             token = self._sample_token(logprobs, item.sampler)
-            prompt_cache = self._extract_prompt_cache(merged_cache, index)
+            prompt_cache = (
+                self._decode_cache_ref(batch_cache_state, index)
+                if batch_cache_state is not None
+                else self._extract_prompt_cache(merged_cache, index)
+            )
             results.append(
                 self._decode_result(
                     item=item,
@@ -717,16 +741,17 @@ class ModelRunner:
         model = self._model
         assert mx is not None and model is not None
 
-        logits = model(mx.array([[item.input_token]], dtype=mx.uint32), cache=item.prompt_cache)
+        prompt_cache = self._resolve_decode_cache(item.prompt_cache)
+        logits = model(mx.array([[item.input_token]], dtype=mx.uint32), cache=prompt_cache)
         logits = logits[:, -1, :]
         logits = self._apply_logits_processors(logits, item=item)
         logprobs = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
         token = self._sample_token(logprobs, item.sampler)
-        self._eval_cache(item.prompt_cache)
+        self._eval_cache(prompt_cache)
         return self._decode_result(
             item=item,
             token=token,
-            prompt_cache=item.prompt_cache,
+            prompt_cache=prompt_cache,
             peak_memory_gb=self.current_peak_memory_gb(),
         )
 
@@ -818,6 +843,47 @@ class ModelRunner:
         for processor in item.logits_processors:
             logits = processor(tokens, logits)
         return logits
+
+    def _get_decode_batch_cache(
+        self,
+        items: list[DecodeWorkItem],
+    ) -> tuple[list[Any], _DecodeBatchCacheState | None]:
+        request_ids = tuple(item.request_id for item in items)
+        current = self._decode_batch_cache_state
+        if (
+            current is not None
+            and all(request_id is not None for request_id in request_ids)
+            and current.request_ids == request_ids
+        ):
+            self._decode_batch_cache_reuses += 1
+            return current.merged_cache, current
+
+        caches = [self._resolve_decode_cache(item.prompt_cache) for item in items]
+        merged_cache = self._merge_prompt_caches(caches)
+        if (
+            request_ids
+            and all(request_id is not None for request_id in request_ids)
+            and len(set(request_ids)) == len(request_ids)
+        ):
+            state = _DecodeBatchCacheState(
+                request_ids=tuple(str(request_id) for request_id in request_ids),
+                merged_cache=merged_cache,
+            )
+            self._decode_batch_cache_state = state
+            self._decode_batch_cache_rebuilds += 1
+            return merged_cache, state
+
+        self._decode_batch_cache_state = None
+        return merged_cache, None
+
+    @staticmethod
+    def _decode_cache_ref(state: _DecodeBatchCacheState, index: int) -> _DecodeCacheRef:
+        return _DecodeCacheRef(state=state, index=index)
+
+    def _resolve_decode_cache(self, prompt_cache: Any) -> Any:
+        if isinstance(prompt_cache, _DecodeCacheRef):
+            return self._extract_prompt_cache(prompt_cache.state.merged_cache, prompt_cache.index)
+        return prompt_cache
 
     def _merge_prompt_caches(self, caches: list[Any]) -> list[Any]:
         if not caches:

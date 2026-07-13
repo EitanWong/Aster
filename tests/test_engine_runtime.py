@@ -86,6 +86,7 @@ class FakeRunner:
     def __init__(self) -> None:
         self.prefill_calls = 0
         self.decode_batch_sizes: list[int] = []
+        self.decode_request_ids: list[tuple[str | None, ...]] = []
         self.prefill_delay_seconds = 0.0
         self.decode_delay_seconds = 0.0
         self.decode_error: BaseException | None = None
@@ -198,6 +199,7 @@ class FakeRunner:
         if self.decode_delay_seconds > 0:
             time.sleep(self.decode_delay_seconds)
         self.decode_batch_sizes.append(len(items))
+        self.decode_request_ids.append(tuple(getattr(item, "request_id", None) for item in items))
         results: list[DecodeResult | BaseException] = []
         for item in items:
             if getattr(item.detokenizer, "fail_decode", False):
@@ -384,6 +386,7 @@ def test_engine_batches_decode_steps_for_concurrent_requests() -> None:
         assert first_result.peak_memory_gb == 1.5
         assert second_result.peak_memory_gb == 1.5
         assert any(size >= 2 for size in runner.decode_batch_sizes)
+        assert any(set(ids) >= {"batch-one", "batch-two"} for ids in runner.decode_request_ids)
         status = engine.status()
         assert status["decode_steps"] >= 1
         timing = status["engine_timing"]
