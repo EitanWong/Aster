@@ -505,7 +505,7 @@ def paged_block_attention(
         ],
         template=(
             [("T", value_pool.dtype), ("D", int(queries.shape[3])), ("V", int(value_pool.shape[4]))]
-            if vectorized
+            if vectorized or tiled
             else [("T", value_pool.dtype)]
         ),
         grid=(
