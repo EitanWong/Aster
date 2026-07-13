@@ -373,7 +373,13 @@ def paged_block_attention(
             if tiled
             else [("T", value_pool.dtype)]
         ),
-        grid=(queries.shape[0] * queries.shape[1] * queries.shape[2] if tiled else math.prod(output_shape), 1, 1),
+        grid=(
+            queries.shape[0] * queries.shape[1] * queries.shape[2] * 32
+            if tiled
+            else math.prod(output_shape),
+            1,
+            1,
+        ),
         threadgroup=(32, 1, 1) if tiled else (256, 1, 1),
         output_shapes=[output_shape],
         output_dtypes=[value_pool.dtype],
