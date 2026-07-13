@@ -1,6 +1,6 @@
 # LOOP ITERATION: ITER-20260713-001-admission-before-prefill
 
-STATUS: SUCCESS (scenario optimization; default-profile acceptance pending stronger benchmark controls)
+STATUS: SUPERSEDED (initial scenario result; later randomized A/B caused rollback)
 
 START COMMIT: `25067b8`
 
@@ -88,8 +88,8 @@ is treated as scenario evidence rather than a default-profile gate.
 
 - All tests passed; all benchmark trials completed 4/4 requests with zero
   failures and zero cancellations.
-- Keep the code in `32addf1` because the behavior is covered and the mixed
-  workload shows a reproducible directional gain.
+- The initial grouped result provisionally kept `32addf1`; iterations 004 and
+  005 superseded that conclusion with randomized mixed/staggered A/B evidence.
 - Do not claim Aster has closed the vllm-mlx continuous-batching gap. The next
   gate is a deterministic, randomized benchmark with memory fields and a 9B
   long-context/mixed workload.

@@ -8,6 +8,7 @@
 - Tradeoff: newly admitted prompts can preempt an existing prefill continuation, increasing fairness and short-request responsiveness while delaying the long prompt by one scheduler turn.
 - Rollback: revert commit `32addf1`.
 - Scope: mixed scheduling and admission latency; no claim about single-request decode kernel speed or global throughput.
+- Superseded by the randomized A/B re-evaluation and rollback decision below.
 
 ## 2026-07-13: Randomized A/B Re-evaluation
 
