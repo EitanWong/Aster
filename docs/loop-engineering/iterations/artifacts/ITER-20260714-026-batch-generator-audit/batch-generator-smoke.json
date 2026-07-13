@@ -1,0 +1,21 @@
+{
+  "model": "Qwen3.5-0.8B-4bit",
+  "engine": "BatchedEngine",
+  "mlx_lm": "0.31.3",
+  "concurrent_requests": 4,
+  "max_tokens": 16,
+  "completed_requests": 4,
+  "completion_tokens": 64,
+  "failed_requests": 0,
+  "cancel": {
+    "accepted": true,
+    "error_code": "request_cancelled"
+  },
+  "prefix_cache_probe": {
+    "prompt_tokens": 196,
+    "requests": 2,
+    "snapshot_entries": 1,
+    "second_request_prefill_cache_hit": false,
+    "second_request_cache_hit": false
+  }
+}

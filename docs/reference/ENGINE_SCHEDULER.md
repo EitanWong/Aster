@@ -200,6 +200,13 @@ runtime ownership boundary:
 - prompt-cache compatibility differs across KV, rotating KV, and hybrid cache
   types
 
+The 2026-07-14 API audit confirmed this boundary on `mlx-lm 0.31.3`: the
+experimental `BatchedEngine` can complete concurrent requests and remove a
+cancelled UID, but its prefix-cache path currently records a hit without
+passing the stored cache to `BatchGenerator.insert(caches=...)`. Until that
+restore/store contract and the response cache flags are corrected, this is a
+functional smoke path rather than an eligible serving backend.
+
 The current manual runtime now binds mlx-lm/mlx-vlm generation streams at every
 runner-entry boundary. This is separate from single-thread ownership: the
 executor ensures all model/cache calls run on one thread, while stream binding

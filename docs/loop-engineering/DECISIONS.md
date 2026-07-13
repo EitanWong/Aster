@@ -325,3 +325,21 @@
 - Next experiment: audit the model-native `mlx_lm.BatchGenerator` path and its
   cache ownership/cancellation behavior rather than reimplementing hybrid
   prefill batching inside the manual runner.
+
+## 2026-07-14: Keep BatchGenerator Experimental After API Audit
+
+- Decision: do not enable or broaden `BatchedEngine` in this iteration; keep
+  the manual runtime as the production default.
+- Package result: `uv lock --upgrade` resolved 72 packages with no lockfile
+  changes. `mlx 0.32.0`, `mlx-lm 0.31.3`, `mlx-audio 0.4.5`, and the serving
+  stack are current within the declared compatibility set. `transformers
+  5.13.1` is rejected because `mlx-audio 0.4.5` requires `<5.13.0`.
+- Runtime evidence: the existing BatchGenerator wrapper completed four
+  concurrent 0.8B requests and a cancellation smoke with no failures.
+- Blocking correctness issue: prefix lookup pins a stored entry but the
+  adapter does not pass its cache through `BatchGenerator.insert(caches=...)`.
+  Two identical sequential requests therefore recomputed the 196-token prompt
+  and reported no cache hit; response cache flags are also hardcoded false.
+- Next experiment: add a cache-shape/ownership adapter with deterministic
+  serial-vs-batched parity and explicit restore/store/cancel tests before any
+  runtime default or package-bound change.

@@ -1,0 +1,30 @@
+{
+  "date": "2026-07-14",
+  "lock_command": "uv lock --upgrade",
+  "resolved_packages": 72,
+  "lockfile_changed": false,
+  "installed": {
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "mlx-audio": "0.4.5",
+    "fastapi": "0.139.0",
+    "pydantic": "2.13.4",
+    "pydantic-core": "2.46.4",
+    "transformers": "5.12.1",
+    "tokenizers": "0.22.2"
+  },
+  "latest_observed": {
+    "transformers": "5.13.1",
+    "tokenizers": "0.23.1",
+    "pydantic-core": "2.47.0"
+  },
+  "compatibility_constraints": {
+    "mlx-audio": "transformers<5.13.0,>=5.5.0",
+    "transformers": "tokenizers<=0.23.0,>=0.22.0",
+    "pydantic": "pydantic-core==2.46.4"
+  },
+  "checks": {
+    "pip_check": "pass",
+    "uv_lock_check": "pass"
+  }
+}
