@@ -241,7 +241,12 @@ class PagedCacheManager:
         if block_id == NULL_BLOCK_ID:
             return
         block = self._blocks[block_id]
-        block.ref_count = max(0, block.ref_count - 1)
+        if block.ref_count <= 0:
+            return
+        was_shared = block.is_shared()
+        block.ref_count -= 1
+        if was_shared and not block.is_shared():
+            self.stats.shared_blocks = max(self.stats.shared_blocks - 1, 0)
         if block.ref_count == 0:
             self._free_queue.append(block)
             self.stats.free_blocks += 1
@@ -252,9 +257,41 @@ class PagedCacheManager:
         if block_id == NULL_BLOCK_ID:
             return
         block = self._blocks[block_id]
+        was_shared = block.is_shared()
         block.ref_count += 1
-        if block.ref_count > 1:
+        if not was_shared and block.is_shared():
             self.stats.shared_blocks += 1
+
+    def get_block(self, block_id: int) -> CacheBlock:
+        """Return a physical block by ID for an attention adapter."""
+        if block_id < 0 or block_id >= len(self._blocks):
+            raise IndexError(f"Unknown cache block {block_id}")
+        return self._blocks[block_id]
+
+    def fork_table(self, source: BlockTable, request_id: str) -> BlockTable:
+        """Fork a block table while retaining one reference to each block."""
+        if request_id in self._tables:
+            raise ValueError(f"Cache table already exists: {request_id}")
+        table = self.create_table(request_id)
+        for block_id in source.block_ids:
+            self.increment_ref(block_id)
+            table.append_block(block_id)
+        table.num_tokens = source.num_tokens
+        return table
+
+    def ensure_writable_block(self, table: BlockTable, block_index: int) -> int:
+        """Return a table block that can be modified without mutating a fork."""
+        if block_index < 0 or block_index >= len(table.block_ids):
+            raise IndexError(f"Unknown logical cache block {block_index}")
+        block_id = table.block_ids[block_index]
+        source = self._blocks[block_id]
+        if not source.is_shared():
+            return block_id
+
+        new_id = self._cow_copy_block(source)
+        self.free_block(block_id)
+        table.block_ids[block_index] = new_id
+        return new_id
 
     def get_blocks_for_generation(self, table: BlockTable) -> list[int]:
         """Ensure blocks are not shared before writing (COW)."""
