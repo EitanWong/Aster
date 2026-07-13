@@ -4,7 +4,8 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `74f6a94` (opt-in direct paged attention bridge).
+- Current commit: `86ed15c` (refresh compatible dependency lock).
+- Code commit: `be48448` (reuse paged-attention block-index tensors).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -30,7 +31,7 @@ Updated: 2026-07-14
 - The adapter's contiguous materialization fallback did not clear the 3% performance gate: 2K median was `1.29%` slower and 8K median was statistically flat (`0.03%` slower); it is not enabled by default.
 - A block-indexed `mx.fast.metal_kernel` now consumes persistent physical block pools and logical block indices with GQA and causal offsets. A tiled SIMD path reduces duplicate softmax work and reaches Qwen3.5-shaped FP16 parity at or below `3.1e-05` max absolute difference for 512/2K/8K probes. The corrected dispatch benchmark is still slower than native attention: median ratios were `1.56x`, `3.42x`, and `7.44x` in the recorded run, so it remains disabled.
 - The persistent pool removes per-call `mx.stack` packing and preserves per-layer COW data when a shared block table forks. It is an experimental storage boundary; pool capacity and release lifecycle are not yet integrated with serving.
-- Package audit on 2026-07-14: direct MLX/MLX-LM/MLX-Audio/FastAPI packages were already at the current PyPI versions (`mlx 0.32.0`, `mlx-lm 0.31.3`, `mlx-audio 0.4.5`, `fastapi 0.139.0`); `transformers 5.12.1` is the latest version compatible with the current `mlx-audio` upper bound `<5.13.0`. `pip check` passed. No dependency change was justified this iteration.
+- Package refresh on 2026-07-14: `uv lock --upgrade` resolved 72 compatible packages, including `mlx 0.32.0`, `mlx-lm 0.31.3`, `mlx-audio 0.4.5`, `fastapi 0.139.0`, `numpy 2.5.1`, `uvicorn 0.51.0`, and `transformers 5.12.1`. `transformers 5.13.1` remains excluded by the current `mlx-audio` and project bound `<5.13.0`. `pydub` and `python-multipart` were added to `pyproject.toml` after a locked sync exposed that they were only present in `requirements.txt`; `pip check` and `uv lock --check` pass.
 - A production-shaped 0.8B manual-runtime baseline completed without swap growth: 2,229 prompt tokens took `2.638s` at `48.52` completion tok/s with `1.677 GB` MLX peak / `0.999 GB` active; 8,373 prompt tokens took `5.279s` at `24.25` completion tok/s with `2.297 GB` peak / `1.277 GB` active. These are baselines, not an optimization claim.
 - Paged KV lifecycle probing showed `2,097,152` pool bytes retained after a child fork was released, then `0` pool bytes and `0` manager allocated blocks after the source bundle was released. After `mx.clear_cache()`, active MLX memory fell to `16` bytes in the isolated probe.
 - An opt-in hybrid prompt-cache boundary now preserves Qwen3.5's `ArraysCache + KVCache` list shape, deep-copies recurrent state on fork, and releases full-attention pools during request cleanup. Native and opt-in greedy parity matched exactly for a 10-token prompt and 32-token completion.
@@ -40,6 +41,7 @@ Updated: 2026-07-14
 - Step-bounded fallback growth removes the final 8K chunk's geometric overshoot: native KV ended at capacity `10240`, while paged materialized capacity ended at `8373`. Randomized 8K 3×3 A/B now measures native `5.4353s` versus paged `5.4259s` (`-0.17%`), with peak memory `2.297 GB` versus `2.286 GB` (`-0.46%`). This clears the memory regression but remains below the 3% speed gate.
 - The paged Metal boundary now partitions long KV scans across 32 simdgroups and reduces partial online-softmax states. Qwen3.5-shaped kernel medians are `0.880x`, `0.976x`, and `0.733x` of native at 512/2K/8K tokens, with max absolute differences `0`, `0`, and `3.05e-05`. This is a kernel-level result only; serving still uses contiguous MLX-LM SDPA.
 - An explicitly disabled Qwen3.5 direct-attention bridge now uses the pool kernel for decode (`Q<=8`) and native SDPA for long prefill. Randomized 8K direct/native A/B measured `5.4561s/5.4423s` (`+0.25%`) and `2.286/2.297 GB` peak memory (`-0.46%`), with exact greedy parity and zero swap delta. It is functional and memory-neutral, but not a speed win.
+- The direct bridge now reuses a cached `uint32` block-index tensor until block-table or COW topology changes. A fresh randomized 8K 3x3 A/B measured native/direct elapsed medians `5.4306s/5.4597s` (`+0.54%`) and completion throughput `23.570/23.445 tok/s` (`-0.53%`), with unchanged peak memory `2.297/2.286 GB`; all six requests completed and the result does not clear the 3% speed gate.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
@@ -51,4 +53,4 @@ Updated: 2026-07-14
 
 ## Next Priority
 
-Evaluate direct pool attention or another memory-reducing path; require a randomized multi-trial A/B to clear the 3% gate before any default change.
+Evaluate decode-only bridge overhead or broader model/batch support; require parity, lifecycle, memory, and randomized multi-trial evidence to clear the 3% gate before any default change. Keep the dependency lock aligned with the project declarations on each package refresh.

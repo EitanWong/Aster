@@ -206,3 +206,28 @@
   revert `9415777` and `74f6a94`.
 - Next experiment: reduce decode bridge overhead or test broader batch/model
   support only after new end-to-end evidence clears the same gates.
+
+## 2026-07-14: Cache Direct Paged-Attention Block Indices
+
+- Decision: retain `be48448` as a small internal optimization; keep direct
+  paged attention disabled by default.
+- Change: cache the `uint32` logical block-index tensor and invalidate it on
+  table growth, COW remapping, trim, reset, or pool promotion changes.
+- Correctness: the persistent-pool identity test and the full suite passed;
+  current result is `417 passed, 9 skipped, 1 warning`.
+- Evidence: fresh randomized 8K 3x3 A/B measured native/direct elapsed medians
+  of `5.4306s/5.4597s` (`+0.54%`) and completion throughput of
+  `23.570/23.445 tok/s` (`-0.53%`). Peak MLX memory stayed at
+  `2.297/2.286 GB`, with zero failed requests and zero swap delta.
+- Interpretation: reusing the tensor removes repeated small allocations but
+  does not produce a statistically meaningful end-to-end speedup. It remains
+  below the 3% gate and is not a default-path change.
+- Dependency maintenance: refreshed `uv.lock` to 72 compatible packages and
+  declared `pydub` plus `python-multipart` in `pyproject.toml`, keeping the
+  lock and runtime requirements aligned. `uv lock --check`, `pip check`, and
+  compileall pass. `transformers 5.13.1` remains excluded by the current
+  `<5.13.0` compatibility bound.
+- Rollback: disable `engine.paged_cache_direct_attention_enabled` or revert
+  `be48448`; dependency-only rollback is `86ed15c`.
+- Next experiment: measure decode-only bridge overhead or broaden model/batch
+  support, preserving the same parity, lifecycle, memory, and A/B gates.
