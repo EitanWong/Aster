@@ -175,6 +175,30 @@ def test_attention_view_reuses_a_persistent_physical_block_pool() -> None:
     assert _values(second_pool[layer.block_table.block_ids[0], ..., :2, :]) == [1, 2]
 
 
+def test_materialized_fallback_reuses_capacity_for_append() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+    layer = PagedKVCacheLayer(manager, layer_index=0)
+    layer.update_and_fetch(_array([1, 2]), _array([11, 12]))
+    materialized_keys = layer._materialized_keys
+
+    layer.update_and_fetch(_array([3]), _array([13]))
+
+    assert layer._materialized_keys is materialized_keys
+    assert _values(layer.state[0]) == [1, 2, 3]
+
+
+def test_trim_then_append_preserves_block_and_materialized_state() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+    layer = PagedKVCacheLayer(manager, layer_index=0)
+    layer.update_and_fetch(_array([1, 2, 3, 4, 5]), _array([11, 12, 13, 14, 15]))
+
+    assert layer.trim(2) == 2
+    layer.update_and_fetch(_array([6]), _array([16]))
+
+    assert _values(layer.state[0]) == [1, 2, 3, 6]
+    assert _values(layer.state[1]) == [11, 12, 13, 16]
+
+
 @pytest.mark.skipif(not mlx.metal.is_available(), reason="Metal is required")
 def test_attention_view_can_dispatch_block_indexed_metal_attention() -> None:
     manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=4)

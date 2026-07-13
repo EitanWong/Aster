@@ -117,6 +117,12 @@ class _PagedKVBlockPool:
     def block_token_count(self, block_id: int) -> int:
         return self._written_tokens.get(block_id, 0)
 
+    def truncate(self, block_id: int, token_count: int) -> None:
+        if token_count <= 0:
+            self._written_tokens.pop(block_id, None)
+        else:
+            self._written_tokens[block_id] = token_count
+
     def block_pool(self) -> tuple[Any, Any]:
         if self.keys is None or self.values is None:
             raise ValueError("Cannot expose an empty paged KV pool")
@@ -193,6 +199,9 @@ class PagedKVCacheLayer:
         else:
             pool.retain()
             self._pool = pool
+        self._materialized_keys: Any | None = None
+        self._materialized_values: Any | None = None
+        self._materialized_capacity = 0
 
     @property
     def block_size(self) -> int:
@@ -225,6 +234,7 @@ class PagedKVCacheLayer:
             self._write_segment(block, block_offset, segment)
             position += take
 
+        self._update_materialized(keys, values, start, end)
         self.offset = end
         self.block_table.num_tokens = max(self.block_table.num_tokens, end)
         return self._materialize()
@@ -258,7 +268,31 @@ class PagedKVCacheLayer:
         block.cache_data[self.layer_index] = (self._pool.keys[block.block_id], self._pool.values[block.block_id])
         block.token_count = max(block.token_count, block_offset + int(segment[0].shape[2]))
 
-    def _materialize(self) -> tuple[Any, Any]:
+    def _update_materialized(self, keys: Any, values: Any, start: int, end: int) -> None:
+        mx = _mlx()
+        if self._materialized_keys is None or end > self._materialized_capacity:
+            old_keys = self._materialized_keys
+            old_values = self._materialized_values
+            old_capacity = self._materialized_capacity
+            if old_keys is None and self.offset > 0:
+                old_keys, old_values = self._materialize_from_pool()
+            new_capacity = max(end, self.block_size, old_capacity * 2)
+            B, H, _, key_dim = keys.shape
+            value_dim = values.shape[3]
+            new_keys = mx.zeros((B, H, new_capacity, key_dim), dtype=keys.dtype)
+            new_values = mx.zeros((B, H, new_capacity, value_dim), dtype=values.dtype)
+            if old_keys is not None and old_values is not None and self.offset > 0:
+                new_keys[..., : self.offset, :] = old_keys[..., : self.offset, :]
+                new_values[..., : self.offset, :] = old_values[..., : self.offset, :]
+            self._materialized_keys = new_keys
+            self._materialized_values = new_values
+            self._materialized_capacity = new_capacity
+        if self._materialized_keys is None or self._materialized_values is None:
+            raise RuntimeError("Contiguous paged KV fallback is not initialized")
+        self._materialized_keys[..., start:end, :] = keys
+        self._materialized_values[..., start:end, :] = values
+
+    def _materialize_from_pool(self) -> tuple[Any, Any]:
         if self.offset == 0:
             raise ValueError("Cannot materialize an empty paged KV cache")
         pool_keys, pool_values = self._pool.block_pool()
@@ -274,6 +308,17 @@ class PagedKVCacheLayer:
         return (
             mx.concatenate(keys, axis=2)[..., : self.offset, :],
             mx.concatenate(values, axis=2)[..., : self.offset, :],
+        )
+
+    def _materialize(self) -> tuple[Any, Any]:
+        if self.offset == 0:
+            raise ValueError("Cannot materialize an empty paged KV cache")
+        if self._materialized_keys is None or self._materialized_values is None:
+            self._materialized_keys, self._materialized_values = self._materialize_from_pool()
+            self._materialized_capacity = self.offset
+        return (
+            self._materialized_keys[..., : self.offset, :],
+            self._materialized_values[..., : self.offset, :],
         )
 
     def _block_pool(self) -> tuple[Any, Any, Any]:
@@ -303,6 +348,9 @@ class PagedKVCacheLayer:
             self.manager.free_block(block_id)
         self.block_table.block_ids.clear()
         self.block_table.num_tokens = 0
+        self._materialized_keys = None
+        self._materialized_values = None
+        self._materialized_capacity = 0
 
     def fork(self) -> PagedKVCacheLayer:
         table = self.manager.fork_table(
@@ -326,7 +374,31 @@ class PagedKVCacheLayer:
 
     def trim(self, num_tokens: int) -> int:
         trimmed = min(max(int(num_tokens), 0), self.offset)
+        if trimmed == 0:
+            return 0
         self.offset -= trimmed
+        keep_count = (self.offset + self.block_size - 1) // self.block_size
+        removed = self.block_table.block_ids[keep_count:]
+        for block_id in removed:
+            self.manager.free_block(block_id)
+        del self.block_table.block_ids[keep_count:]
+        self.block_table.num_tokens = self.offset
+        if keep_count and self.offset % self.block_size:
+            block_index = keep_count - 1
+            old_block_id = self.block_table.block_ids[block_index]
+            block_id = self.manager.ensure_writable_block(self.block_table, block_index)
+            if block_id != old_block_id:
+                source_id = self.manager.cow_source(block_id)
+                if source_id is not None:
+                    self._pool.copy_block(source_id, block_id)
+            token_count = self.offset % self.block_size
+            self._pool.truncate(block_id, token_count)
+            block = self.manager.get_block(block_id)
+            block.token_count = token_count
+            block.cache_data[self.layer_index] = (
+                self._pool.keys[block_id],
+                self._pool.values[block_id],
+            )
         return trimmed
 
     def make_mask(self, *args: Any, **kwargs: Any) -> Any:
@@ -361,7 +433,7 @@ class PagedKVCacheLayer:
 
     @property
     def nbytes(self) -> int:
-        return self._pool.nbytes
+        return self._pool.nbytes + _nbytes(self._materialized_keys) + _nbytes(self._materialized_values)
 
     def attention_view(self) -> PagedAttentionView:
         return PagedAttentionView(
