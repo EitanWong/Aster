@@ -7,6 +7,7 @@ mlx = pytest.importorskip("mlx.core")
 
 from aster.inference.paged_cache import PagedCacheManager
 from aster.inference.paged_kv_adapter import (
+    PagedKVCacheBundle,
     PagedKVCacheLayer,
     replace_kv_cache_layers,
 )
@@ -74,6 +75,48 @@ def test_cow_copies_each_layer_pool_after_one_shared_table_split() -> None:
     assert _values(fork_k0.state[0]) == [1, 2, 3]
     assert _values(fork_k1.state[0]) == [101, 102, 103]
     assert manager.stats.cow_copies == 1
+
+
+def test_bundle_release_reclaims_pool_after_table_release() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=8)
+    bundle = PagedKVCacheBundle.from_prompt_cache(
+        [KVCache()], manager, kv_cache_type=KVCache, request_id="release-source"
+    )
+    layer = bundle.layers[0]
+    layer.update_and_fetch(_array([1, 2, 3]), _array([11, 12, 13]))
+    pool = layer._pool
+
+    assert pool.nbytes > 0
+    assert manager.stats.allocated_blocks == 2
+
+    bundle.release()
+    bundle.release()
+
+    assert manager.get_table("release-source") is None
+    assert manager.stats.allocated_blocks == 0
+    assert pool.nbytes == 0
+
+
+def test_bundle_fork_keeps_shared_pool_alive_until_last_release() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+    source = PagedKVCacheBundle.from_prompt_cache(
+        [KVCache()], manager, kv_cache_type=KVCache, request_id="fork-source"
+    )
+    source_layer = source.layers[0]
+    source_layer.update_and_fetch(_array([1, 2]), _array([11, 12]))
+    pool = source_layer._pool
+
+    fork = source.fork("fork-child")
+    fork.layers[0].update_and_fetch(_array([3]), _array([13]))
+    assert _values(source_layer.state[0]) == [1, 2]
+    assert _values(fork.layers[0].state[0]) == [1, 2, 3]
+
+    fork.release()
+    assert pool.nbytes > 0
+    assert manager.get_table("fork-source") is not None
+
+    source.release()
+    assert pool.nbytes == 0
 
 
 def test_attention_view_exposes_blocks_without_hiding_materialization() -> None:

@@ -362,11 +362,13 @@ class PagedCacheManager:
     def get_table(self, request_id: str) -> BlockTable | None:
         return self._tables.get(request_id)
 
-    def remove_table(self, request_id: str) -> None:
+    def remove_table(self, request_id: str, *, discard_cache_data: bool = False) -> None:
         table = self._tables.pop(request_id, None)
         if table is not None:
             for bid in table.block_ids:
                 self.free_block(bid)
+                if discard_cache_data and self._blocks[bid].ref_count == 0:
+                    self._blocks[bid].cache_data = []
 
     def _cow_copy_block(self, src: CacheBlock) -> int:
         """Copy-on-write: allocate new block, copy cache data."""

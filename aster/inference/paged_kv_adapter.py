@@ -33,6 +33,23 @@ class _PagedKVBlockPool:
         self._capacity = 0
         self._shape: tuple[int, int, int, int, int] | None = None
         self._written_tokens: dict[int, int] = {}
+        self._owners = 1
+
+    def retain(self) -> None:
+        if self._owners == 0:
+            raise RuntimeError("Cannot retain a released paged KV pool")
+        self._owners += 1
+
+    def release(self) -> None:
+        if self._owners == 0:
+            return
+        self._owners -= 1
+        if self._owners == 0:
+            self.keys = None
+            self.values = None
+            self._capacity = 0
+            self._shape = None
+            self._written_tokens.clear()
 
     def ensure_capacity(self, block_id: int, keys: Any, values: Any) -> None:
         mx = _mlx()
@@ -170,7 +187,11 @@ class PagedKVCacheLayer:
         )
         self.offset = 0
         self.step = max(manager.block_size, 1)
-        self._pool = pool or _PagedKVBlockPool(manager)
+        if pool is None:
+            self._pool = _PagedKVBlockPool(manager)
+        else:
+            pool.retain()
+            self._pool = pool
 
     @property
     def block_size(self) -> int:
@@ -350,6 +371,77 @@ class PagedKVCacheLayer:
         )
 
 
+class PagedKVCacheBundle:
+    """Own a full-attention block table and release its physical pools together."""
+
+    def __init__(
+        self,
+        manager: PagedCacheManager,
+        layers: tuple[PagedKVCacheLayer, ...],
+        *,
+        request_id: str,
+    ) -> None:
+        if not layers:
+            raise ValueError("Paged KV bundles require at least one layer")
+        source_table = layers[0].block_table
+        if any(
+            layer.manager is not manager or layer.block_table is not source_table
+            for layer in layers
+        ):
+            raise ValueError("Paged KV bundle layers must share one manager and block table")
+        self.manager = manager
+        self.layers = layers
+        self.request_id = request_id
+        self._released = False
+
+    @classmethod
+    def from_prompt_cache(
+        cls,
+        prompt_cache: list[Any],
+        manager: PagedCacheManager,
+        *,
+        kv_cache_type: type[Any],
+        request_id: str,
+    ) -> PagedKVCacheBundle:
+        if not prompt_cache or not all(isinstance(cache, kv_cache_type) for cache in prompt_cache):
+            raise ValueError("Paged KV bundles currently require only full-attention cache layers")
+        table = manager.create_table(request_id)
+        layers = tuple(
+            PagedKVCacheLayer(manager, layer_index=index, block_table=table)
+            for index in range(len(prompt_cache))
+        )
+        return cls(manager, layers, request_id=request_id)
+
+    def fork(self, request_id: str) -> PagedKVCacheBundle:
+        if self._released:
+            raise RuntimeError("Cannot fork a released paged KV bundle")
+        source_table = self.layers[0].block_table
+        source_offset = self.layers[0].offset
+        if any(layer.offset != source_offset for layer in self.layers):
+            raise ValueError("Paged KV bundle layers must have matching offsets")
+        table = self.manager.fork_table(source_table, request_id)
+        layers = tuple(
+            PagedKVCacheLayer(
+                self.manager,
+                layer_index=layer.layer_index,
+                block_table=table,
+                pool=layer._pool,
+            )
+            for layer in self.layers
+        )
+        for layer in layers:
+            layer.offset = source_offset
+        return PagedKVCacheBundle(self.manager, layers, request_id=request_id)
+
+    def release(self) -> None:
+        if self._released:
+            return
+        self.manager.remove_table(self.request_id, discard_cache_data=True)
+        for layer in self.layers:
+            layer._pool.release()
+        self._released = True
+
+
 def replace_kv_cache_layers(
     prompt_cache: list[Any],
     manager: PagedCacheManager,
@@ -369,6 +461,7 @@ def replace_kv_cache_layers(
 
 __all__ = [
     "PagedAttentionView",
+    "PagedKVCacheBundle",
     "PagedKVCacheLayer",
     "replace_kv_cache_layers",
 ]
