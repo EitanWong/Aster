@@ -87,6 +87,8 @@ class ModelRunner:
         self._loaded = False
         self._mx: Any | None = None
         self._make_prompt_cache: Any | None = None
+        self._prompt_cache_factory: Any | None = None
+        self._kv_cache_type: Any | None = None
         self._make_sampler: Any | None = None
         self._make_logits_processors: Any | None = None
         self._model: Any | None = None
@@ -438,6 +440,27 @@ class ModelRunner:
             return float(mx.get_active_memory()) / 1e9
         except Exception:
             return 0.0
+
+    @staticmethod
+    def _configure_prompt_cache_step(
+        prompt_cache: list[Any], cache_type: type[Any], step_tokens: int
+    ) -> list[Any]:
+        for cache in prompt_cache:
+            if isinstance(cache, cache_type):
+                cache.step = max(int(step_tokens), 1)
+        return prompt_cache
+
+    def _make_configured_prompt_cache(self, model: Any) -> list[Any]:
+        factory = self._prompt_cache_factory
+        cache_type = self._kv_cache_type
+        if factory is None or cache_type is None:
+            raise RuntimeError("Prompt cache factory is not initialized")
+        prompt_cache = factory(model)
+        return self._configure_prompt_cache_step(
+            prompt_cache,
+            cache_type,
+            self.settings.engine.kv_cache_step_tokens,
+        )
 
     def model_fingerprint(self) -> str:
         self._ensure_loaded()
@@ -898,7 +921,9 @@ class ModelRunner:
             )
 
         self._mx = mx
-        self._make_prompt_cache = mlx_cache.make_prompt_cache
+        self._prompt_cache_factory = mlx_cache.make_prompt_cache
+        self._kv_cache_type = mlx_cache.KVCache
+        self._make_prompt_cache = self._make_configured_prompt_cache
         self._make_sampler = make_sampler
         self._make_logits_processors = make_logits_processors
         self._model = model

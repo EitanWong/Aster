@@ -172,6 +172,23 @@ def test_estimate_request_bytes_accounts_for_nested_hybrid_attention_config() ->
     )
 
 
+def test_configure_prompt_cache_step_only_updates_matching_cache_type() -> None:
+    class FakeKVCache:
+        def __init__(self) -> None:
+            self.step = 256
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    kv_cache = FakeKVCache()
+    other_cache = object()
+
+    configured = runner._configure_prompt_cache_step(
+        [kv_cache, other_cache], FakeKVCache, 2048
+    )
+
+    assert configured == [kv_cache, other_cache]
+    assert kv_cache.step == 2048
+
+
 def test_chat_template_kwargs_reach_tokenizer_and_keep_core_flags_authoritative() -> None:
     runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
     runner._loaded = True

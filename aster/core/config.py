@@ -53,6 +53,7 @@ class EngineSettings(BaseModel):
     snapshot_min_prefix_tokens: int = 32
     snapshot_chunk_checkpoint_max_tokens: int = 0
     snapshot_max_entries: int = 256
+    kv_cache_step_tokens: int = 2048
     prefix_cache_enabled: bool = True
     prefix_cache_persist_path: str | None = None
     prefix_cache_load_on_warmup: bool = True
