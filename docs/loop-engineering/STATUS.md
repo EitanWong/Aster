@@ -24,6 +24,7 @@ Updated: 2026-07-13
 - Hybrid-attention accounting removed the false 9B admission rejects: fresh 12K, 16K, and 30K prompts all completed.
 - Bounding automatic prefix snapshots reduced 30K stores from 53 to 8 at cap 4K and to 1 at default cap 0; the cap-0 run took 92.6s, reached 1.38 completion tok/s, and added 1.10 GiB swap.
 - Prefill memory is now separately observable: default cap-0 12K measured 9.121 GB peak / 6.866 GB active; 30K measured 12.124 GB peak / 6.149 GB active. Overall request peaks matched prefill peaks.
+- 4-bit/8-bit MLX KV prototypes were evaluated and not adopted: 4-bit changed fixed greedy output, while 8-bit showed no material gain in the measured 12K trial.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
@@ -35,4 +36,4 @@ Updated: 2026-07-13
 
 ## Next Priority
 
-Use the prefill measurements to evaluate a lossless paged KV or allocator-aware working-set candidate at 12K, 16K, and 30K before attempting 32K mixed-agent traffic.
+Specify and implement a lossless paged KV adapter boundary, including block ownership/COW and MLX attention access, before attempting 32K mixed-agent traffic.
