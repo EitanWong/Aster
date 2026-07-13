@@ -200,6 +200,7 @@ def _serve_compatibility_warnings(args: argparse.Namespace) -> list[str]:
     warnings: list[str] = []
     unsupported_flags = {
         "models_config": args.models_config,
+        "continuous_batching": args.continuous_batching,
         "mllm_prefill_step_size": args.mllm_prefill_step_size,
         "cache_memory_mb": args.cache_memory_mb,
         "no_memory_aware_cache": args.no_memory_aware_cache,
