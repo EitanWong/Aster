@@ -293,6 +293,28 @@ def _make_engine(
     return engine, runner
 
 
+def test_engine_cleanup_releases_owned_prompt_cache() -> None:
+    class ReleasableCache(list[Any]):
+        released = 0
+
+        def release(self) -> None:
+            self.released += 1
+
+    engine, _runner = _make_engine()
+    cache = ReleasableCache()
+    state = RequestState(
+        request_id="release-cache",
+        request=InferenceRequest(prompt="ignored"),
+        prompt_cache=cache,
+    )
+    engine._requests[state.request_id] = state
+
+    engine._cleanup_request(state)
+
+    assert cache.released == 1
+    assert state.request_id not in engine._requests
+
+
 def test_decode_work_item_does_not_duplicate_current_token_for_logits_processors() -> None:
     engine, _runner = _make_engine()
     state = RequestState(

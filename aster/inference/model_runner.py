@@ -95,6 +95,7 @@ class ModelRunner:
         self._tokenizer: Any | None = None
         self._config: dict[str, Any] = {}
         self._model_fingerprint: str | None = None
+        self._paged_cache: Any | None = None
         self._decode_batch_attempts = 0
         self._decode_batch_successes = 0
         self._decode_batch_fallbacks = 0
@@ -456,11 +457,40 @@ class ModelRunner:
         if factory is None or cache_type is None:
             raise RuntimeError("Prompt cache factory is not initialized")
         prompt_cache = factory(model)
-        return self._configure_prompt_cache_step(
+        configured = self._configure_prompt_cache_step(
             prompt_cache,
             cache_type,
             self.settings.engine.kv_cache_step_tokens,
         )
+        if not self.settings.engine.paged_cache_enabled:
+            return configured
+        if self.settings.engine.prefix_cache_enabled:
+            raise ConfigurationError(
+                code="paged_cache_prefix_cache_conflict",
+                message="paged_cache_enabled requires prefix_cache_enabled=false",
+                status_code=400,
+            )
+        if self.settings.engine.max_decode_batch != 1:
+            raise ConfigurationError(
+                code="paged_cache_batch_conflict",
+                message="paged_cache_enabled currently requires max_decode_batch=1",
+                status_code=400,
+            )
+        if self._paged_cache is None:
+            raise ConfigurationError(
+                code="paged_cache_unavailable",
+                message="Paged KV cache manager is unavailable for this model",
+                status_code=500,
+            )
+        from aster.inference.paged_kv_adapter import PagedKVCacheBundle
+
+        bundle = PagedKVCacheBundle.from_prompt_cache(
+            configured,
+            self._paged_cache,
+            kv_cache_type=cache_type,
+            request_id=f"model-runner-cache-{id(configured)}",
+        )
+        return bundle.caches
 
     def model_fingerprint(self) -> str:
         self._ensure_loaded()
@@ -929,6 +959,25 @@ class ModelRunner:
         self._model = model
         self._tokenizer = tokenizer
         self._config = config or {}
+        if self.settings.engine.paged_cache_enabled:
+            try:
+                from aster.inference.paged_cache import PagedCacheManager
+
+                layers = getattr(model, "layers", None) or getattr(
+                    getattr(model, "model", None), "layers", None
+                )
+                self._paged_cache = PagedCacheManager(
+                    num_layers=len(layers) if layers else 24,
+                    block_size=self.settings.engine.paged_cache_block_size,
+                    max_blocks=self.settings.engine.paged_cache_max_blocks,
+                )
+            except Exception as exc:
+                raise ConfigurationError(
+                    code="paged_cache_initialization_failed",
+                    message="Unable to initialize the opt-in paged KV cache manager",
+                    status_code=500,
+                    details={"error": str(exc)},
+                ) from exc
         self._model_fingerprint = self._compute_model_fingerprint()
         self._loaded = True
 

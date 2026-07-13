@@ -6,7 +6,9 @@ from aster.core.config import RuntimeSettings
 from aster.inference.constrained import ThinkingAwareJsonLogitsProcessor
 from aster.inference.contracts import InferenceRequest
 from aster.inference.model_runner import DecodeResult, DecodeWorkItem, ModelRunner
+from aster.inference.paged_cache import PagedCacheManager
 from aster.inference.thinking_processor import ThinkingAwareLogitsProcessor
+from mlx_lm.models.cache import ArraysCache, KVCache
 
 
 class FakeChatTokenizer:
@@ -187,6 +189,31 @@ def test_configure_prompt_cache_step_only_updates_matching_cache_type() -> None:
 
     assert configured == [kv_cache, other_cache]
     assert kv_cache.step == 2048
+
+
+def test_opt_in_paged_prompt_cache_preserves_hybrid_list_shape_and_owner() -> None:
+    settings = RuntimeSettings.model_validate(
+        {
+            "embeddings": {"enabled": False},
+            "engine": {
+                "paged_cache_enabled": True,
+                "prefix_cache_enabled": False,
+                "max_decode_batch": 1,
+            },
+        }
+    )
+    runner = ModelRunner(settings)
+    runner._prompt_cache_factory = lambda _model: [ArraysCache(1), KVCache()]
+    runner._kv_cache_type = KVCache
+    runner._paged_cache = PagedCacheManager(num_layers=2, block_size=4, max_blocks=8)
+
+    configured = runner._make_configured_prompt_cache(object())
+
+    assert isinstance(configured, list)
+    assert isinstance(configured[0], ArraysCache)
+    assert configured[1].__class__.__name__ == "PagedKVCacheLayer"
+    assert callable(getattr(configured, "release", None))
+    configured.release()
 
 
 def test_chat_template_kwargs_reach_tokenizer_and_keep_core_flags_authoritative() -> None:

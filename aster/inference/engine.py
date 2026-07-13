@@ -1345,6 +1345,17 @@ class InferenceEngine:
 
     def _cleanup_request(self, state: RequestState) -> None:
         self.prefix_store.unpin(state.attached_snapshot_key)
+        prompt_cache = state.prompt_cache
+        release = getattr(prompt_cache, "release", None)
+        if callable(release):
+            try:
+                release()
+            except Exception:
+                self.logger.warning(
+                    "prompt_cache_release_failed",
+                    exc_info=True,
+                    extra={"request_id": state.request_id},
+                )
         self._active_estimated_bytes = max(self._active_estimated_bytes - state.estimated_bytes, 0)
         self._requests.pop(state.request_id, None)
         self._prefill_yield_request_ids.discard(state.request_id)

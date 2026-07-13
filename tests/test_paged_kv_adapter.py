@@ -11,7 +11,7 @@ from aster.inference.paged_kv_adapter import (
     PagedKVCacheLayer,
     replace_kv_cache_layers,
 )
-from mlx_lm.models.cache import KVCache
+from mlx_lm.models.cache import ArraysCache, KVCache
 
 
 def _array(values: list[float]):
@@ -117,6 +117,31 @@ def test_bundle_fork_keeps_shared_pool_alive_until_last_release() -> None:
 
     source.release()
     assert pool.nbytes == 0
+
+
+def test_bundle_forks_hybrid_arrays_cache_without_sharing_recurrent_state() -> None:
+    manager = PagedCacheManager(num_layers=3, block_size=4, max_blocks=8)
+    recurrent = ArraysCache(1)
+    recurrent[0] = mlx.array([[7.0, 8.0]])
+    bundle = PagedKVCacheBundle.from_prompt_cache(
+        [recurrent, KVCache(), ArraysCache(1)],
+        manager,
+        kv_cache_type=KVCache,
+        request_id="hybrid-source",
+    )
+    bundle.layers[0].update_and_fetch(_array([1, 2]), _array([11, 12]))
+
+    fork = bundle.fork("hybrid-child")
+    assert isinstance(fork.caches[0], ArraysCache)
+    assert fork.caches[0] is not bundle.caches[0]
+    assert np.asarray(fork.caches[0][0]).tolist() == [[7.0, 8.0]]
+
+    fork.caches[0][0] = mlx.array([[9.0, 10.0]])
+    assert np.asarray(bundle.caches[0][0]).tolist() == [[7.0, 8.0]]
+    assert np.asarray(fork.caches[0][0]).tolist() == [[9.0, 10.0]]
+
+    fork.release()
+    bundle.release()
 
 
 def test_attention_view_exposes_blocks_without_hiding_materialization() -> None:

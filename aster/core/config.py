@@ -65,6 +65,7 @@ class EngineSettings(BaseModel):
     memory_headroom_ratio: float = 0.10
     paged_cache_block_size: int = 64
     paged_cache_max_blocks: int = 1000
+    paged_cache_enabled: bool = False
 
 
 class CacheSettings(BaseModel):

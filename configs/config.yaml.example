@@ -29,6 +29,7 @@ speculative:
 # ── Engine ─────────────────────────────────────────────────────────────────
 engine:
   runtime_kernel: manual       # manual today; batch_generator is an experimental boundary
+  paged_cache_enabled: false   # opt-in; requires prefix cache off and decode batch 1
   max_active_requests: 16
   max_decode_batch: 8
   prefill_token_budget: 1024

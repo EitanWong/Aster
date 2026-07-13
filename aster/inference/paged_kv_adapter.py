@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from itertools import count
 from typing import Any
@@ -371,18 +372,32 @@ class PagedKVCacheLayer:
         )
 
 
+class PagedKVCacheList(list[Any]):
+    """List-compatible hybrid cache container with an explicit owner."""
+
+    def __init__(self, caches: tuple[Any, ...], bundle: PagedKVCacheBundle) -> None:
+        super().__init__(caches)
+        self.bundle = bundle
+
+    def release(self) -> None:
+        self.bundle.release()
+
+
 class PagedKVCacheBundle:
-    """Own a full-attention block table and release its physical pools together."""
+    """Own hybrid cache layers and release full-attention pools together."""
 
     def __init__(
         self,
         manager: PagedCacheManager,
         layers: tuple[PagedKVCacheLayer, ...],
+        caches: tuple[Any, ...],
         *,
         request_id: str,
     ) -> None:
         if not layers:
             raise ValueError("Paged KV bundles require at least one layer")
+        if not caches or any(layer.layer_index >= len(caches) for layer in layers):
+            raise ValueError("Paged KV bundle cache list does not contain all full layers")
         source_table = layers[0].block_table
         if any(
             layer.manager is not manager or layer.block_table is not source_table
@@ -391,6 +406,7 @@ class PagedKVCacheBundle:
             raise ValueError("Paged KV bundle layers must share one manager and block table")
         self.manager = manager
         self.layers = layers
+        self.caches = PagedKVCacheList(caches, self)
         self.request_id = request_id
         self._released = False
 
@@ -403,14 +419,20 @@ class PagedKVCacheBundle:
         kv_cache_type: type[Any],
         request_id: str,
     ) -> PagedKVCacheBundle:
-        if not prompt_cache or not all(isinstance(cache, kv_cache_type) for cache in prompt_cache):
-            raise ValueError("Paged KV bundles currently require only full-attention cache layers")
+        if not prompt_cache:
+            raise ValueError("Paged KV bundles require at least one cache layer")
         table = manager.create_table(request_id)
-        layers = tuple(
-            PagedKVCacheLayer(manager, layer_index=index, block_table=table)
-            for index in range(len(prompt_cache))
-        )
-        return cls(manager, layers, request_id=request_id)
+        caches = list(prompt_cache)
+        layers: list[PagedKVCacheLayer] = []
+        for index, cache in enumerate(prompt_cache):
+            if isinstance(cache, kv_cache_type):
+                layer = PagedKVCacheLayer(manager, layer_index=index, block_table=table)
+                layers.append(layer)
+                caches[index] = layer
+        if not layers:
+            manager.remove_table(request_id)
+            raise ValueError("Paged KV bundles require at least one full-attention layer")
+        return cls(manager, tuple(layers), tuple(caches), request_id=request_id)
 
     def fork(self, request_id: str) -> PagedKVCacheBundle:
         if self._released:
@@ -420,18 +442,26 @@ class PagedKVCacheBundle:
         if any(layer.offset != source_offset for layer in self.layers):
             raise ValueError("Paged KV bundle layers must have matching offsets")
         table = self.manager.fork_table(source_table, request_id)
-        layers = tuple(
-            PagedKVCacheLayer(
+        fork_layers: dict[int, PagedKVCacheLayer] = {}
+        for layer in self.layers:
+            fork_layers[layer.layer_index] = PagedKVCacheLayer(
                 self.manager,
                 layer_index=layer.layer_index,
                 block_table=table,
                 pool=layer._pool,
             )
-            for layer in self.layers
-        )
-        for layer in layers:
+        for layer in fork_layers.values():
             layer.offset = source_offset
-        return PagedKVCacheBundle(self.manager, layers, request_id=request_id)
+        fork_caches = tuple(
+            fork_layers[index] if index in fork_layers else copy.deepcopy(cache)
+            for index, cache in enumerate(self.caches)
+        )
+        return PagedKVCacheBundle(
+            self.manager,
+            tuple(fork_layers.values()),
+            fork_caches,
+            request_id=request_id,
+        )
 
     def release(self) -> None:
         if self._released:
@@ -461,6 +491,7 @@ def replace_kv_cache_layers(
 
 __all__ = [
     "PagedAttentionView",
+    "PagedKVCacheList",
     "PagedKVCacheBundle",
     "PagedKVCacheLayer",
     "replace_kv_cache_layers",
