@@ -417,46 +417,7 @@ def test_scheduler_step_prioritizes_decode_before_new_admissions(monkeypatch: py
             await engine.aclose()
 
         assert did_work is True
-        assert calls == ["cancellations", "decode", "admission", "prefill"]
-
-    asyncio.run(scenario())
-
-
-def test_scheduler_step_admits_waiting_requests_before_prefill_when_decode_is_idle(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    async def scenario() -> None:
-        engine, _runner = _make_engine()
-        calls: list[str] = []
-
-        async def process_cancellations() -> bool:
-            calls.append("cancellations")
-            return False
-
-        async def step_decode() -> bool:
-            calls.append("decode")
-            return False
-
-        async def drain_submissions() -> bool:
-            calls.append("admission")
-            return True
-
-        async def step_prefill() -> bool:
-            calls.append("prefill")
-            return True
-
-        monkeypatch.setattr(engine, "_process_cancellations", process_cancellations)
-        monkeypatch.setattr(engine, "_step_decode", step_decode)
-        monkeypatch.setattr(engine, "_drain_submissions", drain_submissions)
-        monkeypatch.setattr(engine, "_step_prefill", step_prefill)
-
-        try:
-            did_work = await engine._scheduler_step()
-        finally:
-            await engine.aclose()
-
-        assert did_work is True
-        assert calls == ["cancellations", "decode", "admission", "prefill"]
+        assert calls == ["cancellations", "decode", "prefill", "admission"]
 
     asyncio.run(scenario())
 
@@ -497,7 +458,7 @@ def test_drain_submissions_fills_available_active_slots() -> None:
     asyncio.run(scenario())
 
 
-def test_new_admission_preempts_prefill_continuation() -> None:
+def test_prefill_continuation_yields_to_new_admissions() -> None:
     async def scenario() -> None:
         engine, runner = _make_engine(batch_overrides={"prefill_batch_size": 1})
         long_state = RequestState(
@@ -527,10 +488,8 @@ def test_new_admission_preempts_prefill_continuation() -> None:
         assert did_work is True
         assert runner.prefill_calls == 1
         assert runner.encode_calls == 1
-        assert long_state.cache_token_count == 0
-        assert short_state.cache_token_count == 1
-        assert short_state.phase == RequestPhase.DECODE_READY
-        assert list(engine._prefill_queue) == ["long-prefill"]
+        assert long_state.cache_token_count == 2
+        assert list(engine._prefill_queue)[:2] == ["short-new", "long-prefill"]
         assert "long-prefill" not in engine._prefill_yield_request_ids
         assert engine.status()["prefill_yield_rotations"] == 1
 

@@ -580,15 +580,11 @@ class InferenceEngine:
     async def _scheduler_step(self) -> bool:
         did_work = await self._process_cancellations()
         did_work = await self._step_decode() or did_work
-        prefill_queue_before_admission = (
-            tuple(self._prefill_queue) if not self._submission_queue.empty() else ()
-        )
+        did_work = await self._step_prefill() or did_work
         drained = await self._drain_submissions()
         if drained:
             self._rotate_yielding_prefill_continuations()
-            self._prioritize_new_prefill_admissions(prefill_queue_before_admission)
         did_work = drained or did_work
-        did_work = await self._step_prefill() or did_work
         return did_work
 
     async def _drain_submissions(self) -> bool:
@@ -793,28 +789,6 @@ class InferenceEngine:
         self._prefill_queue = deque([*ready_now, *yielding])
         self._prefill_yield_rotations += len(yielding)
         self._prefill_yield_request_ids.difference_update(yielding)
-
-    def _prioritize_new_prefill_admissions(
-        self,
-        previous_prefill_request_ids: tuple[str, ...],
-    ) -> None:
-        if not previous_prefill_request_ids:
-            return
-        previous_prefill_ids = set(previous_prefill_request_ids)
-        newly_admitted = [
-            request_id
-            for request_id in self._prefill_queue
-            if request_id not in previous_prefill_ids
-        ]
-        existing_prefill = [
-            request_id
-            for request_id in self._prefill_queue
-            if request_id in previous_prefill_ids
-        ]
-        if not newly_admitted or not existing_prefill:
-            return
-        self._prefill_queue = deque([*newly_admitted, *existing_prefill])
-        self._prefill_yield_rotations += len(existing_prefill)
 
     async def _step_decode(self) -> bool:
         if not self._decode_queue:
