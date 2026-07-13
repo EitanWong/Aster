@@ -30,6 +30,8 @@ class PrefillChunkResult:
     prompt_cache: Any
     cache_token_count: int
     elapsed_seconds: float
+    peak_memory_gb: float = 0.0
+    active_memory_gb: float = 0.0
 
 
 @dataclass(slots=True)
@@ -170,6 +172,9 @@ class ModelRunner:
                 elapsed_seconds=0.0,
             )
 
+        reset_peak_memory = getattr(mx, "reset_peak_memory", None)
+        if callable(reset_peak_memory):
+            reset_peak_memory()
         started = time.perf_counter()
         model(mx.array(tokens_to_process)[None], cache=live_cache)
         self._eval_cache(live_cache)
@@ -177,6 +182,8 @@ class ModelRunner:
             prompt_cache=live_cache,
             cache_token_count=target_cache_token_count,
             elapsed_seconds=time.perf_counter() - started,
+            peak_memory_gb=self.current_peak_memory_gb(),
+            active_memory_gb=self.current_active_memory_gb(),
         )
 
     def initialize_decode(
@@ -420,6 +427,15 @@ class ModelRunner:
             return 0.0
         try:
             return float(mx.get_peak_memory()) / 1e9
+        except Exception:
+            return 0.0
+
+    def current_active_memory_gb(self) -> float:
+        mx = self._mx
+        if mx is None or not hasattr(mx, "get_active_memory"):
+            return 0.0
+        try:
+            return float(mx.get_active_memory()) / 1e9
         except Exception:
             return 0.0
 

@@ -31,6 +31,8 @@ class BenchmarkRecord:
     mlx_lm_version: str
     system_memory_total_bytes: int
     mlx_peak_memory_gb: float
+    prefill_peak_memory_gb: float
+    prefill_active_memory_gb: float
     process_rss_peak_bytes: int
     swap_used_bytes_before: int
     swap_used_bytes_after: int
@@ -119,6 +121,14 @@ def _max_response_peak_memory_gb(responses: list[object]) -> float:
         if isinstance((value := getattr(response, "peak_memory_gb", 0.0)), (int, float))
     ]
     return max(values, default=0.0)
+
+
+def _engine_timing_memory_gb(status: dict[str, object], name: str) -> float:
+    timing = status.get("engine_timing")
+    if not isinstance(timing, dict):
+        return 0.0
+    value = timing.get(name)
+    return float(value) if isinstance(value, (int, float)) else 0.0
 
 
 def _collect_runtime_metadata() -> dict[str, int | str]:
@@ -351,6 +361,14 @@ async def benchmark_workload(
         mlx_lm_version=str(runtime_metadata["mlx_lm_version"]),
         system_memory_total_bytes=int(runtime_metadata["system_memory_total_bytes"]),
         mlx_peak_memory_gb=_max_response_peak_memory_gb(responses),
+        prefill_peak_memory_gb=_engine_timing_memory_gb(
+            after,
+            "max_prefill_peak_memory_gb",
+        ),
+        prefill_active_memory_gb=_engine_timing_memory_gb(
+            after,
+            "max_prefill_active_memory_gb",
+        ),
         process_rss_peak_bytes=max(rss_samples),
         swap_used_bytes_before=int(runtime_metadata["swap_used_bytes"]),
         swap_used_bytes_after=int(after_metadata["swap_used_bytes"]),

@@ -7,6 +7,7 @@ from scripts.dev.benchmark_live import (
     _build_workload,
     _collect_runtime_metadata,
     _extract_staggered_latency_metrics,
+    _engine_timing_memory_gb,
     _max_response_peak_memory_gb,
     _prefix_cache_counter_delta,
     _run_requests,
@@ -92,6 +93,12 @@ def test_max_response_peak_memory_uses_allocator_metric() -> None:
     ]
 
     assert _max_response_peak_memory_gb(responses) == 7.5
+
+
+def test_engine_timing_memory_reads_prefill_metrics() -> None:
+    status = {"engine_timing": {"max_prefill_peak_memory_gb": 9.25}}
+
+    assert _engine_timing_memory_gb(status, "max_prefill_peak_memory_gb") == 9.25
 
 
 def test_run_requests_can_serialize_prefix_reuse_requests() -> None:

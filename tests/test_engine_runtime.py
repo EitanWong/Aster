@@ -168,6 +168,8 @@ class FakeRunner:
             prompt_cache=live_cache,
             cache_token_count=target_cache_token_count,
             elapsed_seconds=0.001,
+            peak_memory_gb=1.5,
+            active_memory_gb=1.0,
         )
 
     def initialize_decode(
@@ -357,12 +359,16 @@ def test_engine_batches_decode_steps_for_concurrent_requests() -> None:
         assert second_result.text == "ab"
         assert first_result.finish_reason == "length"
         assert second_result.finish_reason == "length"
+        assert first_result.peak_memory_gb == 1.5
+        assert second_result.peak_memory_gb == 1.5
         assert any(size >= 2 for size in runner.decode_batch_sizes)
         status = engine.status()
         assert status["decode_steps"] >= 1
         timing = status["engine_timing"]
         assert timing["prefill_model_tokens"] > 0
         assert timing["prompt_tps"] > 0
+        assert timing["max_prefill_peak_memory_gb"] == 1.5
+        assert timing["max_prefill_active_memory_gb"] == 1.0
         assert timing["decode_runner_batches"] >= 1
         assert timing["decode_runner_tokens"] >= 4
         assert timing["generation_tps"] > 0

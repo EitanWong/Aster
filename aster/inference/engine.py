@@ -129,6 +129,8 @@ class InferenceEngine:
         self._prefill_model_seconds = 0.0
         self._prefill_model_tokens = 0
         self._max_prefill_step_seconds = 0.0
+        self._max_prefill_peak_memory_gb = 0.0
+        self._max_prefill_active_memory_gb = 0.0
         self._decode_runner_seconds = 0.0
         self._decode_runner_batches = 0
         self._decode_runner_items = 0
@@ -751,11 +753,20 @@ class InferenceEngine:
             state.cache_token_count = result.cache_token_count
             state.prefill_seconds += result.elapsed_seconds
             state.prefill_steps += 1
+            state.peak_memory_gb = max(state.peak_memory_gb, result.peak_memory_gb)
             self._prefill_model_tokens += processed_tokens
             self._prefill_model_seconds += result.elapsed_seconds
             self._max_prefill_step_seconds = max(
                 self._max_prefill_step_seconds,
                 result.elapsed_seconds,
+            )
+            self._max_prefill_peak_memory_gb = max(
+                self._max_prefill_peak_memory_gb,
+                result.peak_memory_gb,
+            )
+            self._max_prefill_active_memory_gb = max(
+                self._max_prefill_active_memory_gb,
+                result.active_memory_gb,
             )
             self._prefill_steps += 1
             self.metrics.prefill_steps.inc()
@@ -1389,6 +1400,8 @@ class InferenceEngine:
             "prefill_model_tokens": self._prefill_model_tokens,
             "prompt_tps": round(prefill_tps, 3),
             "max_prefill_step_seconds": round(self._max_prefill_step_seconds, 6),
+            "max_prefill_peak_memory_gb": round(self._max_prefill_peak_memory_gb, 6),
+            "max_prefill_active_memory_gb": round(self._max_prefill_active_memory_gb, 6),
             "decode_runner_seconds": round(self._decode_runner_seconds, 6),
             "decode_runner_batches": self._decode_runner_batches,
             "decode_runner_items": self._decode_runner_items,
