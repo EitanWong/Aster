@@ -170,6 +170,7 @@ def test_attention_view_reuses_a_persistent_physical_block_pool() -> None:
     mlx.eval(first_pool, second_pool, second_indices)
 
     assert first_pool is second_pool
+    assert first_indices is second_indices
     assert first_pool.shape[0] >= max(layer.block_table.block_ids) + 1
     assert np.asarray(second_indices).tolist() == layer.block_table.block_ids
     assert _values(second_pool[layer.block_table.block_ids[0], ..., :2, :]) == [1, 2]

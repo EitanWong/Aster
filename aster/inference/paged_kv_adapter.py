@@ -207,6 +207,8 @@ class PagedKVCacheLayer:
         self._materialized_values: Any | None = None
         self._materialized_capacity = 0
         self._storage_written_tokens: dict[int, int] = {}
+        self._block_indices: Any | None = None
+        self._block_indices_ids: tuple[int, ...] = ()
 
     @property
     def block_size(self) -> int:
@@ -223,9 +225,12 @@ class PagedKVCacheLayer:
             logical_index = (start + position) // self.block_size
             block_offset = (start + position) % self.block_size
             self._ensure_table_block(logical_index)
+            old_block_id = self.block_table.block_ids[logical_index]
             block_id = self.manager.ensure_writable_block(
                 self.block_table, logical_index
             )
+            if block_id != old_block_id:
+                self._block_indices = None
             if not self._pool_enabled:
                 cow_source = self.manager.cow_source(block_id)
                 if cow_source is not None and block_id not in self._storage_written_tokens:
@@ -267,6 +272,7 @@ class PagedKVCacheLayer:
             block_id = self.manager.allocate_block()
             self._pool.reset_block(block_id)
             self._storage_written_tokens.pop(block_id, None)
+            self._block_indices = None
             self.block_table.append_block(block_id)
 
     def _write_segment(
@@ -364,10 +370,14 @@ class PagedKVCacheLayer:
         self._promote_pool()
         mx = _mlx()
         pool_keys, pool_values = self._pool.block_pool()
+        block_ids = tuple(self.block_table.block_ids)
+        if self._block_indices is None or self._block_indices_ids != block_ids:
+            self._block_indices = mx.array(block_ids, dtype=mx.uint32)
+            self._block_indices_ids = block_ids
         return (
             pool_keys,
             pool_values,
-            mx.array(self.block_table.block_ids, dtype=mx.uint32),
+            self._block_indices,
         )
 
     def _promote_pool(self) -> None:
@@ -377,9 +387,11 @@ class PagedKVCacheLayer:
             raise RuntimeError("Cannot promote an empty storage-only paged KV cache")
         writable_block_ids: list[int] = []
         for logical_index in range(len(self.block_table.block_ids)):
-            writable_block_ids.append(
-                self.manager.ensure_writable_block(self.block_table, logical_index)
-            )
+            old_block_id = self.block_table.block_ids[logical_index]
+            block_id = self.manager.ensure_writable_block(self.block_table, logical_index)
+            writable_block_ids.append(block_id)
+            if block_id != old_block_id:
+                self._block_indices = None
         max_block_id = max(writable_block_ids)
         first_take = min(self.block_size, self.offset)
         self._pool.ensure_capacity(
@@ -429,6 +441,8 @@ class PagedKVCacheLayer:
         self._materialized_values = None
         self._materialized_capacity = 0
         self._storage_written_tokens.clear()
+        self._block_indices = None
+        self._block_indices_ids = ()
 
     def fork(self) -> PagedKVCacheLayer:
         table = self.manager.fork_table(
@@ -479,6 +493,9 @@ class PagedKVCacheLayer:
         for block_id in removed:
             self.manager.free_block(block_id)
             self._storage_written_tokens.pop(block_id, None)
+        if removed:
+            self._block_indices = None
+            self._block_indices_ids = ()
         del self.block_table.block_ids[keep_count:]
         self.block_table.num_tokens = self.offset
         if keep_count and self.offset % self.block_size:
@@ -489,6 +506,7 @@ class PagedKVCacheLayer:
             if self._pool_enabled:
                 block_id = self.manager.ensure_writable_block(self.block_table, block_index)
                 if block_id != old_block_id:
+                    self._block_indices = None
                     source_id = self.manager.cow_source(block_id)
                     if source_id is not None:
                         self._pool.copy_block(source_id, block_id)
