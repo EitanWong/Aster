@@ -1,0 +1,35 @@
+{
+  "kernel": "simdgroup-token-parallel-correct-dispatch",
+  "shapes": {
+    "512": {
+      "max_abs_difference": 0.0,
+      "paged_over_native_median_ratio": 0.8801683638117174,
+      "native_median_elapsed_ms": 0.2851249955710955,
+      "paged_median_elapsed_ms": 0.2509580008336343,
+      "native_p95_elapsed_ms": 0.4848750031669624,
+      "paged_p95_elapsed_ms": 1.641333001316525,
+      "native_peak_memory_gb": 0.00211768,
+      "paged_peak_memory_gb": 0.002113596
+    },
+    "2048": {
+      "max_abs_difference": 0.0,
+      "paged_over_native_median_ratio": 0.9759447482370828,
+      "native_median_elapsed_ms": 0.32566700247116387,
+      "paged_median_elapsed_ms": 0.3178330007358454,
+      "native_p95_elapsed_ms": 0.4575830025714822,
+      "paged_p95_elapsed_ms": 1.5469589998247102,
+      "native_peak_memory_gb": 0.008409232,
+      "paged_peak_memory_gb": 0.00840516
+    },
+    "8192": {
+      "max_abs_difference": 3.0517578125e-05,
+      "paged_over_native_median_ratio": 0.7327475180230595,
+      "native_median_elapsed_ms": 0.5899590032640845,
+      "paged_median_elapsed_ms": 0.4322909953771159,
+      "native_p95_elapsed_ms": 0.8122500003082678,
+      "paged_p95_elapsed_ms": 1.7717500013532117,
+      "native_peak_memory_gb": 0.033841692,
+      "paged_peak_memory_gb": 0.033571364
+    }
+  }
+}

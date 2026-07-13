@@ -1,0 +1,374 @@
+{
+  "kernel": "simdgroup-token-parallel-correct-dispatch",
+  "results": {
+    "512": {
+      "shape": {
+        "queries": [
+          1,
+          8,
+          1,
+          256
+        ],
+        "pool": [
+          8,
+          1,
+          2,
+          64,
+          256
+        ]
+      },
+      "block_size": 64,
+      "total_tokens": 512,
+      "max_abs_difference": 0.0,
+      "warmups_per_kind": 1,
+      "measurements_per_kind": 7,
+      "native": {
+        "median_elapsed_s": 0.0002851249955710955,
+        "p95_elapsed_s": 0.0004848750031669624,
+        "min_elapsed_s": 0.00017629200010560453,
+        "max_elapsed_s": 0.0004848750031669624,
+        "median_peak_memory_gb": 0.00211768
+      },
+      "tiled_paged_kernel": {
+        "median_elapsed_s": 0.0002509580008336343,
+        "p95_elapsed_s": 0.001641333001316525,
+        "min_elapsed_s": 0.00019379200239200145,
+        "max_elapsed_s": 0.001641333001316525,
+        "median_peak_memory_gb": 0.002113596
+      },
+      "paged_over_native_median_ratio": 0.8801683638117174,
+      "records": [
+        {
+          "trial": 3,
+          "kind": "paged",
+          "elapsed_s": 0.00021854099759366363,
+          "peak_memory_gb": 0.002113596
+        },
+        {
+          "trial": 5,
+          "kind": "native",
+          "elapsed_s": 0.00025549999554641545,
+          "peak_memory_gb": 0.002113584
+        },
+        {
+          "trial": 7,
+          "kind": "paged",
+          "elapsed_s": 0.0002519999979995191,
+          "peak_memory_gb": 0.002113596
+        },
+        {
+          "trial": 2,
+          "kind": "paged",
+          "elapsed_s": 0.001641333001316525,
+          "peak_memory_gb": 0.002113608
+        },
+        {
+          "trial": 4,
+          "kind": "paged",
+          "elapsed_s": 0.0002509580008336343,
+          "peak_memory_gb": 0.002113604
+        },
+        {
+          "trial": 7,
+          "kind": "native",
+          "elapsed_s": 0.00017629200010560453,
+          "peak_memory_gb": 0.002117692
+        },
+        {
+          "trial": 1,
+          "kind": "native",
+          "elapsed_s": 0.00033279200579272583,
+          "peak_memory_gb": 0.00211768
+        },
+        {
+          "trial": 5,
+          "kind": "paged",
+          "elapsed_s": 0.00019379200239200145,
+          "peak_memory_gb": 0.002113596
+        },
+        {
+          "trial": 3,
+          "kind": "native",
+          "elapsed_s": 0.0002851249955710955,
+          "peak_memory_gb": 0.002117692
+        },
+        {
+          "trial": 4,
+          "kind": "native",
+          "elapsed_s": 0.00020970799960196018,
+          "peak_memory_gb": 0.00211768
+        },
+        {
+          "trial": 1,
+          "kind": "paged",
+          "elapsed_s": 0.0004027500035590492,
+          "peak_memory_gb": 0.002113596
+        },
+        {
+          "trial": 6,
+          "kind": "paged",
+          "elapsed_s": 0.0002492500061634928,
+          "peak_memory_gb": 0.002113608
+        },
+        {
+          "trial": 6,
+          "kind": "native",
+          "elapsed_s": 0.0004848750031669624,
+          "peak_memory_gb": 0.002113584
+        },
+        {
+          "trial": 2,
+          "kind": "native",
+          "elapsed_s": 0.0003149580006720498,
+          "peak_memory_gb": 0.002113584
+        }
+      ]
+    },
+    "2048": {
+      "shape": {
+        "queries": [
+          1,
+          8,
+          1,
+          256
+        ],
+        "pool": [
+          32,
+          1,
+          2,
+          64,
+          256
+        ]
+      },
+      "block_size": 64,
+      "total_tokens": 2048,
+      "max_abs_difference": 0.0,
+      "warmups_per_kind": 1,
+      "measurements_per_kind": 7,
+      "native": {
+        "median_elapsed_s": 0.00032566700247116387,
+        "p95_elapsed_s": 0.0004575830025714822,
+        "min_elapsed_s": 0.00021175000438233837,
+        "max_elapsed_s": 0.0004575830025714822,
+        "median_peak_memory_gb": 0.008409232
+      },
+      "tiled_paged_kernel": {
+        "median_elapsed_s": 0.0003178330007358454,
+        "p95_elapsed_s": 0.0015469589998247102,
+        "min_elapsed_s": 0.00022612499742535874,
+        "max_elapsed_s": 0.0015469589998247102,
+        "median_peak_memory_gb": 0.00840516
+      },
+      "paged_over_native_median_ratio": 0.9759447482370828,
+      "records": [
+        {
+          "trial": 7,
+          "kind": "native",
+          "elapsed_s": 0.00026000000070780516,
+          "peak_memory_gb": 0.008405136
+        },
+        {
+          "trial": 7,
+          "kind": "paged",
+          "elapsed_s": 0.0002932499992311932,
+          "peak_memory_gb": 0.008405148
+        },
+        {
+          "trial": 6,
+          "kind": "paged",
+          "elapsed_s": 0.00029275000269990414,
+          "peak_memory_gb": 0.00840516
+        },
+        {
+          "trial": 4,
+          "kind": "paged",
+          "elapsed_s": 0.0015469589998247102,
+          "peak_memory_gb": 0.00840516
+        },
+        {
+          "trial": 1,
+          "kind": "native",
+          "elapsed_s": 0.0002595000041765161,
+          "peak_memory_gb": 0.008409244
+        },
+        {
+          "trial": 1,
+          "kind": "paged",
+          "elapsed_s": 0.00035849999403581023,
+          "peak_memory_gb": 0.008405148
+        },
+        {
+          "trial": 3,
+          "kind": "paged",
+          "elapsed_s": 0.000352625000232365,
+          "peak_memory_gb": 0.00840516
+        },
+        {
+          "trial": 2,
+          "kind": "paged",
+          "elapsed_s": 0.00022612499742535874,
+          "peak_memory_gb": 0.00840516
+        },
+        {
+          "trial": 5,
+          "kind": "paged",
+          "elapsed_s": 0.0003178330007358454,
+          "peak_memory_gb": 0.00840516
+        },
+        {
+          "trial": 5,
+          "kind": "native",
+          "elapsed_s": 0.00021175000438233837,
+          "peak_memory_gb": 0.008409244
+        },
+        {
+          "trial": 4,
+          "kind": "native",
+          "elapsed_s": 0.0004188330058241263,
+          "peak_memory_gb": 0.008409232
+        },
+        {
+          "trial": 6,
+          "kind": "native",
+          "elapsed_s": 0.0003476249985396862,
+          "peak_memory_gb": 0.008409232
+        },
+        {
+          "trial": 3,
+          "kind": "native",
+          "elapsed_s": 0.0004575830025714822,
+          "peak_memory_gb": 0.008405136
+        },
+        {
+          "trial": 2,
+          "kind": "native",
+          "elapsed_s": 0.00032566700247116387,
+          "peak_memory_gb": 0.008409232
+        }
+      ]
+    },
+    "8192": {
+      "shape": {
+        "queries": [
+          1,
+          8,
+          1,
+          256
+        ],
+        "pool": [
+          128,
+          1,
+          2,
+          64,
+          256
+        ]
+      },
+      "block_size": 64,
+      "total_tokens": 8192,
+      "max_abs_difference": 3.0517578125e-05,
+      "warmups_per_kind": 1,
+      "measurements_per_kind": 7,
+      "native": {
+        "median_elapsed_s": 0.0005899590032640845,
+        "p95_elapsed_s": 0.0008122500003082678,
+        "min_elapsed_s": 0.000501667003845796,
+        "max_elapsed_s": 0.0008122500003082678,
+        "median_peak_memory_gb": 0.033841692
+      },
+      "tiled_paged_kernel": {
+        "median_elapsed_s": 0.0004322909953771159,
+        "p95_elapsed_s": 0.0017717500013532117,
+        "min_elapsed_s": 0.00038262500311248004,
+        "max_elapsed_s": 0.0017717500013532117,
+        "median_peak_memory_gb": 0.033571364
+      },
+      "paged_over_native_median_ratio": 0.7327475180230595,
+      "records": [
+        {
+          "trial": 5,
+          "kind": "paged",
+          "elapsed_s": 0.00041612500353949144,
+          "peak_memory_gb": 0.033571356
+        },
+        {
+          "trial": 6,
+          "kind": "native",
+          "elapsed_s": 0.0006782080017728731,
+          "peak_memory_gb": 0.033837584
+        },
+        {
+          "trial": 1,
+          "kind": "native",
+          "elapsed_s": 0.0005482500055222772,
+          "peak_memory_gb": 0.03410792
+        },
+        {
+          "trial": 2,
+          "kind": "paged",
+          "elapsed_s": 0.00043037499563070014,
+          "peak_memory_gb": 0.033837596
+        },
+        {
+          "trial": 3,
+          "kind": "native",
+          "elapsed_s": 0.0008122500003082678,
+          "peak_memory_gb": 0.033841692
+        },
+        {
+          "trial": 3,
+          "kind": "paged",
+          "elapsed_s": 0.00038262500311248004,
+          "peak_memory_gb": 0.033571356
+        },
+        {
+          "trial": 1,
+          "kind": "paged",
+          "elapsed_s": 0.0004322909953771159,
+          "peak_memory_gb": 0.033571368
+        },
+        {
+          "trial": 4,
+          "kind": "native",
+          "elapsed_s": 0.0005899590032640845,
+          "peak_memory_gb": 0.033841692
+        },
+        {
+          "trial": 2,
+          "kind": "native",
+          "elapsed_s": 0.000501667003845796,
+          "peak_memory_gb": 0.03410792
+        },
+        {
+          "trial": 7,
+          "kind": "paged",
+          "elapsed_s": 0.0005813329989905469,
+          "peak_memory_gb": 0.033837596
+        },
+        {
+          "trial": 6,
+          "kind": "paged",
+          "elapsed_s": 0.0017717500013532117,
+          "peak_memory_gb": 0.033571364
+        },
+        {
+          "trial": 7,
+          "kind": "native",
+          "elapsed_s": 0.000742500000342261,
+          "peak_memory_gb": 0.033837584
+        },
+        {
+          "trial": 5,
+          "kind": "native",
+          "elapsed_s": 0.0005794579992652871,
+          "peak_memory_gb": 0.033837584
+        },
+        {
+          "trial": 4,
+          "kind": "paged",
+          "elapsed_s": 0.0006678749996353872,
+          "peak_memory_gb": 0.033571356
+        }
+      ]
+    }
+  }
+}

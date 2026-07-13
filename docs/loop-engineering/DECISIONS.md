@@ -167,3 +167,21 @@
 - Rollback: disable `engine.paged_cache_enabled` or revert `89dc086`.
 - Next experiment: improve the direct pool attention kernel and integrate it
   only if it clears parity, memory, lifecycle, and randomized end-to-end gates.
+
+## 2026-07-14: Keep Token-Parallel Paged Attention Experimental
+
+- Decision: retain `9d577a8` as the explicit `PagedAttentionView` kernel
+  boundary; do not route model serving through it yet.
+- Change: partition each aligned long KV scan across 32 simdgroups and reduce
+  per-group online-softmax states in threadgroup memory. Short/non-aligned
+  shapes retain fallback kernels.
+- Evidence: Qwen3.5-shaped 512/2K/8K kernel median ratios were `0.880x`,
+  `0.976x`, and `0.733x` versus native SDPA. Max absolute differences were
+  `0`, `0`, and `3.05e-05`; the causal multi-query regression passed.
+- Boundary: this is not an end-to-end serving result. `Qwen3NextAttention`
+  still calls native MLX-LM SDPA, and a bridge must handle masks, cache
+  evaluation, decode parity, and fallback behavior before any opt-in serving
+  flag is enabled.
+- Rollback: revert `9d577a8`; the current model runner remains unchanged.
+- Next experiment: add a separate direct-attention opt-in bridge and rerun
+  production-shaped parity, memory, lifecycle, and randomized A/B gates.

@@ -1,0 +1,30 @@
+{
+  "shape": [
+    1,
+    2,
+    512,
+    256
+  ],
+  "block_size": 64,
+  "before_fork": {
+    "pool_nbytes": 2097152,
+    "active_memory_bytes": 11534420,
+    "cache_memory_bytes": 2097232
+  },
+  "after_fork": {
+    "pool_nbytes": 2097152,
+    "active_memory_bytes": 12589228,
+    "cache_memory_bytes": 1048592
+  },
+  "after_child_release": {
+    "pool_nbytes": 2097152,
+    "active_memory_bytes": 12585044,
+    "cache_memory_bytes": 0
+  },
+  "after_source_release": {
+    "pool_nbytes": 0,
+    "active_memory_bytes": 1050644,
+    "cache_memory_bytes": 0
+  },
+  "manager_allocated_blocks_after_release": 0
+}

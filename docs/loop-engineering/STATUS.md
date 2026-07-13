@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `89dc086` (step-bounded paged KV fallback growth).
+- Current commit: `9d577a8` (token-parallel paged attention kernel).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -12,7 +12,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `412 passed, 9 skipped, 1 warning` across 421 collected tests.
+- Full suite: `413 passed, 9 skipped, 1 warning` across 422 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -38,6 +38,7 @@ Updated: 2026-07-14
 - Reusing a geometrically grown contiguous fallback removed the repeated full-table concatenation: the 8,373-token opt-in path fell to `5.420s` and `2.471 GB` peak in a single run. Randomized 3×3 A/B measured native median `5.448s` versus paged median `5.425s` (`-0.4%`, below the 3% gate), with paged peak memory still `2.471 GB` versus native `2.297 GB`.
 - Lazy pool promotion now keeps the opt-in serving path storage-only until a block-indexed consumer requests `block_pool()`. The 8,373-token randomized 3×3 A/B measured native median `5.4541s` versus paged median `5.4526s` (`-0.03%`, below the 3% gate); peak MLX memory was `2.297 GB` versus `2.374 GB` (`+3.38%`). Greedy output parity and zero swap delta held across the probe.
 - Step-bounded fallback growth removes the final 8K chunk's geometric overshoot: native KV ended at capacity `10240`, while paged materialized capacity ended at `8373`. Randomized 8K 3×3 A/B now measures native `5.4353s` versus paged `5.4259s` (`-0.17%`), with peak memory `2.297 GB` versus `2.286 GB` (`-0.46%`). This clears the memory regression but remains below the 3% speed gate.
+- The paged Metal boundary now partitions long KV scans across 32 simdgroups and reduces partial online-softmax states. Qwen3.5-shaped kernel medians are `0.880x`, `0.976x`, and `0.733x` of native at 512/2K/8K tokens, with max absolute differences `0`, `0`, and `3.05e-05`. This is a kernel-level result only; serving still uses contiguous MLX-LM SDPA.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
