@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib.metadata
 import json
+import platform
+import psutil
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -23,6 +26,13 @@ from aster.telemetry.metrics import MetricsRegistry  # noqa: E402
 class BenchmarkRecord:
     runtime_kernel: str
     temperature: float
+    platform: str
+    python_version: str
+    mlx_lm_version: str
+    system_memory_total_bytes: int
+    process_rss_peak_bytes: int
+    swap_used_bytes_before: int
+    swap_used_bytes_after: int
     workload: str
     request_count: int
     concurrency: int
@@ -47,6 +57,34 @@ def _percentile(values: list[float], percentile: float) -> float:
     ordered = sorted(values)
     index = max(min(int(round((len(ordered) - 1) * percentile)), len(ordered) - 1), 0)
     return ordered[index]
+
+
+def _package_version(distribution: str) -> str:
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return "unavailable"
+
+
+def _collect_runtime_metadata() -> dict[str, int | str]:
+    return {
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+        "mlx_lm_version": _package_version("mlx-lm"),
+        "system_memory_total_bytes": int(psutil.virtual_memory().total),
+        "process_rss_bytes": int(psutil.Process().memory_info().rss),
+        "swap_used_bytes": int(psutil.swap_memory().used),
+    }
+
+
+async def _sample_process_rss(stop_event: asyncio.Event, samples: list[int]) -> None:
+    process = psutil.Process()
+    while not stop_event.is_set():
+        try:
+            samples.append(int(process.memory_info().rss))
+        except psutil.Error:
+            return
+        await asyncio.sleep(0.05)
 
 
 def _build_workload(
@@ -142,11 +180,20 @@ async def benchmark_workload(
     temperature: float,
 ) -> BenchmarkRecord:
     requests = _build_workload(workload, concurrency, temperature=temperature)
+    runtime_metadata = _collect_runtime_metadata()
+    rss_samples = [int(runtime_metadata["process_rss_bytes"])]
+    rss_stop_event = asyncio.Event()
+    rss_task = asyncio.create_task(_sample_process_rss(rss_stop_event, rss_samples))
     before = engine.status()
-    started = time.perf_counter()
-    latencies, results = await _run_requests(engine, requests)
-    elapsed = time.perf_counter() - started
-    after = engine.status()
+    try:
+        started = time.perf_counter()
+        latencies, results = await _run_requests(engine, requests)
+        elapsed = time.perf_counter() - started
+        after = engine.status()
+    finally:
+        rss_stop_event.set()
+        await rss_task
+    after_metadata = _collect_runtime_metadata()
 
     responses = [result for result in results if not isinstance(result, Exception)]
     total_completion_tokens = sum(getattr(response, "completion_tokens", 0) for response in responses)
@@ -159,6 +206,13 @@ async def benchmark_workload(
     return BenchmarkRecord(
         runtime_kernel=str(after.get("runtime_kernel", "unknown")),
         temperature=temperature,
+        platform=str(runtime_metadata["platform"]),
+        python_version=str(runtime_metadata["python_version"]),
+        mlx_lm_version=str(runtime_metadata["mlx_lm_version"]),
+        system_memory_total_bytes=int(runtime_metadata["system_memory_total_bytes"]),
+        process_rss_peak_bytes=max(rss_samples),
+        swap_used_bytes_before=int(runtime_metadata["swap_used_bytes"]),
+        swap_used_bytes_after=int(after_metadata["swap_used_bytes"]),
         workload=workload,
         request_count=len(requests),
         concurrency=concurrency,
