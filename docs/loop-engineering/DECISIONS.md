@@ -185,3 +185,24 @@
 - Rollback: revert `9d577a8`; the current model runner remains unchanged.
 - Next experiment: add a separate direct-attention opt-in bridge and rerun
   production-shaped parity, memory, lifecycle, and randomized A/B gates.
+
+## 2026-07-14: Keep Direct Paged Attention Opt-In
+
+- Decision: retain `9415777` and `74f6a94` as a Qwen3.5-only opt-in bridge;
+  keep native model attention as the default.
+- Design: prefill remains contiguous, one-time promotion creates the pool at
+  decode init, and only causal `Q<=8` attention calls use the token-parallel
+  pool kernel. Unsupported masks fall back to native SDPA after materializing.
+- Correctness: current greedy text/token/finish parity matched native, all
+  direct 2K/8K requests completed, and the full suite passed with `417
+  passed, 9 skipped`.
+- Performance: randomized 8K direct/native medians were `5.4561s/5.4423s`
+  (`+0.25%`) and `23.460/23.520` completion tok/s (`-0.25%`); peak memory was
+  `0.46%` lower. The 3% speed gate was not met.
+- Failed paths: all-Q direct prefill, per-chunk pool writes, and retained pool
+  row views produced 10.59/10.68/27.22 GB peaks; these are preserved as raw
+  evidence and are not used by the final bridge.
+- Rollback: leave `engine.paged_cache_direct_attention_enabled=false` or
+  revert `9415777` and `74f6a94`.
+- Next experiment: reduce decode bridge overhead or test broader batch/model
+  support only after new end-to-end evidence clears the same gates.
