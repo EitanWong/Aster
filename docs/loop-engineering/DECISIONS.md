@@ -296,3 +296,32 @@
   `1/2/4` with per-step peak memory and swap data, then only implement an
   adaptive microbatch selector if it clears the 3% speed gate without memory
   regression.
+
+## 2026-07-14: Roll Back Memory-Aware Prefill Microbatching
+
+- Decision: roll back the second prefill-batching attempt; keep serial native
+  prefill as the production path. Do not enable a small-chunk exception without
+  resolving deterministic hybrid-cache parity first.
+- Measurement: with cache-only evaluation (no full `[B,S,V]` logits eval), the
+  isolated 0.8B matrix showed batch=4 was useful at chunk 128/256, but not at
+  512/1024. In end-to-end 0.8B 4x8K trials with `prefill_token_budget=256`,
+  randomized serial/batch medians were `22.818/20.182s` (`-11.5%`) and
+  `22.439/25.369 tok/s` (`+13.1%`); peak memory was `1.662/1.931 GB`, with
+  zero swap delta.
+- Model coverage: a one-shot 9B 4-request 512-word probe improved
+  `25.355s -> 24.358s` and `20.193 -> 21.020 tok/s`, but peak memory rose
+  `5.997 -> 6.622 GB`. This is supportive but not sufficient evidence for a
+  default change.
+- Correctness failure: 0.8B greedy serial-vs-batched parity differed for one
+  of four prompts at the text SHA level, despite matching completion length
+  and finish reason. The hybrid `ArraysCache + KVCache` batched prefill state
+  therefore fails the project's deterministic correctness gate.
+- Root causes found: forcing `mx.eval(logits)` caused a separate severe memory
+  regression (`12.886 GB` peak and `0.93 GiB` swap at batch=4); removing that
+  mistake exposed the remaining model/cache numerical divergence.
+- Rollback: all temporary prefill batching source and tests were discarded;
+  full suite returned to `418 passed, 9 skipped, 1 warning`. Matrix and parity
+  raw evidence remain in the iteration artifact directory.
+- Next experiment: audit the model-native `mlx_lm.BatchGenerator` path and its
+  cache ownership/cancellation behavior rather than reimplementing hybrid
+  prefill batching inside the manual runner.

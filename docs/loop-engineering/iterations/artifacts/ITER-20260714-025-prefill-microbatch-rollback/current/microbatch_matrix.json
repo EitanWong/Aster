@@ -1,0 +1,14 @@
+[
+  {"chunk_tokens": 128, "batch": 1, "elapsed_s": 0.0763961670, "peak_gb": 0.656164264},
+  {"chunk_tokens": 128, "batch": 2, "elapsed_s": 0.1267000830, "peak_gb": 0.795085818},
+  {"chunk_tokens": 128, "batch": 4, "elapsed_s": 0.1760566250, "peak_gb": 1.146588658},
+  {"chunk_tokens": 256, "batch": 1, "elapsed_s": 0.1204534170, "peak_gb": 0.786497962},
+  {"chunk_tokens": 256, "batch": 2, "elapsed_s": 0.1761403750, "peak_gb": 1.079348482},
+  {"chunk_tokens": 256, "batch": 4, "elapsed_s": 0.3388889580, "peak_gb": 1.535479754},
+  {"chunk_tokens": 512, "batch": 1, "elapsed_s": 0.1653405420, "peak_gb": 1.065892304},
+  {"chunk_tokens": 512, "batch": 2, "elapsed_s": 0.3433257090, "peak_gb": 1.488883418},
+  {"chunk_tokens": 512, "batch": 4, "elapsed_s": 0.6873084580, "peak_gb": 1.769509746},
+  {"chunk_tokens": 1024, "batch": 1, "elapsed_s": 0.3331846250, "peak_gb": 1.490766228},
+  {"chunk_tokens": 1024, "batch": 2, "elapsed_s": 0.7056265830, "peak_gb": 1.743098498},
+  {"chunk_tokens": 1024, "batch": 4, "elapsed_s": 1.3312832910, "peak_gb": 2.154421054}
+]

@@ -1,0 +1,17 @@
+{
+  "serial_hashes": [
+    "ffe4574de6ba7619b0d294819e9ff1d0bf9c72351af36c825b842ad1807adb29",
+    "ffe4574de6ba7619b0d294819e9ff1d0bf9c72351af36c825b842ad1807adb29",
+    "ffe4574de6ba7619b0d294819e9ff1d0bf9c72351af36c825b842ad1807adb29",
+    "0f4f32f87f6bdb3bef4ba8f577cc95e68630fee6ee85a42316b11e2ff9fff1af"
+  ],
+  "batch_hashes": [
+    "ffe4574de6ba7619b0d294819e9ff1d0bf9c72351af36c825b842ad1807adb29",
+    "ffe4574de6ba7619b0d294819e9ff1d0bf9c72351af36c825b842ad1807adb29",
+    "ffe4574de6ba7619b0d294819e9ff1d0bf9c72351af36c825b842ad1807adb29",
+    "2c6f05377a7e60961de26d68dffd936cd19c9581a078e744f6d8a022043f49fb"
+  ],
+  "completion_tokens": 32,
+  "finish_reason": "length",
+  "parity": false
+}
