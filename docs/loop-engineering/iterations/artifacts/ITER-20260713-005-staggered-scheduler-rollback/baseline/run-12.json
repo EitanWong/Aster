@@ -1,0 +1,31 @@
+[
+  {
+    "runtime_kernel": "manual",
+    "temperature": 0.0,
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.14.5",
+    "mlx_lm_version": "0.31.3",
+    "system_memory_total_bytes": 25769803776,
+    "process_rss_peak_bytes": 1349500928,
+    "swap_used_bytes_before": 3175481344,
+    "swap_used_bytes_after": 3175481344,
+    "workload": "staggered",
+    "request_count": 4,
+    "concurrency": 4,
+    "elapsed_seconds": 4.096623125000406,
+    "average_latency_seconds": 1.5740882810005132,
+    "p95_latency_seconds": 2.739186291000806,
+    "long_request_latency_seconds": 2.733079,
+    "short_request_p95_latency_seconds": 1.255268,
+    "throughput_completion_tps": 66.39614914539473,
+    "average_generation_tps": 69.60790828181065,
+    "completion_tokens_per_decode_step": 1.3532338308457712,
+    "total_completion_tokens": 272,
+    "prefix_reuse_hits": 0,
+    "prefix_tokens_reused": 0,
+    "decode_steps": 201,
+    "completed_requests": 4,
+    "failed_requests": 0,
+    "cancelled_requests": 0
+  }
+]
