@@ -42,6 +42,11 @@ manual-runtime mode. The mode returns a list-compatible owner, releases it in
 `max_decode_batch=1` until paged snapshot trimming and batch merge semantics
 are implemented. The default native MLX-LM cache path is unchanged.
 
+The fallback materialization path now keeps a geometrically grown contiguous
+buffer per full-attention layer and writes only appended tokens. This removes
+repeated block-table concatenation, but it intentionally duplicates pool and
+contiguous storage until a block-indexed attention path can consume the pool.
+
 `aster.inference.metal_paged_attention` provides a block-indexed proof path and
 a tiled 32-lane SIMD path. The tiled path shares Q/K work across value lanes and
 updates online-softmax state once per SIMD group, while preserving the generic

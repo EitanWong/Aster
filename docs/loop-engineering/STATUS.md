@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `3d8d131` (opt-in hybrid paged cache boundary).
+- Current commit: `0e69890` (reuse paged KV contiguous fallback).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -12,7 +12,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `406 passed, 9 skipped, 1 warning` across 415 collected tests.
+- Full suite: `408 passed, 9 skipped, 1 warning` across 417 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -35,6 +35,7 @@ Updated: 2026-07-14
 - Paged KV lifecycle probing showed `2,097,152` pool bytes retained after a child fork was released, then `0` pool bytes and `0` manager allocated blocks after the source bundle was released. After `mx.clear_cache()`, active MLX memory fell to `16` bytes in the isolated probe.
 - An opt-in hybrid prompt-cache boundary now preserves Qwen3.5's `ArraysCache + KVCache` list shape, deep-copies recurrent state on fork, and releases full-attention pools during request cleanup. Native and opt-in greedy parity matched exactly for a 10-token prompt and 32-token completion.
 - The same-model opt-in A/B did not pass the performance gate: at 2,229/8,373 prompt tokens elapsed time regressed by `19.9%/39.0%`, peak MLX memory increased from `1.677/2.297 GB` to `2.285/10.681 GB`, and both paths completed successfully without swap growth.
+- Reusing a geometrically grown contiguous fallback removed the repeated full-table concatenation: the 8,373-token opt-in path fell to `5.420s` and `2.471 GB` peak in a single run. Randomized 3×3 A/B measured native median `5.448s` versus paged median `5.425s` (`-0.4%`, below the 3% gate), with paged peak memory still `2.471 GB` versus native `2.297 GB`.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
@@ -42,8 +43,8 @@ Updated: 2026-07-14
 
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
 - The 9B/32K mixed-agent matrix and sustained-run matrix are not yet complete; long-context prefill still incurs substantial transient memory and swap costs.
-- Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. Hybrid bundle ownership now has an opt-in list-compatible path, but materialization regressions, snapshot/batch restrictions, default integration, SSD tiering, KV quantization, and the MLX-LM BatchGenerator serving adapter remain incomplete.
+- Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. Hybrid bundle ownership now has an opt-in list-compatible path, but memory overhead, snapshot/batch restrictions, default integration, SSD tiering, KV quantization, and the MLX-LM BatchGenerator serving adapter remain incomplete.
 
 ## Next Priority
 
-Reduce opt-in materialization/allocation overhead or roll the integration back to a storage-only boundary; require a randomized multi-trial end-to-end A/B to clear the 3% gate before any default change.
+Reduce duplicate pool-plus-contiguous memory or roll the integration back to a storage-only boundary; require a randomized multi-trial A/B to clear the 3% gate before any default change.

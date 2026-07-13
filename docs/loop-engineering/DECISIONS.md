@@ -112,3 +112,20 @@
 - Rollback: disable `engine.paged_cache_enabled` or revert `3d8d131`.
 - Next experiment: attack repeated contiguous materialization and allocation
   overhead, then rerun randomized multi-trial end-to-end A/B.
+
+## 2026-07-14: Reuse Contiguous Paged KV Fallback, Keep Opt-In
+
+- Decision: retain `0e69890` as an experimental optimization; do not enable
+  `paged_cache_enabled` by default.
+- Change: each paged layer now owns a geometrically grown contiguous fallback
+  and writes only the appended token range. Trim performs COW before modifying
+  a shared partial block.
+- Evidence: the 8K opt-in median improved from the prior `7.336s` single run to
+  `5.420s`; randomized 3×3 A/B measured native `5.448s` versus paged `5.425s`,
+  only `0.4%` apart and below the 3% gate. Peak memory remained `2.471 GB`
+  versus native `2.297 GB`.
+- Interpretation: the time bottleneck was repeated materialization, but the
+  remaining duplicate pool plus contiguous storage is a memory regression.
+- Rollback: revert `0e69890`; the opt-in boundary remains functionally safe.
+- Next experiment: reduce duplicate storage or use the pool directly in a
+  faster attention path, with randomized multi-trial evidence.
