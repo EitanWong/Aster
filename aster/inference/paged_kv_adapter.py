@@ -186,6 +186,7 @@ class PagedKVCacheLayer:
         block_table: BlockTable | None = None,
         request_id: str | None = None,
         pool: _PagedKVBlockPool | None = None,
+        enable_block_pool: bool = True,
     ) -> None:
         self.manager = manager
         self.layer_index = layer_index
@@ -199,9 +200,11 @@ class PagedKVCacheLayer:
         else:
             pool.retain()
             self._pool = pool
+        self._pool_enabled = enable_block_pool
         self._materialized_keys: Any | None = None
         self._materialized_values: Any | None = None
         self._materialized_capacity = 0
+        self._storage_written_tokens: dict[int, int] = {}
 
     @property
     def block_size(self) -> int:
@@ -221,10 +224,17 @@ class PagedKVCacheLayer:
             block_id = self.manager.ensure_writable_block(
                 self.block_table, logical_index
             )
-            self._pool.ensure_capacity(block_id, keys, values)
-            cow_source = self.manager.cow_source(block_id)
-            if self._pool.block_token_count(block_id) == 0 and cow_source is not None:
-                self._pool.copy_block(cow_source, block_id)
+            if not self._pool_enabled:
+                cow_source = self.manager.cow_source(block_id)
+                if cow_source is not None and block_id not in self._storage_written_tokens:
+                    self._storage_written_tokens[block_id] = self._storage_written_tokens.get(
+                        cow_source, 0
+                    )
+            if self._pool_enabled:
+                self._pool.ensure_capacity(block_id, keys, values)
+                cow_source = self.manager.cow_source(block_id)
+                if self._pool.block_token_count(block_id) == 0 and cow_source is not None:
+                    self._pool.copy_block(cow_source, block_id)
             block = self.manager.get_block(block_id)
             take = min(self.block_size - block_offset, token_count - position)
             segment = (
@@ -251,6 +261,7 @@ class PagedKVCacheLayer:
         while len(self.block_table.block_ids) <= logical_index:
             block_id = self.manager.allocate_block()
             self._pool.reset_block(block_id)
+            self._storage_written_tokens.pop(block_id, None)
             self.block_table.append_block(block_id)
 
     def _write_segment(
@@ -259,14 +270,29 @@ class PagedKVCacheLayer:
         block_offset: int,
         segment: tuple[Any, Any],
     ) -> None:
-        old_tokens = self._pool.block_token_count(block.block_id)
+        old_tokens = (
+            self._pool.block_token_count(block.block_id)
+            if self._pool_enabled
+            else self._storage_written_tokens.get(block.block_id, 0)
+        )
         if block_offset != old_tokens:
             raise ValueError("Paged KV writes must append within a block")
-        self._pool.write(block.block_id, block_offset, segment[0], segment[1])
+        if self._pool_enabled:
+            self._pool.write(block.block_id, block_offset, segment[0], segment[1])
         if len(block.cache_data) < self.manager.num_layers:
             block.cache_data.extend([None] * (self.manager.num_layers - len(block.cache_data)))
-        block.cache_data[self.layer_index] = (self._pool.keys[block.block_id], self._pool.values[block.block_id])
-        block.token_count = max(block.token_count, block_offset + int(segment[0].shape[2]))
+        if self._pool_enabled and self._pool.keys is not None and self._pool.values is not None:
+            block.cache_data[self.layer_index] = (
+                self._pool.keys[block.block_id],
+                self._pool.values[block.block_id],
+            )
+        else:
+            block.cache_data[self.layer_index] = None
+        end = block_offset + int(segment[0].shape[2])
+        self._storage_written_tokens[block.block_id] = max(
+            self._storage_written_tokens.get(block.block_id, 0), end
+        )
+        block.token_count = max(block.token_count, end)
 
     def _update_materialized(self, keys: Any, values: Any, start: int, end: int) -> None:
         mx = _mlx()
@@ -295,6 +321,13 @@ class PagedKVCacheLayer:
     def _materialize_from_pool(self) -> tuple[Any, Any]:
         if self.offset == 0:
             raise ValueError("Cannot materialize an empty paged KV cache")
+        if not self._pool_enabled:
+            if self._materialized_keys is None or self._materialized_values is None:
+                raise RuntimeError("Storage-only paged KV cache has no materialized state")
+            return (
+                self._materialized_keys[..., : self.offset, :],
+                self._materialized_values[..., : self.offset, :],
+            )
         pool_keys, pool_values = self._pool.block_pool()
         keys: list[Any] = []
         values: list[Any] = []
@@ -324,6 +357,7 @@ class PagedKVCacheLayer:
     def _block_pool(self) -> tuple[Any, Any, Any]:
         if self.offset == 0 or not self.block_table.block_ids:
             raise ValueError("Cannot build a block pool from an empty paged cache")
+        self._promote_pool()
         mx = _mlx()
         pool_keys, pool_values = self._pool.block_pool()
         return (
@@ -331,6 +365,31 @@ class PagedKVCacheLayer:
             pool_values,
             mx.array(self.block_table.block_ids, dtype=mx.uint32),
         )
+
+    def _promote_pool(self) -> None:
+        if self._pool_enabled:
+            return
+        if self._materialized_keys is None or self._materialized_values is None:
+            raise RuntimeError("Cannot promote an empty storage-only paged KV cache")
+        position = 0
+        for logical_index in range(len(self.block_table.block_ids)):
+            block_id = self.manager.ensure_writable_block(
+                self.block_table, logical_index
+            )
+            take = min(self.block_size, self.offset - position)
+            segment_keys = self._materialized_keys[..., position : position + take, :]
+            segment_values = self._materialized_values[..., position : position + take, :]
+            self._pool.ensure_capacity(block_id, segment_keys, segment_values)
+            self._pool.write(block_id, 0, segment_keys, segment_values)
+            block = self.manager.get_block(block_id)
+            if len(block.cache_data) < self.manager.num_layers:
+                block.cache_data.extend([None] * (self.manager.num_layers - len(block.cache_data)))
+            block.cache_data[self.layer_index] = (
+                self._pool.keys[block_id],
+                self._pool.values[block_id],
+            )
+            position += take
+        self._pool_enabled = True
 
     @property
     def state(self) -> tuple[Any, Any]:
@@ -351,6 +410,7 @@ class PagedKVCacheLayer:
         self._materialized_keys = None
         self._materialized_values = None
         self._materialized_capacity = 0
+        self._storage_written_tokens.clear()
 
     def fork(self) -> PagedKVCacheLayer:
         table = self.manager.fork_table(
@@ -362,9 +422,27 @@ class PagedKVCacheLayer:
             layer_index=self.layer_index,
             block_table=table,
             pool=self._pool,
+            enable_block_pool=self._pool_enabled,
         )
         forked.offset = self.offset
+        forked._storage_written_tokens = dict(self._storage_written_tokens)
+        self._copy_materialized_to(forked)
         return forked
+
+    def _copy_materialized_to(self, target: PagedKVCacheLayer) -> None:
+        if self._materialized_keys is None or self._materialized_values is None:
+            return
+        mx = _mlx()
+        target._materialized_keys = mx.zeros(
+            self._materialized_keys.shape, dtype=self._materialized_keys.dtype
+        )
+        target._materialized_values = mx.zeros(
+            self._materialized_values.shape, dtype=self._materialized_values.dtype
+        )
+        target._materialized_keys[:, :, :, :] = self._materialized_keys
+        target._materialized_values[:, :, :, :] = self._materialized_values
+        target._materialized_capacity = self._materialized_capacity
+        target._storage_written_tokens = dict(self._storage_written_tokens)
 
     def size(self) -> int:
         return self.offset
@@ -381,24 +459,30 @@ class PagedKVCacheLayer:
         removed = self.block_table.block_ids[keep_count:]
         for block_id in removed:
             self.manager.free_block(block_id)
+            self._storage_written_tokens.pop(block_id, None)
         del self.block_table.block_ids[keep_count:]
         self.block_table.num_tokens = self.offset
         if keep_count and self.offset % self.block_size:
             block_index = keep_count - 1
             old_block_id = self.block_table.block_ids[block_index]
-            block_id = self.manager.ensure_writable_block(self.block_table, block_index)
-            if block_id != old_block_id:
-                source_id = self.manager.cow_source(block_id)
-                if source_id is not None:
-                    self._pool.copy_block(source_id, block_id)
             token_count = self.offset % self.block_size
-            self._pool.truncate(block_id, token_count)
+            block_id = old_block_id
+            if self._pool_enabled:
+                block_id = self.manager.ensure_writable_block(self.block_table, block_index)
+                if block_id != old_block_id:
+                    source_id = self.manager.cow_source(block_id)
+                    if source_id is not None:
+                        self._pool.copy_block(source_id, block_id)
+                self._pool.truncate(block_id, token_count)
             block = self.manager.get_block(block_id)
             block.token_count = token_count
-            block.cache_data[self.layer_index] = (
-                self._pool.keys[block_id],
-                self._pool.values[block_id],
-            )
+            if not self._pool_enabled:
+                self._storage_written_tokens[block_id] = token_count
+            if self._pool_enabled and self._pool.keys is not None and self._pool.values is not None:
+                block.cache_data[self.layer_index] = (
+                    self._pool.keys[block_id],
+                    self._pool.values[block_id],
+                )
         return trimmed
 
     def make_mask(self, *args: Any, **kwargs: Any) -> Any:
@@ -465,6 +549,7 @@ class PagedKVCacheBundle:
         caches: tuple[Any, ...],
         *,
         request_id: str,
+        enable_block_pool: bool = True,
     ) -> None:
         if not layers:
             raise ValueError("Paged KV bundles require at least one layer")
@@ -480,6 +565,7 @@ class PagedKVCacheBundle:
         self.layers = layers
         self.caches = PagedKVCacheList(caches, self)
         self.request_id = request_id
+        self._enable_block_pool = enable_block_pool
         self._released = False
 
     @classmethod
@@ -490,6 +576,7 @@ class PagedKVCacheBundle:
         *,
         kv_cache_type: type[Any],
         request_id: str,
+        enable_block_pool: bool = True,
     ) -> PagedKVCacheBundle:
         if not prompt_cache:
             raise ValueError("Paged KV bundles require at least one cache layer")
@@ -498,13 +585,24 @@ class PagedKVCacheBundle:
         layers: list[PagedKVCacheLayer] = []
         for index, cache in enumerate(prompt_cache):
             if isinstance(cache, kv_cache_type):
-                layer = PagedKVCacheLayer(manager, layer_index=index, block_table=table)
+                layer = PagedKVCacheLayer(
+                    manager,
+                    layer_index=index,
+                    block_table=table,
+                    enable_block_pool=enable_block_pool,
+                )
                 layers.append(layer)
                 caches[index] = layer
         if not layers:
             manager.remove_table(request_id)
             raise ValueError("Paged KV bundles require at least one full-attention layer")
-        return cls(manager, tuple(layers), tuple(caches), request_id=request_id)
+        return cls(
+            manager,
+            tuple(layers),
+            tuple(caches),
+            request_id=request_id,
+            enable_block_pool=enable_block_pool,
+        )
 
     def fork(self, request_id: str) -> PagedKVCacheBundle:
         if self._released:
@@ -521,9 +619,13 @@ class PagedKVCacheBundle:
                 layer_index=layer.layer_index,
                 block_table=table,
                 pool=layer._pool,
+                enable_block_pool=layer._pool_enabled,
             )
         for layer in fork_layers.values():
             layer.offset = source_offset
+        for source_layer in self.layers:
+            target_layer = fork_layers[source_layer.layer_index]
+            source_layer._copy_materialized_to(target_layer)
         fork_caches = tuple(
             fork_layers[index] if index in fork_layers else copy.deepcopy(cache)
             for index, cache in enumerate(self.caches)
@@ -533,6 +635,7 @@ class PagedKVCacheBundle:
             tuple(fork_layers.values()),
             fork_caches,
             request_id=request_id,
+            enable_block_pool=self._enable_block_pool,
         )
 
     def release(self) -> None:

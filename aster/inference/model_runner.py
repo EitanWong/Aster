@@ -489,6 +489,7 @@ class ModelRunner:
             self._paged_cache,
             kv_cache_type=cache_type,
             request_id=f"model-runner-cache-{id(configured)}",
+            enable_block_pool=False,
         )
         return bundle.caches
 

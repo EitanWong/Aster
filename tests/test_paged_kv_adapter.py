@@ -199,6 +199,70 @@ def test_trim_then_append_preserves_block_and_materialized_state() -> None:
     assert _values(layer.state[1]) == [11, 12, 13, 16]
 
 
+def test_storage_only_bundle_promotes_to_pool_only_on_block_view() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+    bundle = PagedKVCacheBundle.from_prompt_cache(
+        [KVCache()],
+        manager,
+        kv_cache_type=KVCache,
+        request_id="lazy-pool",
+        enable_block_pool=False,
+    )
+    layer = bundle.layers[0]
+    layer.update_and_fetch(_array([1, 2, 3]), _array([11, 12, 13]))
+
+    assert layer._pool.nbytes == 0
+    assert layer.nbytes > 0
+
+    pool_keys, _, _ = layer.attention_view().block_pool()
+
+    assert layer._pool.nbytes > 0
+    assert _values(pool_keys[layer.block_table.block_ids[0], ..., :3, :]) == [1, 2, 3]
+    bundle.release()
+
+
+def test_storage_only_tracks_written_tokens_per_layer() -> None:
+    manager = PagedCacheManager(num_layers=2, block_size=4, max_blocks=8)
+    bundle = PagedKVCacheBundle.from_prompt_cache(
+        [KVCache(), KVCache()],
+        manager,
+        kv_cache_type=KVCache,
+        request_id="storage-only-layers",
+        enable_block_pool=False,
+    )
+
+    first = _array([1, 2, 3])
+    second = _array([101, 102, 103])
+    bundle.layers[0].update_and_fetch(first, first)
+    bundle.layers[1].update_and_fetch(second, second)
+
+    assert _values(bundle.layers[0].state[0]) == [1, 2, 3]
+    assert _values(bundle.layers[1].state[0]) == [101, 102, 103]
+    bundle.release()
+
+
+def test_storage_only_fork_promotes_with_block_cow() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+    source = PagedKVCacheBundle.from_prompt_cache(
+        [KVCache()],
+        manager,
+        kv_cache_type=KVCache,
+        request_id="storage-only-fork-source",
+        enable_block_pool=False,
+    )
+    source.layers[0].update_and_fetch(_array([1, 2]), _array([11, 12]))
+
+    fork = source.fork("storage-only-fork-child")
+    fork_pool, _, _ = fork.layers[0].attention_view().block_pool()
+    source_pool, _, _ = source.layers[0].attention_view().block_pool()
+
+    assert source.layers[0].block_table.block_ids != fork.layers[0].block_table.block_ids
+    assert _values(fork_pool[fork.layers[0].block_table.block_ids[0], ..., :2, :]) == [1, 2]
+    assert _values(source_pool[source.layers[0].block_table.block_ids[0], ..., :2, :]) == [1, 2]
+    fork.release()
+    source.release()
+
+
 @pytest.mark.skipif(not mlx.metal.is_available(), reason="Metal is required")
 def test_attention_view_can_dispatch_block_indexed_metal_attention() -> None:
     manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=4)
