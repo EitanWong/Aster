@@ -44,6 +44,7 @@ class _RequestState:
     cancel_requested: bool = False
     matched_prefix_tokens: int = 0
     prefix_cache_key: str | None = None
+    effective_stop_token_ids: frozenset[int] = frozenset()
     # Streaming support
     stream_event: asyncio.Event | None = None
     stream_chunks: deque[DecodeChunk] = field(default_factory=deque)
@@ -57,6 +58,8 @@ class _RequestState:
 
     @property
     def stop_token_ids(self) -> frozenset[int]:
+        if self.effective_stop_token_ids:
+            return self.effective_stop_token_ids
         return frozenset(self.request.stop_token_ids)
 
     @property
@@ -344,6 +347,15 @@ class BatchedEngine:
                     total += int(value.nbytes)
         return total
 
+    def _decode_output_text(self, token_ids: list[int]) -> str:
+        try:
+            decoded = self._tokenizer.decode(token_ids, skip_special_tokens=True)
+        except TypeError:
+            decoded = self._tokenizer.decode(token_ids)
+        except Exception:
+            return ""
+        return decoded if isinstance(decoded, str) else ""
+
     def _prepare_prefix_cache_insert(
         self,
         entry: SnapshotEntry,
@@ -383,6 +395,39 @@ class BatchedEngine:
         self.prefix_store.unpin(state.prefix_cache_key)
         self._prefix_pin_count = max(self._prefix_pin_count - 1, 0)
         state.prefix_cache_key = None
+
+    def _cache_restore_compatible(
+        self,
+        use_cache: bool,
+        cache_token_count: int,
+        prompt_token_count: int,
+    ) -> bool:
+        profile = (
+            prompt_token_count,
+            use_cache,
+            cache_token_count if use_cache else 0,
+        )
+        for rid in self._running:
+            state = self._state.get(rid)
+            if state is None:
+                continue
+            other_profile = (
+                len(state.prompt_tokens),
+                state.prefix_cache_key is not None,
+                max(len(state.prompt_tokens) - 1, 0)
+                if state.prefix_cache_key is not None
+                else 0,
+            )
+            if other_profile != profile:
+                return False
+        return True
+
+    def _prompt_length_compatible(self, prompt_token_count: int) -> bool:
+        return all(
+            len(state.prompt_tokens) == prompt_token_count
+            for rid in self._running
+            if (state := self._state.get(rid)) is not None
+        )
 
     def _process_prompt_responses(self, responses: list[Any]) -> None:
         if not responses or not self.prefix_store.enabled or self._model_fingerprint is None:
@@ -556,8 +601,8 @@ class BatchedEngine:
         if request.structured_output_schema is not None:
             try:
                 json_processor = build_json_logits_processor(
-                    self._tokenizer,
                     request.structured_output_schema,
+                    self._tokenizer,
                 )
                 if json_processor is not None:
                     processors.append(json_processor)
@@ -750,6 +795,12 @@ class BatchedEngine:
                 state.prompt_tokens = tokens
                 state.started_at = time.monotonic()
 
+                if not self._prompt_length_compatible(len(tokens)):
+                    state.prompt_tokens = []
+                    state.started_at = None
+                    self._waiting.appendleft(rid)
+                    break
+
                 # Sampler
                 sampler = self._make_sampler_for_request(state.request)
 
@@ -758,6 +809,9 @@ class BatchedEngine:
                 # Ensure it's a list of lists for BatchGenerator
                 wrapped_lps = (
                     [logits_processors] if logits_processors else []
+                )
+                state.effective_stop_token_ids = frozenset(
+                    self._normalize_stop_token_ids(state.request)
                 )
 
                 # Create paged cache block table for this request
@@ -787,6 +841,24 @@ class BatchedEngine:
                         else:
                             self._release_prefix_pin(state)
 
+                cached_prefix_tokens = max(len(tokens) - len(prompt_tokens_for_insert), 0)
+                if not self._cache_restore_compatible(
+                    prompt_cache is not None,
+                    cached_prefix_tokens,
+                    len(tokens),
+                ):
+                    self._release_prefix_pin(state)
+                    state.matched_prefix_tokens = 0
+                    state.prompt_tokens = []
+                    state.started_at = None
+                    if self._paged_cache is not None:
+                        try:
+                            self._paged_cache.remove_table(rid)
+                        except Exception:
+                            pass
+                    self._waiting.appendleft(rid)
+                    break
+
                 # Insert into batch generator
                 kwargs = dict(
                     max_tokens=[state.max_tokens],
@@ -794,7 +866,6 @@ class BatchedEngine:
                     logits_processors=wrapped_lps,
                 )
                 kwargs["prompts"] = [prompt_tokens_for_insert]
-                cached_prefix_tokens = max(len(tokens) - len(prompt_tokens_for_insert), 0)
                 kwargs["all_tokens"] = [list(tokens[:cached_prefix_tokens])]
                 if prompt_cache is not None:
                     kwargs["caches"] = [prompt_cache]
@@ -850,7 +921,7 @@ class BatchedEngine:
             else:
                 # Stream the token
                 try:
-                    text = self._tokenizer.decode([token])
+                    text = self._decode_output_text([token])
                 except Exception:
                     text = ""
                 if state.stream_event is not None:
@@ -876,10 +947,7 @@ class BatchedEngine:
         state.generation_tps = state.generated_tokens / max(gen_seconds, 0.001)
 
         # Decode full text
-        try:
-            state.output_text = self._tokenizer.decode(state.output_token_ids)
-        except Exception:
-            state.output_text = ""
+        state.output_text = self._decode_output_text(state.output_token_ids)
 
         response = InferenceResponse(
             request_id=state.request_id,
