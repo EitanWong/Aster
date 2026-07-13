@@ -1,0 +1,15 @@
+{
+  "model": "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "prompt_tokens": 2048,
+  "chunk_tokens": 256,
+  "block_size": 64,
+  "native_elapsed_s": 0.7891995000027237,
+  "paged_materializing_elapsed_s": 0.7638521670014597,
+  "elapsed_ratio": 0.967882223694799,
+  "native_peak_memory_gb": 0.983618918,
+  "paged_peak_memory_gb": 1.03330953,
+  "max_abs_logit_difference": 0.0,
+  "paged_block_count": 32,
+  "paged_full_attention_layers": 0,
+  "paged_layers_with_data": 6
+}

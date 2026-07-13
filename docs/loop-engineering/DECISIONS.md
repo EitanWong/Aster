@@ -10,6 +10,22 @@
 - Scope: mixed scheduling and admission latency; no claim about single-request decode kernel speed or global throughput.
 - Superseded by the randomized A/B re-evaluation and rollback decision below.
 
+## 2026-07-13: Keep Paged KV as an Experimental Materialization Boundary
+
+- Decision: retain `39502be` as a lossless block ownership/COW adapter, but do
+  not enable it in either production runtime.
+- Evidence: Qwen3.5-0.8B 2K chunked prefill matched native logits exactly; the
+  materializing adapter was `1.29%` slower at 2K and statistically flat at 8K,
+  so it did not pass the 3% performance gate or reduce retained KV memory.
+- Reason: current MLX-LM attention consumes contiguous K/V and cannot consume a
+  block table directly. Enabling the adapter now would add copies without
+  proving a user-visible gain.
+- Next experiment: validate a block-indexed MLX/Metal kernel against
+  `PagedAttentionView`, then add hybrid-cache bundle lifecycle and batch merge
+  support.
+- Rollback: remove `39502be` and the associated experimental tests/docs; the
+  default native cache path is unchanged.
+
 ## 2026-07-13: Randomized A/B Re-evaluation
 
 - Result: do not accept `32addf1` as a default performance profile yet.

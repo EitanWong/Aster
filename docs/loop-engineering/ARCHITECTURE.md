@@ -25,6 +25,15 @@ owned by the runtime kernel. `PagedCache` exists as a separate component, but
 the production manual kernel does not yet expose a complete paged KV execution
 path.
 
+`aster.inference.paged_kv_adapter.PagedKVCacheLayer` now defines an experimental
+lossless boundary: full-attention K/V fragments are owned by fixed physical
+blocks, block-table forks use reference counts and COW, and
+`PagedAttentionView` exposes the physical layout. The current MLX-LM attention
+API still requires contiguous K/V, so the adapter materializes a fallback view
+and is not enabled in production. A future MLX/Metal block-indexed kernel must
+consume that view directly before this boundary can reduce active KV memory or
+improve long-context throughput.
+
 ## Reference Comparison
 
 The local `examples/vllm-mlx/vllm_mlx/scheduler.py` and

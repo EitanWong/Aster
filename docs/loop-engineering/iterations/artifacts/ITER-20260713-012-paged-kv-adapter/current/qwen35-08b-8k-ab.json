@@ -1,0 +1,65 @@
+{
+  "model": "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "prompt_tokens": 8192,
+  "chunk_tokens": 512,
+  "block_size": 64,
+  "warmup_runs_per_kind": 1,
+  "measurements_per_kind": 3,
+  "native": {
+    "median_elapsed_s": 2.536450416999287,
+    "min_elapsed_s": 2.5232570830048644,
+    "max_elapsed_s": 2.5389863750024233,
+    "median_peak_memory_gb": 1.480794458
+  },
+  "paged_materializing": {
+    "median_elapsed_s": 2.5372521249955753,
+    "min_elapsed_s": 2.5344767499991576,
+    "max_elapsed_s": 2.5384632499990403,
+    "median_peak_memory_gb": 1.406327082
+  },
+  "paged_over_native_median_ratio": 1.0003160747755664,
+  "records": [
+    {
+      "trial": 1,
+      "kind": "native",
+      "elapsed_s": 2.536450416999287,
+      "peak_memory_gb": 1.480794458,
+      "block_count": 0
+    },
+    {
+      "trial": 1,
+      "kind": "paged",
+      "elapsed_s": 2.5372521249955753,
+      "peak_memory_gb": 1.406327082,
+      "block_count": 128
+    },
+    {
+      "trial": 2,
+      "kind": "paged",
+      "elapsed_s": 2.5344767499991576,
+      "peak_memory_gb": 1.506990378,
+      "block_count": 128
+    },
+    {
+      "trial": 2,
+      "kind": "native",
+      "elapsed_s": 2.5389863750024233,
+      "peak_memory_gb": 1.581457754,
+      "block_count": 0
+    },
+    {
+      "trial": 3,
+      "kind": "native",
+      "elapsed_s": 2.5232570830048644,
+      "peak_memory_gb": 1.480794458,
+      "block_count": 0
+    },
+    {
+      "trial": 3,
+      "kind": "paged",
+      "elapsed_s": 2.5384632499990403,
+      "peak_memory_gb": 1.406327082,
+      "block_count": 128
+    }
+  ]
+}

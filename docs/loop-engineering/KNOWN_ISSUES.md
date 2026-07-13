@@ -9,3 +9,4 @@
 - Paged KV, SSD cache, KV-cache quantization, structured-output black-box parity, and full tool parser parity remain open.
 - Experimental KV quantization is not enabled: 4-bit KV failed fixed greedy token parity and 8-bit has no demonstrated material gain.
 - `kv_cache_step_tokens` reduces native KV growth copies but does not reduce retained KV memory; a true paged attention path remains unimplemented.
+- The experimental `PagedKVCacheLayer` is lossless and COW-capable, but its current MLX integration materializes contiguous K/V on every update and batch merge falls back to native contiguous caches; it is intentionally disabled in production paths.

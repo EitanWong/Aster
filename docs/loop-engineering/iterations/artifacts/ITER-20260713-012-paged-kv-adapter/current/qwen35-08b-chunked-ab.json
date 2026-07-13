@@ -1,0 +1,93 @@
+{
+  "model": "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "prompt_tokens": 2048,
+  "chunk_tokens": 256,
+  "block_size": 64,
+  "warmup_runs_per_kind": 1,
+  "measurements_per_kind": 5,
+  "native": {
+    "median_elapsed_s": 0.7786600420004106,
+    "min_elapsed_s": 0.7645416669984115,
+    "max_elapsed_s": 0.8115272909999476,
+    "median_peak_memory_gb": 1.263064422
+  },
+  "paged_materializing": {
+    "median_elapsed_s": 0.7887227080063894,
+    "min_elapsed_s": 0.7671569579979405,
+    "max_elapsed_s": 0.8020739999992657,
+    "median_peak_memory_gb": 1.16044937
+  },
+  "paged_over_native_median_ratio": 1.0129230543025265,
+  "records": [
+    {
+      "trial": 1,
+      "kind": "native",
+      "elapsed_s": 0.8115272909999476,
+      "peak_memory_gb": 0.983618918,
+      "block_count": 0
+    },
+    {
+      "trial": 1,
+      "kind": "paged",
+      "elapsed_s": 0.7887227080063894,
+      "peak_memory_gb": 1.03330953,
+      "block_count": 32
+    },
+    {
+      "trial": 2,
+      "kind": "paged",
+      "elapsed_s": 0.796671709002112,
+      "peak_memory_gb": 1.185615194,
+      "block_count": 32
+    },
+    {
+      "trial": 2,
+      "kind": "native",
+      "elapsed_s": 0.7786600420004106,
+      "peak_memory_gb": 1.288230246,
+      "block_count": 0
+    },
+    {
+      "trial": 3,
+      "kind": "native",
+      "elapsed_s": 0.792120457997953,
+      "peak_memory_gb": 1.263064422,
+      "block_count": 0
+    },
+    {
+      "trial": 3,
+      "kind": "paged",
+      "elapsed_s": 0.8020739999992657,
+      "peak_memory_gb": 1.16044937,
+      "block_count": 32
+    },
+    {
+      "trial": 4,
+      "kind": "paged",
+      "elapsed_s": 0.7881593749989406,
+      "peak_memory_gb": 1.185615194,
+      "block_count": 32
+    },
+    {
+      "trial": 4,
+      "kind": "native",
+      "elapsed_s": 0.7735971250003786,
+      "peak_memory_gb": 1.288230246,
+      "block_count": 0
+    },
+    {
+      "trial": 5,
+      "kind": "native",
+      "elapsed_s": 0.7645416669984115,
+      "peak_memory_gb": 1.263064422,
+      "block_count": 0
+    },
+    {
+      "trial": 5,
+      "kind": "paged",
+      "elapsed_s": 0.7671569579979405,
+      "peak_memory_gb": 1.16044937,
+      "block_count": 32
+    }
+  ]
+}
