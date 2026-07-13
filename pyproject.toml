@@ -51,6 +51,8 @@ dependencies = [
     "lm-format-enforcer>=0.10.9",
     "sentencepiece>=0.2.2",
     "huggingface-hub>=1.23.0",
+    "pydub>=0.25.1",
+    "python-multipart>=0.0.32",
 ]
 
 [project.optional-dependencies]
