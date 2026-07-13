@@ -1,6 +1,6 @@
 # Known Issues
 
-- Benchmark sampling is stochastic because the direct workload uses `temperature=0.7`; fixed-seed greedy comparisons are still needed for token-level A/B evidence.
+- Benchmark sampling is now explicit and defaults to greedy `temperature=0.0`; non-greedy runs remain intentionally stochastic.
 - Benchmark A/B execution must be randomized or interleaved to reduce thermal and process-order bias.
 - Direct benchmark records do not include per-trial RSS, MLX peak memory, swap delta, or energy.
 - `BatchGeneratorRuntimeKernel.available` is false; continuous batching is implemented by the manual scheduler and decode batch runner only.

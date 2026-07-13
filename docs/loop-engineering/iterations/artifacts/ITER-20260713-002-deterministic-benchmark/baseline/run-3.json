@@ -1,0 +1,21 @@
+[
+  {
+    "runtime_kernel": "manual",
+    "workload": "mixed",
+    "request_count": 4,
+    "concurrency": 4,
+    "elapsed_seconds": 3.4636732079998183,
+    "average_latency_seconds": 2.645563135500197,
+    "p95_latency_seconds": 3.4635103330001584,
+    "throughput_completion_tps": 83.14872180632553,
+    "average_generation_tps": 59.724492946396836,
+    "completion_tokens_per_decode_step": 1.3457943925233644,
+    "total_completion_tokens": 288,
+    "prefix_reuse_hits": 0,
+    "prefix_tokens_reused": 0,
+    "decode_steps": 214,
+    "completed_requests": 4,
+    "failed_requests": 0,
+    "cancelled_requests": 0
+  }
+]
