@@ -4,7 +4,7 @@ Updated: 2026-07-13
 
 ## Current State
 
-- Current commit: `39502be` (lossless paged KV adapter boundary).
+- Current commit: `31f47cf` (block-indexed Metal attention contract).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -12,7 +12,7 @@ Updated: 2026-07-13
 
 ## Evidence
 
-- Full suite: `395 passed, 9 skipped, 1 warning`.
+- Full suite: `398 passed, 9 skipped, 1 warning`.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -28,6 +28,7 @@ Updated: 2026-07-13
 - Native KV growth step 2048 reduced single-trial 12K latency to 33.2s and 30K latency to 79.8s with exact greedy smoke parity; peak memory was unchanged, so this is an allocation-copy optimization rather than a paged-KV solution.
 - The experimental paged KV adapter now writes full-attention K/V into fixed blocks with reference-counted table forks and COW; Qwen3.5-0.8B 2K chunked prefill matched native logits exactly (`max_abs_logit_difference=0.0`).
 - The adapter's contiguous materialization fallback did not clear the 3% performance gate: 2K median was `1.29%` slower and 8K median was statistically flat (`0.03%` slower); it is not enabled by default.
+- A block-indexed `mx.fast.metal_kernel` now consumes block pools and logical block indices with GQA and causal offsets; Qwen3.5-shaped FP16 parity reached `6.1e-05` max absolute difference, but the correctness-first kernel was `85.96x` slower than native attention and is disabled.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
@@ -35,8 +36,8 @@ Updated: 2026-07-13
 
 - The direct benchmark does not yet randomize A/B order or collect MLX allocator-level peak memory for failed requests and every long-context artifact.
 - The 9B/32K mixed-agent matrix and sustained-run matrix are not yet complete; long-context prefill still incurs substantial transient memory and swap costs.
-- Paged KV ownership is now implemented as an experimental boundary, but block-indexed MLX/Metal attention, hybrid-cache bundle fork/release, and a production integration remain incomplete. SSD tiering, KV quantization, and the MLX-LM BatchGenerator serving adapter also remain incomplete.
+- Paged KV ownership and a block-indexed Metal contract are now experimental boundaries, but a performant tiled kernel, persistent GPU block pool, hybrid-cache bundle fork/release, and production integration remain incomplete. SSD tiering, KV quantization, and the MLX-LM BatchGenerator serving adapter also remain incomplete.
 
 ## Next Priority
 
-Validate or implement a block-indexed MLX/Metal attention entry point for `PagedAttentionView`, then add hybrid-cache bundle fork/release before attempting 32K mixed-agent traffic.
+Replace per-call block packing with a persistent GPU pool and optimize the tiled/simdgroup kernel; only then add hybrid-cache bundle fork/release before attempting 32K mixed-agent traffic.

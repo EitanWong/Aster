@@ -1,0 +1,25 @@
+{
+  "shape": {
+    "queries": [
+      1,
+      8,
+      1,
+      256
+    ],
+    "pool": [
+      8,
+      1,
+      2,
+      64,
+      256
+    ]
+  },
+  "block_size": 64,
+  "total_tokens": 512,
+  "max_abs_difference": 6.103515625e-05,
+  "paged_kernel_elapsed_s": 0.0164434580001398,
+  "native_attention_elapsed_s": 0.00019129199790768325,
+  "paged_over_native_ratio": 85.95998881288983,
+  "paged_peak_memory_gb": 0.0021095,
+  "native_peak_memory_gb": 0.002109488
+}

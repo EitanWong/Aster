@@ -26,6 +26,19 @@
 - Rollback: remove `39502be` and the associated experimental tests/docs; the
   default native cache path is unchanged.
 
+## 2026-07-13: Validate, But Do Not Enable, Block-Indexed Metal Attention
+
+- Decision: retain `31f47cf` as a correctness-first kernel contract and keep it
+  disabled in serving paths.
+- Evidence: Qwen3.5-shaped FP16 block attention matched native MLX within
+  `6.1e-05` maximum absolute difference, but measured `85.96x` slower.
+- Reason: the proof kernel assigns one thread to each output value and repeats
+  the Q/K reduction; it proves the layout, not a viable execution strategy.
+- Next experiment: persistent GPU block pool plus tiled/simdgroup attention,
+  with 512/2K/8K parity and performance gates.
+- Rollback: remove `31f47cf`; no production cache or attention path depends on
+  the experimental module.
+
 ## 2026-07-13: Randomized A/B Re-evaluation
 
 - Result: do not accept `32addf1` as a default performance profile yet.

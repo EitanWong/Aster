@@ -34,6 +34,12 @@ and is not enabled in production. A future MLX/Metal block-indexed kernel must
 consume that view directly before this boundary can reduce active KV memory or
 improve long-context throughput.
 
+The first block-indexed proof kernel now exists in
+`aster.inference.metal_paged_attention`, but it is deliberately outside the
+production runtime. It validates the ABI and causal/GQA semantics; it does not
+yet provide the tiled execution or persistent GPU pool needed for a useful
+performance result.
+
 ## Reference Comparison
 
 The local `examples/vllm-mlx/vllm_mlx/scheduler.py` and
