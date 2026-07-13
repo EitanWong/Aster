@@ -76,3 +76,21 @@
 - Next experiment: compare a production-shaped long-context workload against
   native attention, then choose between a more specialized decode kernel and
   hybrid-cache bundle lifecycle/reclamation.
+
+## 2026-07-14: Add Full-Attention Paged KV Bundle Reclamation
+
+- Decision: retain `c5c2f6b` as an experimental lifecycle boundary for a set of
+  full-attention layers; do not enable it in serving yet.
+- Evidence: a deterministic lifecycle probe retained `2,097,152` pool bytes
+  while a fork remained alive, then reclaimed the pool and all manager blocks
+  after the source bundle released. The 0.8B manual runtime baseline completed
+  2,229 and 8,373 token prompts without swap growth, providing a production
+  reference for a future opt-in integration.
+- Design: pool owners are reference-counted across bundle forks. Bundle release
+  uses `discard_cache_data=True` only when the final table reference is gone,
+  preserving ordinary prefix-cache manager behavior.
+- Boundary: mixed recurrent/full-attention bundles are rejected because
+  recurrent state has no proven fork/release contract yet.
+- Rollback: revert `c5c2f6b`; the native manual runtime remains unchanged.
+- Next experiment: integrate the full-attention bundle behind an opt-in cache
+  boundary, then add and verify hybrid-layer state ownership.

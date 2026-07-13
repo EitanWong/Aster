@@ -32,7 +32,9 @@ per-layer physical pool, block-table forks use reference counts and COW, and
 current MLX-LM attention API still requires contiguous K/V, so the adapter
 materializes a fallback view and is not enabled in production. Pool capacity is
 grown geometrically and is currently owned by the layer; bundle-level release
-and reclamation are not complete.
+and reclamation are available through `PagedKVCacheBundle` for full-attention
+layer sets. The bundle deliberately rejects mixed recurrent/full-attention
+cache lists until recurrent state has an explicit fork/release contract.
 
 `aster.inference.metal_paged_attention` provides a block-indexed proof path and
 a tiled 32-lane SIMD path. The tiled path shares Q/K work across value lanes and
