@@ -206,8 +206,11 @@ recorded prefix hits without passing stored caches to
 capturing the `(prompt_len-1, prompt_len)` prefill snapshot, cloning cache
 ownership before insertion, and releasing pins on all terminal paths. Exact
 and strict-prefix reuse now pass deterministic 0.8B/9B smoke gates, but
-divergent hybrid-cache LCP rewind and the separate `BatchGeneratorRuntimeKernel`
-adapter remain outside the eligible serving boundary.
+heterogeneous prompt/cache profiles are conservatively kept out of the same
+active batch because hybrid-cache offsets are not proven safe. Divergent
+hybrid-cache LCP rewind and the separate `BatchGeneratorRuntimeKernel` adapter
+remain outside the eligible serving boundary. A future per-profile lane
+design must preserve token parity before relaxing this guard.
 
 The current manual runtime now binds mlx-lm/mlx-vlm generation streams at every
 runner-entry boundary. This is separate from single-thread ownership: the

@@ -364,3 +364,26 @@
 - Rollback: revert `68b0a2b`.
 - Next experiment: complete BatchedEngine mixed/reuse/staggered concurrency
   2/4/8 matrix and evaluate safe hybrid append-only LCP coverage.
+
+## 2026-07-14: Guard Heterogeneous BatchGenerator Profiles
+
+- Decision: retain `17f20ee` in the experimental BatchedEngine path, but do
+  not expose it as the production runtime strategy.
+- Root cause: Qwen3.5 hybrid `ArraysCache + KVCache` batches changed greedy
+  output hashes when prompt lengths or cache offsets differed. Forcing
+  prefill batch size to one fixed only part of the failure; decode merging
+  still diverged.
+- Change: active requests must share prompt length, cache/no-cache mode, and
+  cache token offset before entering the same BatchGenerator profile. Other
+  requests wait rather than being mixed.
+- Evidence: corrected 30-record 0.8B on/off matrix at concurrency 2/4/8 had
+  exact response-hash parity, zero errors, and zero swap delta. Warm cache-on
+  elapsed improved `9%~34%`; mixed C=8 improved `16.0%`, long C=8 improved
+  `33.5%`. The mixed peak was `3.1%` higher than off, so this is a measured
+  latency/cache-reuse tradeoff, not a universal memory win.
+- Additional fixes: structured schema argument order, effective EOS stops,
+  and special-token filtering now make structured requests valid JSON with a
+  clean `stop` finish reason.
+- Rollback: revert `17f20ee`.
+- Next experiment: use separate per-profile BatchGenerator lanes or an
+  equivalent scheduler boundary, with the same token parity and memory gates.

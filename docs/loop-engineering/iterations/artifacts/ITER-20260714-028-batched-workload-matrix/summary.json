@@ -1,0 +1,54 @@
+{
+  "date": "2026-07-14",
+  "start_commit": "1dd3fba",
+  "end_commit": "17f20ee",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "memory": "24 GB unified"
+  },
+  "matrix": {
+    "records": 30,
+    "workloads": ["reuse", "mixed", "reuse-divergent", "staggered", "long"],
+    "concurrency_levels": [2, 4, 8],
+    "rounds": 2,
+    "response_hash_parity": true,
+    "errors_on": 0,
+    "errors_off": 0,
+    "swap_delta_on_bytes": 0,
+    "swap_delta_off_bytes": 0,
+    "warm_round_elapsed_improvement_percent": {
+      "reuse": {"2": -9.4, "4": -10.2, "8": -11.0},
+      "mixed": {"2": -18.1, "4": -16.1, "8": -16.0},
+      "reuse-divergent": {"2": -7.1, "4": -9.6, "8": -9.4},
+      "staggered": {"2": -10.1, "4": -12.9, "8": -9.1},
+      "long": {"2": -24.9, "4": -31.9, "8": -33.5}
+    },
+    "mixed_peak_gb_on": 1.517,
+    "mixed_peak_gb_off": 1.472,
+    "long_c8_peak_gb_on": 1.546,
+    "long_c8_peak_gb_off": 2.582
+  },
+  "structured": {
+    "concurrency_levels": [2, 4],
+    "all_valid": true,
+    "all_finish_reasons": "stop",
+    "errors": 0
+  },
+  "cancellation": {
+    "concurrency": 8,
+    "completed": 7,
+    "cancelled": 1,
+    "follow_up_completion_tokens": 8,
+    "running_after": 0,
+    "pinned_entries_after": 0
+  },
+  "package_state": {
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "mlx-audio": "0.4.5",
+    "transformers": "5.12.1"
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "python": "3.14.5",
+  "mlx_lm": "0.31.3",
+  "config": "/tmp/aster-qwen08-native.yaml",
+  "engine": "batched",
+  "prefix_cache_enabled": true,
+  "workloads": [
+    "structured"
+  ],
+  "concurrency_levels": [
+    2,
+    4
+  ],
+  "rounds": 1,
+  "records": [
+    {
+      "workload": "structured",
+      "concurrency": 2,
+      "round": 0,
+      "request_count": 2,
+      "prompt_tokens": 18,
+      "elapsed_s": 1.3298247089987854,
+      "latency_p50_s": 1.3293527499918127,
+      "latency_p95_s": 1.3293828329915414,
+      "completion_tokens": 18,
+      "completion_tps": 13.535618550472009,
+      "average_generation_tps": 25.898573182914763,
+      "completed": 2,
+      "errors": [],
+      "cache_hits": 0,
+      "finish_reasons": [
+        "stop",
+        "stop"
+      ],
+      "response_hashes": [
+        "2e74a359f8084d80fdbe132c9c537be3248cfcf4f47add1fda91ab61197619ba",
+        "2e74a359f8084d80fdbe132c9c537be3248cfcf4f47add1fda91ab61197619ba"
+      ],
+      "structured_valid": [
+        true,
+        true
+      ],
+      "peak_mlx_gb": 0.529557442,
+      "rss_peak_bytes": 1108017152,
+      "rss_delta_bytes": 208699392,
+      "swap_delta_bytes": 0,
+      "prefix_stats": {
+        "enabled": true,
+        "entries": 0,
+        "pinned_entries": 0,
+        "evictable_entries": 0,
+        "bytes": 0,
+        "pinned_bytes": 0,
+        "evictable_bytes": 0,
+        "budget_bytes": 8589934592,
+        "max_entries": 256,
+        "min_prefix_tokens": 64,
+        "memory_utilization": 0.0,
+        "cached_tokens": 0,
+        "avg_entry_bytes": 0.0,
+        "max_entry_bytes": 0,
+        "lookups": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": 0.0,
+        "tokens_saved": 0,
+        "stores": 0,
+        "evictions": 0,
+        "evicted_bytes": 0,
+        "exact_hits": 0,
+        "prefix_hits": 0,
+        "lcp_hits": 0,
+        "unsafe_lcp_skips": 0,
+        "last_match_type": null
+      }
+    },
+    {
+      "workload": "structured",
+      "concurrency": 4,
+      "round": 0,
+      "request_count": 4,
+      "prompt_tokens": 36,
+      "elapsed_s": 0.24141641599999275,
+      "latency_p50_s": 0.24127124999358784,
+      "latency_p95_s": 0.2412777499994263,
+      "completion_tokens": 36,
+      "completion_tps": 149.11993391535182,
+      "average_generation_tps": 38.27626735854382,
+      "completed": 4,
+      "errors": [],
+      "cache_hits": 0,
+      "finish_reasons": [
+        "stop",
+        "stop",
+        "stop",
+        "stop"
+      ],
+      "response_hashes": [
+        "273d5a15d47677fa0584063b8e9e0d5e40d1c824213a5d7d939e5b2b198ea5a5",
+        "273d5a15d47677fa0584063b8e9e0d5e40d1c824213a5d7d939e5b2b198ea5a5",
+        "273d5a15d47677fa0584063b8e9e0d5e40d1c824213a5d7d939e5b2b198ea5a5",
+        "273d5a15d47677fa0584063b8e9e0d5e40d1c824213a5d7d939e5b2b198ea5a5"
+      ],
+      "structured_valid": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "peak_mlx_gb": 0.65075139,
+      "rss_peak_bytes": 1109360640,
+      "rss_delta_bytes": 1245184,
+      "swap_delta_bytes": 0,
+      "prefix_stats": {
+        "enabled": true,
+        "entries": 0,
+        "pinned_entries": 0,
+        "evictable_entries": 0,
+        "bytes": 0,
+        "pinned_bytes": 0,
+        "evictable_bytes": 0,
+        "budget_bytes": 8589934592,
+        "max_entries": 256,
+        "min_prefix_tokens": 64,
+        "memory_utilization": 0.0,
+        "cached_tokens": 0,
+        "avg_entry_bytes": 0.0,
+        "max_entry_bytes": 0,
+        "lookups": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": 0.0,
+        "tokens_saved": 0,
+        "stores": 0,
+        "evictions": 0,
+        "evicted_bytes": 0,
+        "exact_hits": 0,
+        "prefix_hits": 0,
+        "lcp_hits": 0,
+        "unsafe_lcp_skips": 0,
+        "last_match_type": null
+      }
+    }
+  ]
+}
