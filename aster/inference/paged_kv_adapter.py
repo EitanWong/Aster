@@ -35,6 +35,26 @@ class PagedAttentionView:
     def materialize(self) -> tuple[Any, Any]:
         return self.layer._materialize()
 
+    def block_pool(self) -> tuple[Any, Any, Any]:
+        """Return a packed pool and logical-to-physical indices for Metal."""
+        return self.layer._block_pool()
+
+    def attention(self, queries: Any, *, scale: float) -> Any:
+        """Run the experimental block-indexed Metal attention entry point."""
+        from aster.inference.metal_paged_attention import paged_block_attention
+
+        key_pool, value_pool, block_indices = self.block_pool()
+        query_tokens = int(queries.shape[2])
+        return paged_block_attention(
+            queries,
+            key_pool,
+            value_pool,
+            block_indices,
+            query_offset=self.sequence_length - query_tokens,
+            total_kv_tokens=self.sequence_length,
+            scale=scale,
+        )
+
 
 class PagedKVCacheLayer:
     """Lossless block-backed cache implementing MLX-LM's KV cache contract.
@@ -146,6 +166,33 @@ class PagedKVCacheLayer:
         return (
             mx.concatenate(keys, axis=2)[..., : self.offset, :],
             mx.concatenate(values, axis=2)[..., : self.offset, :],
+        )
+
+    def _block_pool(self) -> tuple[Any, Any, Any]:
+        if self.offset == 0 or not self.block_table.block_ids:
+            raise ValueError("Cannot build a block pool from an empty paged cache")
+        mx = _mlx()
+        keys: list[Any] = []
+        values: list[Any] = []
+        for block_id in self.block_table.block_ids:
+            block = self.manager.get_block(block_id)
+            if self.layer_index >= len(block.cache_data):
+                raise ValueError(f"Block {block_id} has no layer {self.layer_index} data")
+            layer_data = block.cache_data[self.layer_index]
+            if layer_data is None:
+                raise ValueError(f"Block {block_id} has incomplete layer data")
+            block_keys, block_values = layer_data
+            padding = self.block_size - int(block_keys.shape[2])
+            if padding > 0:
+                pad = [(0, 0), (0, 0), (0, padding), (0, 0)]
+                block_keys = mx.pad(block_keys, pad)
+                block_values = mx.pad(block_values, pad)
+            keys.append(block_keys)
+            values.append(block_values)
+        return (
+            mx.stack(keys, axis=0),
+            mx.stack(values, axis=0),
+            mx.arange(len(keys), dtype=mx.uint32),
         )
 
     @property

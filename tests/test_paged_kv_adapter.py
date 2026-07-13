@@ -69,6 +69,25 @@ def test_attention_view_exposes_blocks_without_hiding_materialization() -> None:
     assert _values(values) == [11, 12, 13]
 
 
+@pytest.mark.skipif(not mlx.metal.is_available(), reason="Metal is required")
+def test_attention_view_can_dispatch_block_indexed_metal_attention() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=4)
+    layer = PagedKVCacheLayer(manager, layer_index=0)
+    keys = mlx.array([[[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]]])
+    values = mlx.array([[[[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]]]])
+    layer.update_and_fetch(keys, values)
+    query = mlx.array([[[[0.5, 0.25]]]])
+    view = layer.attention_view()
+
+    actual = view.attention(query, scale=0.5)
+    expected = mlx.fast.scaled_dot_product_attention(
+        query, keys, values, scale=0.5, mask=None
+    )
+    mlx.eval(actual, expected)
+
+    np.testing.assert_allclose(np.asarray(actual), np.asarray(expected), rtol=2e-3, atol=2e-3)
+
+
 def test_materialized_view_is_compatible_with_native_mlx_attention() -> None:
     manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=4)
     paged = PagedKVCacheLayer(manager, layer_index=0)
