@@ -32,9 +32,15 @@ per-layer physical pool, block-table forks use reference counts and COW, and
 current MLX-LM attention API still requires contiguous K/V, so the adapter
 materializes a fallback view and is not enabled in production. Pool capacity is
 grown geometrically and is currently owned by the layer; bundle-level release
-and reclamation are available through `PagedKVCacheBundle` for full-attention
-layer sets. The bundle deliberately rejects mixed recurrent/full-attention
-cache lists until recurrent state has an explicit fork/release contract.
+and reclamation are available through `PagedKVCacheBundle`. Full-attention
+layers use block-table COW while recurrent `ArraysCache` layers are deep-copied
+on fork; other recurrent state types still require an explicit contract.
+
+`EngineSettings.paged_cache_enabled` exposes this boundary only as an opt-in
+manual-runtime mode. The mode returns a list-compatible owner, releases it in
+`InferenceEngine._cleanup_request`, disables prefix snapshots, and requires
+`max_decode_batch=1` until paged snapshot trimming and batch merge semantics
+are implemented. The default native MLX-LM cache path is unchanged.
 
 `aster.inference.metal_paged_attention` provides a block-indexed proof path and
 a tiled 32-lane SIMD path. The tiled path shares Q/K work across value lanes and

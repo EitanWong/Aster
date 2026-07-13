@@ -1,0 +1,18 @@
+{
+  "path": "paged",
+  "response": {
+    "request_id": "parity-paged",
+    "text": "\n\n<think>\n\n</think>\n\n**Unified memory** is a fundamental concept in modern distributed computing and machine learning that refers to the ability of a system to share a single",
+    "prompt_tokens": 10,
+    "completion_tokens": 32,
+    "cache_hit": false,
+    "prefill_cache_hit": false,
+    "generation_cache_reuse": false,
+    "speculative_enabled": false,
+    "speculative_path_mode": "disabled",
+    "prompt_tps": 339.00028814972586,
+    "generation_tps": 72.19766592828458,
+    "peak_memory_gb": 0.474486743,
+    "finish_reason": "length"
+  }
+}

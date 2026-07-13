@@ -94,3 +94,21 @@
 - Rollback: revert `c5c2f6b`; the native manual runtime remains unchanged.
 - Next experiment: integrate the full-attention bundle behind an opt-in cache
   boundary, then add and verify hybrid-layer state ownership.
+
+## 2026-07-14: Keep Hybrid Paged Cache Opt-In Only
+
+- Decision: retain `3d8d131` as an opt-in manual-runtime boundary. Keep native
+  MLX-LM caches as the default.
+- Design: `PagedKVCacheList` remains list-compatible for model execution;
+  `ArraysCache` layers are deep-copied on bundle fork, full KV layers use
+  physical block COW, and engine cleanup invokes `release()`.
+- Correctness: same-model greedy output matched exactly for the 10-token /
+  32-token parity smoke; 2.2K and 8.4K requests both completed with zero swap
+  growth.
+- Performance: opt-in elapsed time was `19.9%` slower at 2.2K and `39.0%`
+  slower at 8.4K; peak memory was `36%` and `365%` higher. The 3% gate failed.
+- Restrictions: prefix snapshots are disabled and decode batch size must be
+  one because clone/merge ownership is not yet safe for paged bundles.
+- Rollback: disable `engine.paged_cache_enabled` or revert `3d8d131`.
+- Next experiment: attack repeated contiguous materialization and allocation
+  overhead, then rerun randomized multi-trial end-to-end A/B.
