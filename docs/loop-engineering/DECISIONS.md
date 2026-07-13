@@ -129,3 +129,23 @@
 - Rollback: revert `0e69890`; the opt-in boundary remains functionally safe.
 - Next experiment: reduce duplicate storage or use the pool directly in a
   faster attention path, with randomized multi-trial evidence.
+
+## 2026-07-14: Keep Lazy Paged Pool Promotion Opt-In
+
+- Decision: retain `6772425` as the storage-only default inside the existing
+  opt-in paged boundary; keep native MLX-LM caches as the production default.
+- Change: the model-runner path now keeps geometrically grown contiguous KV
+  storage and promotes into the persistent physical pool only when
+  `PagedAttentionView.block_pool()` is explicitly requested. Per-layer token
+  accounting and COW cover hybrid layers and forks.
+- Correctness: 16 paged-adapter tests passed, full suite passed with `411
+  passed, 9 skipped`, and native/storage-only greedy output matched exactly.
+- Performance: randomized 8K 3×3 A/B measured native `5.4541s` versus paged
+  `5.4526s` (`-0.03%`), below the 3% gate; paged peak memory was `3.38%`
+  higher. This is a memory-architecture improvement, not a speedup claim.
+- Dependency result: relevant runtime packages were already current within
+  project constraints; `transformers 5.13.1` remains excluded by the
+  `mlx-audio` compatibility bound `<5.13.0`. No package upgrade was made.
+- Rollback: disable `engine.paged_cache_enabled` or revert `6772425`.
+- Next experiment: benchmark direct attention over the persistent pool, with
+  the same parity, lifecycle, memory, and randomized 3% gates.

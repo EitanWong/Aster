@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `0e69890` (reuse paged KV contiguous fallback).
+- Current commit: `6772425` (lazy paged KV pool promotion).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -36,6 +36,7 @@ Updated: 2026-07-14
 - An opt-in hybrid prompt-cache boundary now preserves Qwen3.5's `ArraysCache + KVCache` list shape, deep-copies recurrent state on fork, and releases full-attention pools during request cleanup. Native and opt-in greedy parity matched exactly for a 10-token prompt and 32-token completion.
 - The same-model opt-in A/B did not pass the performance gate: at 2,229/8,373 prompt tokens elapsed time regressed by `19.9%/39.0%`, peak MLX memory increased from `1.677/2.297 GB` to `2.285/10.681 GB`, and both paths completed successfully without swap growth.
 - Reusing a geometrically grown contiguous fallback removed the repeated full-table concatenation: the 8,373-token opt-in path fell to `5.420s` and `2.471 GB` peak in a single run. Randomized 3×3 A/B measured native median `5.448s` versus paged median `5.425s` (`-0.4%`, below the 3% gate), with paged peak memory still `2.471 GB` versus native `2.297 GB`.
+- Lazy pool promotion now keeps the opt-in serving path storage-only until a block-indexed consumer requests `block_pool()`. The 8,373-token randomized 3×3 A/B measured native median `5.4541s` versus paged median `5.4526s` (`-0.03%`, below the 3% gate); peak MLX memory was `2.297 GB` versus `2.374 GB` (`+3.38%`). Greedy output parity and zero swap delta held across the probe.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
@@ -43,8 +44,8 @@ Updated: 2026-07-14
 
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
 - The 9B/32K mixed-agent matrix and sustained-run matrix are not yet complete; long-context prefill still incurs substantial transient memory and swap costs.
-- Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. Hybrid bundle ownership now has an opt-in list-compatible path, but memory overhead, snapshot/batch restrictions, default integration, SSD tiering, KV quantization, and the MLX-LM BatchGenerator serving adapter remain incomplete.
+- Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. Hybrid bundle ownership now has an opt-in list-compatible path with lazy pool promotion, but direct pool attention, snapshot/batch restrictions, default integration, SSD tiering, KV quantization, and the MLX-LM BatchGenerator serving adapter remain incomplete.
 
 ## Next Priority
 
-Reduce duplicate pool-plus-contiguous memory or roll the integration back to a storage-only boundary; require a randomized multi-trial A/B to clear the 3% gate before any default change.
+Evaluate direct pool attention or another memory-reducing path; require a randomized multi-trial A/B to clear the 3% gate before any default change.
