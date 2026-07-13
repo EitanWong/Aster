@@ -39,6 +39,8 @@ class BenchmarkRecord:
     elapsed_seconds: float
     average_latency_seconds: float
     p95_latency_seconds: float
+    long_request_latency_seconds: float | None
+    short_request_p95_latency_seconds: float | None
     throughput_completion_tps: float
     average_generation_tps: float
     completion_tokens_per_decode_step: float
@@ -57,6 +59,28 @@ def _percentile(values: list[float], percentile: float) -> float:
     ordered = sorted(values)
     index = max(min(int(round((len(ordered) - 1) * percentile)), len(ordered) - 1), 0)
     return ordered[index]
+
+
+def _extract_staggered_latency_metrics(
+    timelines: list[dict[str, object]],
+) -> dict[str, float | None]:
+    long_latency: float | None = None
+    short_latencies: list[float] = []
+    for timeline in timelines:
+        request_id = timeline.get("request_id")
+        latency = timeline.get("total_latency_s")
+        if not isinstance(request_id, str) or not isinstance(latency, (int, float)):
+            continue
+        if request_id == "staggered-long":
+            long_latency = float(latency)
+        elif request_id.startswith("staggered-short-"):
+            short_latencies.append(float(latency))
+    return {
+        "long_request_latency_seconds": long_latency,
+        "short_request_p95_latency_seconds": (
+            _percentile(short_latencies, 0.95) if short_latencies else None
+        ),
+    }
 
 
 def _package_version(distribution: str) -> str:
@@ -132,6 +156,26 @@ def _build_workload(
             )
             for index in range(max(concurrency, 4))
         ]
+    if name == "staggered":
+        long_prompt = repeated_prefix + " ".join(["section"] * 4096)
+        request_count = max(concurrency, 4)
+        return [
+            InferenceRequest(
+                prompt=long_prompt,
+                max_tokens=128,
+                temperature=temperature,
+                trace_id="staggered-long",
+            ),
+            *[
+                InferenceRequest(
+                    prompt="Summarize scheduler fairness tradeoffs.",
+                    max_tokens=48,
+                    temperature=temperature,
+                    trace_id=f"staggered-short-{index}",
+                )
+                for index in range(1, request_count)
+            ],
+        ]
     if name == "long":
         long_prompt = repeated_prefix + " ".join(["section"] * 4096)
         return [
@@ -158,7 +202,12 @@ def _parse_concurrency_levels(raw: str | None, fallback: int) -> list[int]:
     return levels
 
 
-async def _run_requests(engine: InferenceEngine, requests: list[InferenceRequest]) -> tuple[list[float], list[object]]:
+async def _run_requests(
+    engine: InferenceEngine,
+    requests: list[InferenceRequest],
+    *,
+    staggered: bool = False,
+) -> tuple[list[float], list[object]]:
     latencies: list[float] = []
 
     async def run_one(request: InferenceRequest) -> object:
@@ -168,7 +217,25 @@ async def _run_requests(engine: InferenceEngine, requests: list[InferenceRequest
         finally:
             latencies.append(time.perf_counter() - started)
 
-    results = await asyncio.gather(*(run_one(request) for request in requests), return_exceptions=True)
+    if not staggered:
+        results = await asyncio.gather(
+            *(run_one(request) for request in requests),
+            return_exceptions=True,
+        )
+        return latencies, results
+
+    tasks = [asyncio.create_task(run_one(requests[0]))]
+    deadline = time.monotonic() + 5.0
+    while not tasks[0].done() and time.monotonic() < deadline:
+        status = engine.status()
+        request_phases = {item.get("phase") for item in status.get("requests", [])}
+        if status.get("prefill_requests", 0) > 0 or "prefilling" in request_phases:
+            break
+        await asyncio.sleep(0.01)
+    for request in requests[1:]:
+        await asyncio.sleep(0.05)
+        tasks.append(asyncio.create_task(run_one(request)))
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     return latencies, results
 
 
@@ -187,13 +254,30 @@ async def benchmark_workload(
     before = engine.status()
     try:
         started = time.perf_counter()
-        latencies, results = await _run_requests(engine, requests)
+        latencies, results = await _run_requests(
+            engine,
+            requests,
+            staggered=workload == "staggered",
+        )
         elapsed = time.perf_counter() - started
         after = engine.status()
     finally:
         rss_stop_event.set()
         await rss_task
     after_metadata = _collect_runtime_metadata()
+    timelines = [
+        timeline
+        for timeline in after.get("recent_request_timelines", [])
+        if isinstance(timeline, dict)
+    ]
+    staggered_latency_metrics = (
+        _extract_staggered_latency_metrics(timelines)
+        if workload == "staggered"
+        else {
+            "long_request_latency_seconds": None,
+            "short_request_p95_latency_seconds": None,
+        }
+    )
 
     responses = [result for result in results if not isinstance(result, Exception)]
     total_completion_tokens = sum(getattr(response, "completion_tokens", 0) for response in responses)
@@ -219,6 +303,10 @@ async def benchmark_workload(
         elapsed_seconds=elapsed,
         average_latency_seconds=(sum(latencies) / len(latencies)) if latencies else 0.0,
         p95_latency_seconds=_percentile(latencies, 0.95),
+        long_request_latency_seconds=staggered_latency_metrics["long_request_latency_seconds"],
+        short_request_p95_latency_seconds=staggered_latency_metrics[
+            "short_request_p95_latency_seconds"
+        ],
         throughput_completion_tps=total_completion_tokens / elapsed if elapsed > 0 else 0.0,
         average_generation_tps=average_generation_tps,
         completion_tokens_per_decode_step=(
@@ -278,7 +366,7 @@ def main() -> None:
     parser.add_argument("--config", default="configs/config.yaml")
     parser.add_argument(
         "--workload",
-        choices=["single", "reuse", "mixed", "long", "all"],
+        choices=["single", "reuse", "mixed", "staggered", "long", "all"],
         default="all",
     )
     parser.add_argument("--concurrency", type=int, default=2)
@@ -305,7 +393,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
-    workloads = ["single", "reuse", "mixed", "long"] if args.workload == "all" else [args.workload]
+    workloads = (
+        ["single", "reuse", "mixed", "staggered", "long"]
+        if args.workload == "all"
+        else [args.workload]
+    )
     runtime_kernel = None if args.runtime_kernel == "configured" else args.runtime_kernel
     concurrency_levels = _parse_concurrency_levels(
         args.concurrency_levels,
