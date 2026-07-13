@@ -187,6 +187,19 @@ def test_materialized_fallback_reuses_capacity_for_append() -> None:
     assert _values(layer.state[0]) == [1, 2, 3]
 
 
+def test_materialized_growth_is_step_bounded() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+    layer = PagedKVCacheLayer(manager, layer_index=0)
+    layer.update_and_fetch(
+        _array([1, 2, 3, 4, 5, 6, 7, 8]),
+        _array([11, 12, 13, 14, 15, 16, 17, 18]),
+    )
+
+    layer.update_and_fetch(_array([9]), _array([19]))
+
+    assert layer._materialized_capacity == 12
+
+
 def test_trim_then_append_preserves_block_and_materialized_state() -> None:
     manager = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
     layer = PagedKVCacheLayer(manager, layer_index=0)

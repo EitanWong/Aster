@@ -302,7 +302,8 @@ class PagedKVCacheLayer:
             old_capacity = self._materialized_capacity
             if old_keys is None and self.offset > 0:
                 old_keys, old_values = self._materialize_from_pool()
-            new_capacity = max(end, self.block_size, old_capacity * 2)
+            growth = max(self.step, end - old_capacity)
+            new_capacity = max(end, self.block_size, old_capacity + growth)
             B, H, _, key_dim = keys.shape
             value_dim = values.shape[3]
             new_keys = mx.zeros((B, H, new_capacity, key_dim), dtype=keys.dtype)
