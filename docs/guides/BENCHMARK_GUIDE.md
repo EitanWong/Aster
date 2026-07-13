@@ -104,7 +104,8 @@ For each run, capture:
 - average latency
 - p95 latency
 - runtime kernel
-- MLX allocator peak memory in GiB
+- MLX allocator peak memory in GB
+- prefill peak and active MLX memory in GB
 - aggregate completion tokens/sec
 - average generation tokens/sec
 - completion tokens per decode step
