@@ -200,12 +200,14 @@ runtime ownership boundary:
 - prompt-cache compatibility differs across KV, rotating KV, and hybrid cache
   types
 
-The 2026-07-14 API audit confirmed this boundary on `mlx-lm 0.31.3`: the
-experimental `BatchedEngine` can complete concurrent requests and remove a
-cancelled UID, but its prefix-cache path currently records a hit without
-passing the stored cache to `BatchGenerator.insert(caches=...)`. Until that
-restore/store contract and the response cache flags are corrected, this is a
-functional smoke path rather than an eligible serving backend.
+The 2026-07-14 API audit initially found that the experimental `BatchedEngine`
+recorded prefix hits without passing stored caches to
+`BatchGenerator.insert(caches=...)`. Iteration 027 corrected that boundary by
+capturing the `(prompt_len-1, prompt_len)` prefill snapshot, cloning cache
+ownership before insertion, and releasing pins on all terminal paths. Exact
+and strict-prefix reuse now pass deterministic 0.8B/9B smoke gates, but
+divergent hybrid-cache LCP rewind and the separate `BatchGeneratorRuntimeKernel`
+adapter remain outside the eligible serving boundary.
 
 The current manual runtime now binds mlx-lm/mlx-vlm generation streams at every
 runner-entry boundary. This is separate from single-thread ownership: the

@@ -1,0 +1,70 @@
+{
+  "date": "2026-07-14",
+  "start_commit": "91f612c",
+  "end_commit": "68b0a2b",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "memory": "24 GB unified"
+  },
+  "repeated_prompt_0_8b_concurrency_4": {
+    "no_prefix_median": {
+      "elapsed_s": 1.254819791502086,
+      "completion_tps": 204.015937735447,
+      "peak_gb": 1.486085174,
+      "hits": 0
+    },
+    "prefix_hot_median": {
+      "elapsed_s": 0.978548083496167,
+      "completion_tps": 261.6280672335608,
+      "peak_gb": 1.486085174,
+      "hits": 4
+    },
+    "elapsed_change_percent": -22.014,
+    "throughput_change_percent": 28.237,
+    "response_hashes_equal": true,
+    "swap_delta_gib": 0.0
+  },
+  "long_context_exact_reuse": [
+    {
+      "model": "Qwen3.5-0.8B-4bit",
+      "prompt_tokens": 12295,
+      "cold_elapsed_s": 5.725425834,
+      "hot_elapsed_s": 0.483640416,
+      "peak_gb": 1.678827758,
+      "cache_bytes": 170606592,
+      "swap_delta_gib": 0.0,
+      "response_hash_equal": true
+    },
+    {
+      "model": "Qwen3.5-9B-4bit",
+      "prompt_tokens": 12295,
+      "cold_elapsed_s": 35.755081208,
+      "hot_elapsed_s": 3.3748265,
+      "peak_gb": 6.85210094,
+      "cache_bytes": 454361088,
+      "swap_delta_gib": 0.0,
+      "response_hash_equal": true
+    }
+  ],
+  "cancellation": {
+    "concurrent_requests": 4,
+    "completed": 3,
+    "cancelled": 1,
+    "running_after": 0,
+    "pinned_entries_after": 0,
+    "follow_up_succeeded": true
+  },
+  "streaming": {
+    "chunks": 12,
+    "terminal_chunks": 1,
+    "pinned_entries_after": 0
+  },
+  "append_only_prefix": {
+    "cached_tokens": 481,
+    "prefix_hit": true,
+    "response_hash_equal_to_no_cache": true
+  }
+}

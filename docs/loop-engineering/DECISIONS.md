@@ -343,3 +343,24 @@
 - Next experiment: add a cache-shape/ownership adapter with deterministic
   serial-vs-batched parity and explicit restore/store/cancel tests before any
   runtime default or package-bound change.
+
+## 2026-07-14: Restore Prompt-Boundary Caches in BatchedEngine
+
+- Decision: retain `68b0a2b` in the experimental `engine_type=batched` path;
+  keep manual runtime as the production default.
+- Root cause: the previous wrapper discarded `BatchGenerator` prompt responses,
+  never passed stored caches to `insert()`, and stored cache state after
+  generation instead of at the reusable prompt boundary.
+- Change: consume `BatchGenerator.next()`, capture the final prefill response
+  at `(prompt_len-1, prompt_len)`, deep-copy the cache before insertion, pass
+  only uncached tokens, and release prefix pins on every terminal path.
+- Evidence: 0.8B four-request hot-prefix throughput improved `28.2%` with
+  identical output hashes and unchanged peak memory. Exact 12K reuse improved
+  elapsed by `91.6%` on 0.8B and `90.6%` on 9B, with zero swap delta. An
+  append-only Agent prompt reused 481 tokens with exact no-cache parity.
+- Safety: divergent LCP matches that require hybrid-cache rewind remain
+  rejected; cancellation, streaming, and follow-up probes left zero pinned
+  entries. No default runtime or package bound changed.
+- Rollback: revert `68b0a2b`.
+- Next experiment: complete BatchedEngine mixed/reuse/staggered concurrency
+  2/4/8 matrix and evaluate safe hybrid append-only LCP coverage.
