@@ -8,3 +8,4 @@
 - The admission-before-prefill scheduler experiment was rolled back: randomized mixed and staggered A/B did not meet a reliable performance gate.
 - Paged KV, SSD cache, KV-cache quantization, structured-output black-box parity, and full tool parser parity remain open.
 - Experimental KV quantization is not enabled: 4-bit KV failed fixed greedy token parity and 8-bit has no demonstrated material gain.
+- `kv_cache_step_tokens` reduces native KV growth copies but does not reduce retained KV memory; a true paged attention path remains unimplemented.

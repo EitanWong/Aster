@@ -4,7 +4,7 @@ Updated: 2026-07-13
 
 ## Current State
 
-- Current commit: `fee6db4` (prefill allocator peak/active memory observability).
+- Current commit: `d525ef6` (tuned native MLX KV growth step).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -12,7 +12,7 @@ Updated: 2026-07-13
 
 ## Evidence
 
-- Full suite: `389 passed, 9 skipped, 1 warning`.
+- Full suite: `390 passed, 9 skipped, 1 warning`.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -25,6 +25,7 @@ Updated: 2026-07-13
 - Bounding automatic prefix snapshots reduced 30K stores from 53 to 8 at cap 4K and to 1 at default cap 0; the cap-0 run took 92.6s, reached 1.38 completion tok/s, and added 1.10 GiB swap.
 - Prefill memory is now separately observable: default cap-0 12K measured 9.121 GB peak / 6.866 GB active; 30K measured 12.124 GB peak / 6.149 GB active. Overall request peaks matched prefill peaks.
 - 4-bit/8-bit MLX KV prototypes were evaluated and not adopted: 4-bit changed fixed greedy output, while 8-bit showed no material gain in the measured 12K trial.
+- Native KV growth step 2048 reduced single-trial 12K latency to 33.2s and 30K latency to 79.8s with exact greedy smoke parity; peak memory was unchanged, so this is an allocation-copy optimization rather than a paged-KV solution.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
