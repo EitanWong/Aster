@@ -23,6 +23,94 @@ def _nbytes(value: Any) -> int:
     return int(value_nbytes) if isinstance(value_nbytes, int) else 0
 
 
+class _PagedKVBlockPool:
+    """Persistent MLX storage for one full-attention layer."""
+
+    def __init__(self, manager: PagedCacheManager) -> None:
+        self.manager = manager
+        self.keys: Any | None = None
+        self.values: Any | None = None
+        self._capacity = 0
+        self._shape: tuple[int, int, int, int, int] | None = None
+        self._written_tokens: dict[int, int] = {}
+
+    def ensure_capacity(self, block_id: int, keys: Any, values: Any) -> None:
+        mx = _mlx()
+        B, H, _, key_dim = keys.shape
+        block_size = self.manager.block_size
+        value_dim = values.shape[3]
+        shape = (B, H, block_size, key_dim, value_dim)
+        if self._shape is None:
+            self._shape = shape
+            initial = max(8, 1 << max(block_id, 1).bit_length())
+            self._capacity = min(max(initial, block_id + 1), self.manager.max_blocks)
+            self.keys = mx.zeros(
+                (self._capacity, B, H, block_size, key_dim), dtype=keys.dtype
+            )
+            self.values = mx.zeros(
+                (self._capacity, B, H, block_size, value_dim), dtype=values.dtype
+            )
+            return
+
+        if shape != self._shape:
+            raise ValueError("Paged KV pool shape changed after initialization")
+        if block_id < self._capacity:
+            return
+        if self.keys is None or self.values is None:
+            raise RuntimeError("Paged KV pool is not initialized")
+        new_capacity = min(
+            max(block_id + 1, self._capacity * 2),
+            self.manager.max_blocks,
+        )
+        if new_capacity <= block_id:
+            raise MemoryError("Paged KV pool exhausted")
+        extra = new_capacity - self._capacity
+        self.keys = mx.concatenate(
+            [self.keys, mx.zeros((extra, B, H, block_size, key_dim), dtype=keys.dtype)],
+            axis=0,
+        )
+        self.values = mx.concatenate(
+            [
+                self.values,
+                mx.zeros((extra, B, H, block_size, value_dim), dtype=values.dtype),
+            ],
+            axis=0,
+        )
+        self._capacity = new_capacity
+
+    def copy_block(self, source_id: int, target_id: int) -> None:
+        if self.keys is None or self.values is None:
+            raise RuntimeError("Cannot copy an uninitialized paged KV pool")
+        self.keys[target_id] = self.keys[source_id]
+        self.values[target_id] = self.values[source_id]
+        self._written_tokens[target_id] = self._written_tokens.get(source_id, 0)
+
+    def reset_block(self, block_id: int) -> None:
+        self._written_tokens.pop(block_id, None)
+
+    def write(self, block_id: int, block_offset: int, keys: Any, values: Any) -> None:
+        if self.keys is None or self.values is None:
+            raise RuntimeError("Cannot write an uninitialized paged KV pool")
+        end = block_offset + int(keys.shape[2])
+        self.keys[block_id, ..., block_offset:end, :] = keys
+        self.values[block_id, ..., block_offset:end, :] = values
+        self._written_tokens[block_id] = end
+
+    def block_token_count(self, block_id: int) -> int:
+        return self._written_tokens.get(block_id, 0)
+
+    def block_pool(self) -> tuple[Any, Any]:
+        if self.keys is None or self.values is None:
+            raise ValueError("Cannot expose an empty paged KV pool")
+        return self.keys, self.values
+
+    @property
+    def nbytes(self) -> int:
+        if self.keys is None or self.values is None:
+            return 0
+        return _nbytes(self.keys) + _nbytes(self.values)
+
+
 @dataclass(frozen=True, slots=True)
 class PagedAttentionView:
     """Block metadata plus a contiguous fallback for current MLX attention."""
@@ -73,6 +161,7 @@ class PagedKVCacheLayer:
         layer_index: int,
         block_table: BlockTable | None = None,
         request_id: str | None = None,
+        pool: _PagedKVBlockPool | None = None,
     ) -> None:
         self.manager = manager
         self.layer_index = layer_index
@@ -81,6 +170,7 @@ class PagedKVCacheLayer:
         )
         self.offset = 0
         self.step = max(manager.block_size, 1)
+        self._pool = pool or _PagedKVBlockPool(manager)
 
     @property
     def block_size(self) -> int:
@@ -100,6 +190,10 @@ class PagedKVCacheLayer:
             block_id = self.manager.ensure_writable_block(
                 self.block_table, logical_index
             )
+            self._pool.ensure_capacity(block_id, keys, values)
+            cow_source = self.manager.cow_source(block_id)
+            if self._pool.block_token_count(block_id) == 0 and cow_source is not None:
+                self._pool.copy_block(cow_source, block_id)
             block = self.manager.get_block(block_id)
             take = min(self.block_size - block_offset, token_count - position)
             segment = (
@@ -123,7 +217,9 @@ class PagedKVCacheLayer:
 
     def _ensure_table_block(self, logical_index: int) -> None:
         while len(self.block_table.block_ids) <= logical_index:
-            self.block_table.append_block(self.manager.allocate_block())
+            block_id = self.manager.allocate_block()
+            self._pool.reset_block(block_id)
+            self.block_table.append_block(block_id)
 
     def _write_segment(
         self,
@@ -131,37 +227,27 @@ class PagedKVCacheLayer:
         block_offset: int,
         segment: tuple[Any, Any],
     ) -> None:
+        old_tokens = self._pool.block_token_count(block.block_id)
+        if block_offset != old_tokens:
+            raise ValueError("Paged KV writes must append within a block")
+        self._pool.write(block.block_id, block_offset, segment[0], segment[1])
         if len(block.cache_data) < self.manager.num_layers:
             block.cache_data.extend([None] * (self.manager.num_layers - len(block.cache_data)))
-        previous = block.cache_data[self.layer_index]
-        if previous is None:
-            block.cache_data[self.layer_index] = segment
-        else:
-            old_keys, old_values = previous
-            old_tokens = int(old_keys.shape[2])
-            if block_offset == old_tokens:
-                block.cache_data[self.layer_index] = (
-                    _mlx().concatenate([old_keys, segment[0]], axis=2),
-                    _mlx().concatenate([old_values, segment[1]], axis=2),
-                )
-            else:
-                raise ValueError("Paged KV writes must append within a block")
+        block.cache_data[self.layer_index] = (self._pool.keys[block.block_id], self._pool.values[block.block_id])
         block.token_count = max(block.token_count, block_offset + int(segment[0].shape[2]))
 
     def _materialize(self) -> tuple[Any, Any]:
         if self.offset == 0:
             raise ValueError("Cannot materialize an empty paged KV cache")
+        pool_keys, pool_values = self._pool.block_pool()
         keys: list[Any] = []
         values: list[Any] = []
+        position = 0
         for block_id in self.block_table.block_ids:
-            block = self.manager.get_block(block_id)
-            if self.layer_index >= len(block.cache_data):
-                raise ValueError(f"Block {block_id} has no layer {self.layer_index} data")
-            layer_data = block.cache_data[self.layer_index]
-            if layer_data is None:
-                raise ValueError(f"Block {block_id} has incomplete layer data")
-            keys.append(layer_data[0])
-            values.append(layer_data[1])
+            take = min(self.block_size, self.offset - position)
+            keys.append(pool_keys[block_id, ..., :take, :])
+            values.append(pool_values[block_id, ..., :take, :])
+            position += take
         mx = _mlx()
         return (
             mx.concatenate(keys, axis=2)[..., : self.offset, :],
@@ -172,27 +258,11 @@ class PagedKVCacheLayer:
         if self.offset == 0 or not self.block_table.block_ids:
             raise ValueError("Cannot build a block pool from an empty paged cache")
         mx = _mlx()
-        keys: list[Any] = []
-        values: list[Any] = []
-        for block_id in self.block_table.block_ids:
-            block = self.manager.get_block(block_id)
-            if self.layer_index >= len(block.cache_data):
-                raise ValueError(f"Block {block_id} has no layer {self.layer_index} data")
-            layer_data = block.cache_data[self.layer_index]
-            if layer_data is None:
-                raise ValueError(f"Block {block_id} has incomplete layer data")
-            block_keys, block_values = layer_data
-            padding = self.block_size - int(block_keys.shape[2])
-            if padding > 0:
-                pad = [(0, 0), (0, 0), (0, padding), (0, 0)]
-                block_keys = mx.pad(block_keys, pad)
-                block_values = mx.pad(block_values, pad)
-            keys.append(block_keys)
-            values.append(block_values)
+        pool_keys, pool_values = self._pool.block_pool()
         return (
-            mx.stack(keys, axis=0),
-            mx.stack(values, axis=0),
-            mx.arange(len(keys), dtype=mx.uint32),
+            pool_keys,
+            pool_values,
+            mx.array(self.block_table.block_ids, dtype=mx.uint32),
         )
 
     @property
@@ -221,6 +291,7 @@ class PagedKVCacheLayer:
             self.manager,
             layer_index=self.layer_index,
             block_table=table,
+            pool=self._pool,
         )
         forked.offset = self.offset
         return forked
@@ -268,14 +339,7 @@ class PagedKVCacheLayer:
 
     @property
     def nbytes(self) -> int:
-        total = 0
-        for block_id in self.block_table.block_ids:
-            block = self.manager.get_block(block_id)
-            if self.layer_index < len(block.cache_data):
-                layer_data = block.cache_data[self.layer_index]
-                if layer_data is not None:
-                    total += _nbytes(layer_data[0]) + _nbytes(layer_data[1])
-        return total
+        return self._pool.nbytes
 
     def attention_view(self) -> PagedAttentionView:
         return PagedAttentionView(

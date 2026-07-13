@@ -54,6 +54,28 @@ def test_fork_copies_a_shared_partial_block_before_writing() -> None:
     assert manager.stats.shared_blocks == 0
 
 
+def test_cow_copies_each_layer_pool_after_one_shared_table_split() -> None:
+    manager = PagedCacheManager(num_layers=2, block_size=4, max_blocks=8)
+    table = manager.create_table("source-bundle")
+    source_k0 = PagedKVCacheLayer(manager, layer_index=0, block_table=table)
+    source_k1 = PagedKVCacheLayer(manager, layer_index=1, block_table=table)
+    source_k0.update_and_fetch(_array([1, 2]), _array([11, 12]))
+    source_k1.update_and_fetch(_array([101, 102]), _array([111, 112]))
+
+    fork_table = manager.fork_table(table, "fork-bundle")
+    fork_k0 = PagedKVCacheLayer(manager, layer_index=0, block_table=fork_table, pool=source_k0._pool)
+    fork_k1 = PagedKVCacheLayer(manager, layer_index=1, block_table=fork_table, pool=source_k1._pool)
+    fork_k0.offset = fork_k1.offset = 2
+    fork_k0.update_and_fetch(_array([3]), _array([13]))
+    fork_k1.update_and_fetch(_array([103]), _array([113]))
+
+    assert _values(source_k0.state[0]) == [1, 2]
+    assert _values(source_k1.state[0]) == [101, 102]
+    assert _values(fork_k0.state[0]) == [1, 2, 3]
+    assert _values(fork_k1.state[0]) == [101, 102, 103]
+    assert manager.stats.cow_copies == 1
+
+
 def test_attention_view_exposes_blocks_without_hiding_materialization() -> None:
     manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=4)
     layer = PagedKVCacheLayer(manager, layer_index=0)
@@ -67,6 +89,22 @@ def test_attention_view_exposes_blocks_without_hiding_materialization() -> None:
     keys, values = view.materialize()
     assert _values(keys) == [1, 2, 3]
     assert _values(values) == [11, 12, 13]
+
+
+def test_attention_view_reuses_a_persistent_physical_block_pool() -> None:
+    manager = PagedCacheManager(num_layers=1, block_size=2, max_blocks=8)
+    layer = PagedKVCacheLayer(manager, layer_index=0)
+    layer.update_and_fetch(_array([1, 2, 3]), _array([11, 12, 13]))
+
+    first_pool, _, first_indices = layer.attention_view().block_pool()
+    layer.update_and_fetch(_array([4]), _array([14]))
+    second_pool, _, second_indices = layer.attention_view().block_pool()
+    mlx.eval(first_pool, second_pool, second_indices)
+
+    assert first_pool is second_pool
+    assert first_pool.shape[0] >= max(layer.block_table.block_ids) + 1
+    assert np.asarray(second_indices).tolist() == layer.block_table.block_ids
+    assert _values(second_pool[layer.block_table.block_ids[0], ..., :2, :]) == [1, 2]
 
 
 @pytest.mark.skipif(not mlx.metal.is_available(), reason="Metal is required")

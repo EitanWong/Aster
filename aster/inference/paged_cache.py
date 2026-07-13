@@ -206,6 +206,7 @@ class PagedCacheManager:
 
         # Per-sequence block tables
         self._tables: dict[str, BlockTable] = {}
+        self._cow_sources: dict[int, int] = {}
 
         # Free list
         self._free_queue = FreeKVCacheBlockQueue()
@@ -232,6 +233,7 @@ class PagedCacheManager:
         block.cache_data = []
         block.token_count = 0
         block.block_hash = 0
+        self._cow_sources.pop(block.block_id, None)
         self.stats.allocated_blocks += 1
         self.stats.free_blocks -= 1
         return block.block_id
@@ -289,9 +291,14 @@ class PagedCacheManager:
             return block_id
 
         new_id = self._cow_copy_block(source)
+        self._cow_sources[new_id] = block_id
         self.free_block(block_id)
         table.block_ids[block_index] = new_id
         return new_id
+
+    def cow_source(self, block_id: int) -> int | None:
+        """Return the source block for a recent COW allocation, if any."""
+        return self._cow_sources.get(block_id)
 
     def get_blocks_for_generation(self, table: BlockTable) -> list[int]:
         """Ensure blocks are not shared before writing (COW)."""
@@ -397,6 +404,7 @@ class PagedCacheManager:
         """Release all blocks back to the free pool."""
         self._hash_map.clear()
         self._tables.clear()
+        self._cow_sources.clear()
         self._free_queue = FreeKVCacheBlockQueue()
         for block in self._blocks[1:]:
             block.ref_count = 0
