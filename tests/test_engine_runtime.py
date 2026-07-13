@@ -857,6 +857,7 @@ def test_engine_reuses_prefix_checkpoints_and_skips_prefill_work() -> None:
         status = engine.status()
         assert status["prefix_reuse_hits"] == 1
         assert status["prefix_tokens_reused"] > 0
+        assert status["prefix_cache_stats"]["exact_hits"] == 1
 
     asyncio.run(scenario())
 

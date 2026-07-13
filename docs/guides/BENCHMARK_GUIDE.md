@@ -9,6 +9,7 @@ Use it to validate:
 
 - single-request latency
 - repeated-prefix reuse
+- divergent-prefix safety behavior
 - mixed concurrency behavior
 - long-prompt stability
 - decode-step throughput
@@ -43,6 +44,17 @@ python scripts/dev/benchmark_live.py \
   --runtime-kernel manual
 ```
 
+For a long-context pressure probe, set the repeated prompt length explicitly:
+
+```bash
+python scripts/dev/benchmark_live.py \
+  --config configs/config.yaml \
+  --workload long \
+  --concurrency 1 \
+  --long-prompt-words 16000 \
+  --runtime-kernel manual
+```
+
 Optional output file:
 
 ```bash
@@ -61,11 +73,18 @@ One interactive request. Use this for baseline latency and TTFT validation.
 
 ### `reuse`
 
-Repeated prompts with a large shared prefix. Use this to validate:
+Repeated identical prompts with a large shared prefix. Use this to validate:
 
 - prefix reuse hits
 - reused prompt tokens
 - second-request latency drop
+
+### `reuse-divergent`
+
+Two sequential agent turns with a large shared prefix and different suffixes.
+This distinguishes a real LCP hit from a safe skip when the underlying MLX-LM
+cache cannot rewind. Inspect `prefix_unsafe_lcp_skips` rather than counting a
+shared string prefix as a hit.
 
 ### `mixed`
 
@@ -89,10 +108,12 @@ For each run, capture:
 - average generation tokens/sec
 - completion tokens per decode step
 - total completion tokens
+- total prompt tokens
 - prefix reuse hits
 - prefix tokens reused
+- exact/LCP cache hits and unsafe LCP skips
 - decode steps
-- completed, failed, and cancelled request counts
+- completed, failed, cancelled, and admission-rejected request counts
 
 Also collect:
 
@@ -119,6 +140,7 @@ Be explicit about:
 - concurrency
 - context length
 - whether prefix reuse was warm or cold
+- exact or divergent prefix workload
 - runtime kernel
 
 ## Interpreting Results

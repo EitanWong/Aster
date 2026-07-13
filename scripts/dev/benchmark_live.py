@@ -36,6 +36,7 @@ class BenchmarkRecord:
     workload: str
     request_count: int
     concurrency: int
+    total_prompt_tokens: int
     elapsed_seconds: float
     average_latency_seconds: float
     p95_latency_seconds: float
@@ -47,10 +48,15 @@ class BenchmarkRecord:
     total_completion_tokens: int
     prefix_reuse_hits: int
     prefix_tokens_reused: int
+    prefix_cache_stores: int
+    prefix_cache_exact_hits: int
+    prefix_cache_lcp_hits: int
+    prefix_unsafe_lcp_skips: int
     decode_steps: int
     completed_requests: int
     failed_requests: int
     cancelled_requests: int
+    admission_rejections: int
 
 
 def _percentile(values: list[float], percentile: float) -> float:
@@ -90,6 +96,21 @@ def _package_version(distribution: str) -> str:
         return "unavailable"
 
 
+def _prefix_cache_counter_delta(
+    before: dict[str, object],
+    after: dict[str, object],
+    name: str,
+) -> int:
+    def read(status: dict[str, object]) -> int:
+        stats = status.get("prefix_cache_stats")
+        if not isinstance(stats, dict):
+            return 0
+        value = stats.get(name)
+        return int(value) if isinstance(value, (int, float)) else 0
+
+    return read(after) - read(before)
+
+
 def _collect_runtime_metadata() -> dict[str, int | str]:
     return {
         "platform": platform.platform(),
@@ -116,10 +137,18 @@ def _build_workload(
     concurrency: int,
     *,
     temperature: float = 0.0,
+    long_prompt_words: int = 4096,
 ) -> list[InferenceRequest]:
+    if long_prompt_words < 1:
+        raise ValueError("long_prompt_words must be >= 1")
     repeated_prefix = (
         "System: You are a local Apple Silicon assistant. "
         "Keep answers precise. Reuse prior context when possible. "
+        + " ".join(
+            "Preserve this stable operating policy across every agent turn."
+            for _ in range(16)
+        )
+        + " "
     )
     if name == "single":
         return [
@@ -130,10 +159,15 @@ def _build_workload(
                 trace_id="single-0",
             )
         ]
-    if name == "reuse":
+    if name in {"reuse", "reuse-divergent"}:
         return [
             InferenceRequest(
-                prompt=repeated_prefix + f"User turn {index}: summarize the same operating constraints.",
+                prompt=(
+                    repeated_prefix + "Summarize the same operating constraints."
+                    if name == "reuse"
+                    else repeated_prefix
+                    + f"User turn {index}: summarize the same operating constraints."
+                ),
                 max_tokens=96,
                 temperature=temperature,
                 trace_id=f"reuse-{index}",
@@ -157,7 +191,7 @@ def _build_workload(
             for index in range(max(concurrency, 4))
         ]
     if name == "staggered":
-        long_prompt = repeated_prefix + " ".join(["section"] * 4096)
+        long_prompt = repeated_prefix + " ".join(["section"] * long_prompt_words)
         request_count = max(concurrency, 4)
         return [
             InferenceRequest(
@@ -177,7 +211,7 @@ def _build_workload(
             ],
         ]
     if name == "long":
-        long_prompt = repeated_prefix + " ".join(["section"] * 4096)
+        long_prompt = repeated_prefix + " ".join(["section"] * long_prompt_words)
         return [
             InferenceRequest(
                 prompt=long_prompt,
@@ -207,6 +241,7 @@ async def _run_requests(
     requests: list[InferenceRequest],
     *,
     staggered: bool = False,
+    sequential: bool = False,
 ) -> tuple[list[float], list[object]]:
     latencies: list[float] = []
 
@@ -216,6 +251,10 @@ async def _run_requests(
             return await engine.submit(request)
         finally:
             latencies.append(time.perf_counter() - started)
+
+    if sequential:
+        results = [await run_one(request) for request in requests]
+        return latencies, results
 
     if not staggered:
         results = await asyncio.gather(
@@ -245,8 +284,14 @@ async def benchmark_workload(
     workload: str,
     concurrency: int,
     temperature: float,
+    long_prompt_words: int,
 ) -> BenchmarkRecord:
-    requests = _build_workload(workload, concurrency, temperature=temperature)
+    requests = _build_workload(
+        workload,
+        concurrency,
+        temperature=temperature,
+        long_prompt_words=long_prompt_words,
+    )
     runtime_metadata = _collect_runtime_metadata()
     rss_samples = [int(runtime_metadata["process_rss_bytes"])]
     rss_stop_event = asyncio.Event()
@@ -258,6 +303,7 @@ async def benchmark_workload(
             engine,
             requests,
             staggered=workload == "staggered",
+            sequential=workload in {"reuse", "reuse-divergent"},
         )
         elapsed = time.perf_counter() - started
         after = engine.status()
@@ -300,6 +346,7 @@ async def benchmark_workload(
         workload=workload,
         request_count=len(requests),
         concurrency=concurrency,
+        total_prompt_tokens=int(after["total_prompt_tokens"]) - int(before["total_prompt_tokens"]),
         elapsed_seconds=elapsed,
         average_latency_seconds=(sum(latencies) / len(latencies)) if latencies else 0.0,
         p95_latency_seconds=_percentile(latencies, 0.95),
@@ -316,10 +363,16 @@ async def benchmark_workload(
         total_completion_tokens=total_completion_tokens,
         prefix_reuse_hits=int(after["prefix_reuse_hits"]) - int(before["prefix_reuse_hits"]),
         prefix_tokens_reused=int(after["prefix_tokens_reused"]) - int(before["prefix_tokens_reused"]),
+        prefix_cache_stores=_prefix_cache_counter_delta(before, after, "stores"),
+        prefix_cache_exact_hits=_prefix_cache_counter_delta(before, after, "exact_hits"),
+        prefix_cache_lcp_hits=_prefix_cache_counter_delta(before, after, "lcp_hits"),
+        prefix_unsafe_lcp_skips=_prefix_cache_counter_delta(before, after, "unsafe_lcp_skips"),
         decode_steps=int(after["decode_steps"]) - int(before["decode_steps"]),
         completed_requests=int(after["completed_requests"]) - int(before["completed_requests"]),
         failed_requests=int(after["failed_requests"]) - int(before["failed_requests"]),
         cancelled_requests=int(after["cancelled_requests"]) - int(before["cancelled_requests"]),
+        admission_rejections=int(after["admission_rejections"])
+        - int(before["admission_rejections"]),
     )
 
 
@@ -330,6 +383,7 @@ async def run(
     concurrency_levels: list[int],
     runtime_kernel: str | None,
     temperature: float,
+    long_prompt_words: int = 4096,
 ) -> list[BenchmarkRecord]:
     settings = load_settings(config_path)
     if runtime_kernel is not None:
@@ -354,6 +408,7 @@ async def run(
                         workload=workload,
                         concurrency=concurrency,
                         temperature=temperature,
+                        long_prompt_words=long_prompt_words,
                     )
                 )
         return records
@@ -366,10 +421,16 @@ def main() -> None:
     parser.add_argument("--config", default="configs/config.yaml")
     parser.add_argument(
         "--workload",
-        choices=["single", "reuse", "mixed", "staggered", "long", "all"],
+        choices=["single", "reuse", "reuse-divergent", "mixed", "staggered", "long", "all"],
         default="all",
     )
     parser.add_argument("--concurrency", type=int, default=2)
+    parser.add_argument(
+        "--long-prompt-words",
+        type=int,
+        default=4096,
+        help="Number of repeated words in long and staggered prompts. Defaults to 4096.",
+    )
     parser.add_argument(
         "--temperature",
         type=float,
@@ -394,7 +455,7 @@ def main() -> None:
     args = parser.parse_args()
 
     workloads = (
-        ["single", "reuse", "mixed", "staggered", "long"]
+        ["single", "reuse", "reuse-divergent", "mixed", "staggered", "long"]
         if args.workload == "all"
         else [args.workload]
     )
@@ -410,6 +471,7 @@ def main() -> None:
             concurrency_levels=concurrency_levels,
             runtime_kernel=runtime_kernel,
             temperature=args.temperature,
+            long_prompt_words=args.long_prompt_words,
         )
     )
     payload = [asdict(record) for record in records]

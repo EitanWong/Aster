@@ -207,6 +207,7 @@ class InferenceEngine:
             "prefix_reuse_attempts": status.prefix_reuse_attempts,
             "prefix_reuse_hits": status.prefix_reuse_hits,
             "prefix_tokens_reused": status.prefix_tokens_reused,
+            "prefix_cache_stats": self.prefix_store.stats_snapshot(),
             "prefill_steps": status.prefill_steps,
             "decode_steps": status.decode_steps,
             "completed_requests": status.completed_requests,
