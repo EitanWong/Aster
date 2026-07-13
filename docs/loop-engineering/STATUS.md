@@ -4,7 +4,7 @@ Updated: 2026-07-13
 
 ## Current State
 
-- Current commit: `32addf1` (`perf: admit waiting requests before prefill continuation`).
+- Current commit: `aa2a8f4` (`docs: record admission scheduling loop`); scheduler code commit: `32addf1`.
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
 - The first loop iteration improved mixed scheduling by admitting waiting requests before the next prefill step and prioritizing those new requests ahead of existing prefill continuations.
