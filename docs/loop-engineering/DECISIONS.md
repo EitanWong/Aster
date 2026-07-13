@@ -231,3 +231,40 @@
   `be48448`; dependency-only rollback is `86ed15c`.
 - Next experiment: measure decode-only bridge overhead or broaden model/batch
   support, preserving the same parity, lifecycle, memory, and A/B gates.
+
+## 2026-07-14: Persist Merged Decode Cache Across Stable Batches
+
+- Decision: retain `b721554` and raise the validated native decode batch
+  recommendation to `4`; keep paged/direct cache modes at their existing
+  explicit restrictions.
+- Root cause: the original batched path merged every request-local cache and
+  extracted every row on every decode step. Those O(context length) copies
+  erased the benefit of a batched model forward, especially for Qwen3.5.
+- Change: `ModelRunner` now passes request identities into `DecodeWorkItem`,
+  retains the merged cache for an unchanged batch membership, returns private
+  cache references, and materializes/remerges only when membership changes.
+  Single-request, anonymous, unsupported, and failed-batch paths retain their
+  existing fallback behavior.
+- Correctness: full suite passed with `418 passed, 9 skipped, 1 warning`.
+  Real greedy batch=1 versus batch=4 output hashes, completion counts, and
+  finish reasons matched exactly. Mixed and staggered workloads completed all
+  four requests with zero failed/cancelled requests and zero swap delta.
+- Performance: randomized 0.8B no-prefix 4-request A/B measured batch=4
+  baseline/current medians of `19.460/29.476 tok/s` (`+51.5%`) and
+  `26.310/17.371s` (`-34.0%`), with `1.829 GB` peak in both paths. Randomized
+  9B 2x2 A/B measured batch=2 `13.576 tok/s / 37.715s` versus batch=4
+  `23.247 tok/s / 22.025s` (`+71.2%` throughput, `-41.6%` elapsed), with
+  peak memory `6.256/6.220 GB` and no swap growth.
+- Reference: the installed `mlx-lm 0.31.3` cache contract in
+  `mlx_lm.models.cache` (`BatchKVCache.merge`, `BatchKVCache.extract`, and
+  `update_and_fetch`) informed the persistent-context boundary; no reference
+  code was copied.
+- Configuration: the tracked example now recommends `max_decode_batch=4`;
+  the ignored local `configs/config.yaml` was also set to 4 for the validated
+  9B deployment profile.
+- Rollback: revert `b721554` and restore `max_decode_batch` to the previous
+  local value if a different model or memory budget regresses. The persistent
+  cache automatically falls back on membership changes and batch errors.
+- Next experiment: measure prefill batching and long-context multi-request
+  memory pressure before considering larger decode batches or broader cache
+  integration.

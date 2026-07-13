@@ -32,7 +32,7 @@ engine:
   paged_cache_enabled: false   # opt-in; requires prefix cache off and decode batch 1
   paged_cache_direct_attention_enabled: false  # experimental; requires paged cache and Qwen3.5
   max_active_requests: 16
-  max_decode_batch: 8
+  max_decode_batch: 4
   prefill_token_budget: 1024
   idle_prefill_token_limit: 4096
   pressure_prefill_token_budget: 512

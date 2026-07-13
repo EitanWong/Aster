@@ -38,9 +38,10 @@ on fork; other recurrent state types still require an explicit contract.
 
 `EngineSettings.paged_cache_enabled` exposes this boundary only as an opt-in
 manual-runtime mode. The mode returns a list-compatible owner, releases it in
-`InferenceEngine._cleanup_request`, disables prefix snapshots, and requires
-`max_decode_batch=1` until paged snapshot trimming and batch merge semantics
-are implemented. The default native MLX-LM cache path is unchanged.
+`InferenceEngine._cleanup_request`, disables prefix snapshots, and still
+requires `max_decode_batch=1` because paged snapshot trimming is not yet
+integrated with the batched cache contract. The default native MLX-LM cache
+path supports persistent decode batching.
 
 The fallback materialization path now keeps a geometrically grown contiguous
 buffer per full-attention layer and writes only appended tokens. This removes

@@ -4,8 +4,8 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `86ed15c` (refresh compatible dependency lock).
-- Code commit: `be48448` (reuse paged-attention block-index tensors).
+- Current commit: `b721554` (reuse merged decode cache across batch steps).
+- Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
@@ -13,7 +13,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `417 passed, 9 skipped, 1 warning` across 426 collected tests.
+- Full suite: `418 passed, 9 skipped, 1 warning` across 427 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -42,6 +42,7 @@ Updated: 2026-07-14
 - The paged Metal boundary now partitions long KV scans across 32 simdgroups and reduces partial online-softmax states. Qwen3.5-shaped kernel medians are `0.880x`, `0.976x`, and `0.733x` of native at 512/2K/8K tokens, with max absolute differences `0`, `0`, and `3.05e-05`. This is a kernel-level result only; serving still uses contiguous MLX-LM SDPA.
 - An explicitly disabled Qwen3.5 direct-attention bridge now uses the pool kernel for decode (`Q<=8`) and native SDPA for long prefill. Randomized 8K direct/native A/B measured `5.4561s/5.4423s` (`+0.25%`) and `2.286/2.297 GB` peak memory (`-0.46%`), with exact greedy parity and zero swap delta. It is functional and memory-neutral, but not a speed win.
 - The direct bridge now reuses a cached `uint32` block-index tensor until block-table or COW topology changes. A fresh randomized 8K 3x3 A/B measured native/direct elapsed medians `5.4306s/5.4597s` (`+0.54%`) and completion throughput `23.570/23.445 tok/s` (`-0.53%`), with unchanged peak memory `2.297/2.286 GB`; all six requests completed and the result does not clear the 3% speed gate.
+- Native manual decode now keeps a persistent merged cache across stable multi-request steps, returning lightweight per-request references and remerging only after batch membership changes. In a 0.8B no-prefix 4-request A/B, batch=4 improved from `19.460` to `29.476 tok/s` (`+51.5%`) and reduced elapsed median from `26.310s` to `17.371s` (`-34.0%`) with unchanged `1.829 GB` peak and zero failures/swap growth. Randomized 9B 2x2 A/B measured batch=2 at `13.576 tok/s / 37.715s` versus batch=4 at `23.247 tok/s / 22.025s` (`+71.2%` throughput, `-41.6%` elapsed); peak memory was `6.256/6.220 GB`, with zero failures and zero swap delta. Greedy response hashes, token counts, and finish reasons matched batch=1 exactly; mixed and staggered membership-change probes completed 4/4.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
@@ -53,4 +54,4 @@ Updated: 2026-07-14
 
 ## Next Priority
 
-Evaluate decode-only bridge overhead or broader model/batch support; require parity, lifecycle, memory, and randomized multi-trial evidence to clear the 3% gate before any default change. Keep the dependency lock aligned with the project declarations on each package refresh.
+Evaluate prefill batching and long-context multi-request pressure now that native decode batching has a validated fast path; keep paged/direct cache modes opt-in, and require parity, lifecycle, memory, and randomized multi-trial evidence for any further default change. Keep the dependency lock aligned with project declarations on each package refresh.

@@ -69,13 +69,19 @@ Each active decode request carries:
 
 The runner receives a list of these request-local decode work items.
 
-For a multi-request step:
+For a multi-request step, the runner maintains a persistent merged cache when
+the active request membership is unchanged:
 
-1. Merge caches into a temporary batch cache
+1. Merge caches into a batch cache when the batch is first formed
 2. Run one model forward pass on a `[batch, 1]` token input
 3. Sample one token per row
-4. Extract per-request caches back out
-5. Return one aligned decode result per request
+4. Return lightweight per-request references to the merged cache
+5. Reuse the merged cache on the next stable batch step
+6. Extract and re-merge once when membership changes, then continue
+
+Single-request steps and batches without request identities retain the direct
+request-local cache path. A failed batch clears the persistent context and
+falls back to per-item decode so unsupported cache types remain recoverable.
 
 The engine then:
 
