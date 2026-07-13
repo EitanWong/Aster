@@ -14,10 +14,10 @@ Updated: 2026-07-13
 - Full suite: `376 passed, 9 skipped`.
 - Affected scheduler suite: `52 passed`.
 - `compileall` and `git diff --check`: passed.
-- Seven-trial 0.8B mixed A/B: median elapsed time `3.8727s -> 3.3468s` for equal-token samples (`-13.6%`); completion throughput `74.367 -> 86.051 tok/s` (`+15.7%`).
+- The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
 - The benchmark now defaults to explicit greedy sampling (`temperature=0.0`); seven validation trials all produced 288 completion tokens and 4/4 successful requests.
 - Resource-aware validation now records platform, Python, MLX-LM, total memory, RSS peak, and swap before/after values; seven trials showed zero swap growth.
-- The scheduler result remains a mixed-workload scenario result, not a global performance claim. A/B ordering and per-trial resource collection are still incomplete.
+- The scheduler change remains under investigation for staggered arrival workloads; no default-profile performance gain is accepted yet.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
 
 ## Active Risks
@@ -28,4 +28,4 @@ Updated: 2026-07-13
 
 ## Next Priority
 
-Make the benchmark runner randomize A/B order and add MLX allocator-level memory when available, then rerun the scheduler candidate under that harness before accepting it as a default profile.
+Add a staggered long-prefill/short-arrival workload, then decide whether the scheduler change has a workload-specific benefit or should be rolled back.
