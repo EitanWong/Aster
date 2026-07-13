@@ -864,7 +864,9 @@ def test_engine_reuses_prefix_checkpoints_and_skips_prefill_work() -> None:
 
 def test_engine_checkpoints_completed_prefill_chunks_at_cache_budget() -> None:
     async def scenario() -> None:
-        engine, runner = _make_engine()
+        engine, runner = _make_engine(
+            engine_overrides={"snapshot_chunk_checkpoint_max_tokens": 4096}
+        )
         state = RequestState(
             request_id="chunk-checkpoint",
             request=InferenceRequest(prompt="ignored"),
@@ -889,6 +891,29 @@ def test_engine_checkpoints_completed_prefill_chunks_at_cache_budget() -> None:
         assert matched is not None
         assert matched.prefix_token_count == 3
         assert matched.cache_token_count == 2
+
+    asyncio.run(scenario())
+
+
+def test_engine_disables_periodic_checkpoints_by_default() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine()
+        state = RequestState(
+            request_id="default-no-chunk-checkpoint",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            cache_token_count=2,
+            prompt_cache={"cache_tokens": 2},
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._maybe_checkpoint(state)
+        finally:
+            await engine.aclose()
+
+        assert state.checkpoints_created == set()
+        assert runner.clone_cache_token_counts == []
 
     asyncio.run(scenario())
 

@@ -51,7 +51,7 @@ class EngineSettings(BaseModel):
     admission_retry_limit: int = 16
     snapshot_budget_bytes: int = 8 * 1024 * 1024 * 1024
     snapshot_min_prefix_tokens: int = 32
-    snapshot_chunk_checkpoint_max_tokens: int = 4096
+    snapshot_chunk_checkpoint_max_tokens: int = 0
     snapshot_max_entries: int = 256
     prefix_cache_enabled: bool = True
     prefix_cache_persist_path: str | None = None
