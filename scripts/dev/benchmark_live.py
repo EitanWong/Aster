@@ -22,6 +22,7 @@ from aster.telemetry.metrics import MetricsRegistry  # noqa: E402
 @dataclass(slots=True)
 class BenchmarkRecord:
     runtime_kernel: str
+    temperature: float
     workload: str
     request_count: int
     concurrency: int
@@ -48,7 +49,12 @@ def _percentile(values: list[float], percentile: float) -> float:
     return ordered[index]
 
 
-def _build_workload(name: str, concurrency: int) -> list[InferenceRequest]:
+def _build_workload(
+    name: str,
+    concurrency: int,
+    *,
+    temperature: float = 0.0,
+) -> list[InferenceRequest]:
     repeated_prefix = (
         "System: You are a local Apple Silicon assistant. "
         "Keep answers precise. Reuse prior context when possible. "
@@ -58,6 +64,7 @@ def _build_workload(name: str, concurrency: int) -> list[InferenceRequest]:
             InferenceRequest(
                 prompt="Explain how unified memory changes local LLM inference on Apple Silicon.",
                 max_tokens=128,
+                temperature=temperature,
                 trace_id="single-0",
             )
         ]
@@ -66,6 +73,7 @@ def _build_workload(name: str, concurrency: int) -> list[InferenceRequest]:
             InferenceRequest(
                 prompt=repeated_prefix + f"User turn {index}: summarize the same operating constraints.",
                 max_tokens=96,
+                temperature=temperature,
                 trace_id=f"reuse-{index}",
             )
             for index in range(max(concurrency, 2))
@@ -81,6 +89,7 @@ def _build_workload(name: str, concurrency: int) -> list[InferenceRequest]:
             InferenceRequest(
                 prompt=prompts[index % len(prompts)],
                 max_tokens=96 if index % 2 == 0 else 48,
+                temperature=temperature,
                 trace_id=f"mixed-{index}",
             )
             for index in range(max(concurrency, 4))
@@ -91,6 +100,7 @@ def _build_workload(name: str, concurrency: int) -> list[InferenceRequest]:
             InferenceRequest(
                 prompt=long_prompt,
                 max_tokens=128,
+                temperature=temperature,
                 trace_id=f"long-{index}",
             )
             for index in range(max(concurrency, 1))
@@ -129,8 +139,9 @@ async def benchmark_workload(
     *,
     workload: str,
     concurrency: int,
+    temperature: float,
 ) -> BenchmarkRecord:
-    requests = _build_workload(workload, concurrency)
+    requests = _build_workload(workload, concurrency, temperature=temperature)
     before = engine.status()
     started = time.perf_counter()
     latencies, results = await _run_requests(engine, requests)
@@ -147,6 +158,7 @@ async def benchmark_workload(
 
     return BenchmarkRecord(
         runtime_kernel=str(after.get("runtime_kernel", "unknown")),
+        temperature=temperature,
         workload=workload,
         request_count=len(requests),
         concurrency=concurrency,
@@ -175,6 +187,7 @@ async def run(
     workloads: list[str],
     concurrency_levels: list[int],
     runtime_kernel: str | None,
+    temperature: float,
 ) -> list[BenchmarkRecord]:
     settings = load_settings(config_path)
     if runtime_kernel is not None:
@@ -198,6 +211,7 @@ async def run(
                         engine,
                         workload=workload,
                         concurrency=concurrency,
+                        temperature=temperature,
                     )
                 )
         return records
@@ -214,6 +228,12 @@ def main() -> None:
         default="all",
     )
     parser.add_argument("--concurrency", type=int, default=2)
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="Sampling temperature for every request. Defaults to greedy 0.0 for reproducibility.",
+    )
     parser.add_argument(
         "--concurrency-levels",
         default=None,
@@ -243,6 +263,7 @@ def main() -> None:
             workloads=workloads,
             concurrency_levels=concurrency_levels,
             runtime_kernel=runtime_kernel,
+            temperature=args.temperature,
         )
     )
     payload = [asdict(record) for record in records]
