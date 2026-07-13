@@ -1,0 +1,10 @@
+{
+  "prompt_tokens": 106,
+  "individual_prefill_seconds": 0.33080279199930374,
+  "batched_prefill_seconds": 0.22285095800179988,
+  "batched_over_individual_ratio": 0.6736671013413601,
+  "max_abs_last_logit_difference": 0.1875,
+  "greedy_argmax_rows_equal": 4,
+  "greedy_argmax_rows_total": 4,
+  "note": "Short fresh-cache probe only; not an end-to-end serving claim."
+}

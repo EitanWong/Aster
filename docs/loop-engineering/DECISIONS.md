@@ -268,3 +268,31 @@
 - Next experiment: measure prefill batching and long-context multi-request
   memory pressure before considering larger decode batches or broader cache
   integration.
+
+## 2026-07-14: Roll Back Naive Native Prefill Batching
+
+- Decision: roll back the uncommitted prefill-batching implementation; keep
+  serial chunked prefill as the production path and retain `b721554`'s native
+  decode batching optimization.
+- Hypothesis: merging equal-offset request caches and running one `[B, S]`
+  model forward would reduce serial prefill wall time for concurrent long
+  prompts.
+- Evidence: with 0.8B, four concurrent 8K prompts, no prefix reuse, and native
+  decode batch 4, baseline was `17.390s / 29.442 tok/s` with `1.829 GB` peak.
+  Naive prefill batch 4 was `23.423s / 21.859 tok/s`, with `12.886 GB` peak
+  and `0.93 GiB` swap growth. Batch 2 reduced peak to `3.282 GB` but still
+  took `20.892s / 24.507 tok/s`, `20.1%` slower than baseline.
+- Prototype: a fresh-cache 106-token microprobe showed batched prefill at
+  `0.223s` versus individual `0.331s`; greedy argmax tokens matched for all
+  four rows, but this short result did not predict long-context memory behavior
+  and is not a serving claim.
+- Root cause: the merged `[B, S]` forward creates activation and cache
+  allocation pressure proportional to batch and chunk size; the extra merge
+  and extract work does not compensate at the current 1024-token budget.
+- Rollback: all prefill implementation changes were discarded; the full suite
+  returned to `418 passed, 9 skipped, 1 warning`. Raw baseline and failed
+  benchmark JSON records remain under the iteration artifact directory.
+- Next experiment: measure chunk sizes `128/256/512/1024` against batch sizes
+  `1/2/4` with per-step peak memory and swap data, then only implement an
+  adaptive microbatch selector if it clears the 3% speed gate without memory
+  regression.
