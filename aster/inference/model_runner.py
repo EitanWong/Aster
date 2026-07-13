@@ -250,6 +250,10 @@ class ModelRunner:
         eos_ids.update(int(token_id) for token_id in request.stop_token_ids)
         eos_ids.update(self._single_token_stop_ids(request.parser_stop_sequences, tokenizer))
         live_cache = prompt_cache or make_prompt_cache(model)
+        for cache in live_cache:
+            prepare_direct = getattr(cache, "prepare_direct_attention", None)
+            if callable(prepare_direct):
+                prepare_direct()
         return DecodeInit(
             prompt_cache=live_cache,
             next_input_token=int(decode_prompt[-1]),
@@ -304,6 +308,9 @@ class ModelRunner:
             return 0
         total = 0
         for layer in prompt_cache:
+            if getattr(layer, "direct_attention_enabled", False):
+                total += int(getattr(layer, "nbytes", 0))
+                continue
             if isinstance(layer, dict) and "state" in layer:
                 keys, values = layer["state"]
                 total += _array_memory(keys)
@@ -462,6 +469,15 @@ class ModelRunner:
             cache_type,
             self.settings.engine.kv_cache_step_tokens,
         )
+        if (
+            self.settings.engine.paged_cache_direct_attention_enabled
+            and not self.settings.engine.paged_cache_enabled
+        ):
+            raise ConfigurationError(
+                code="paged_direct_attention_requires_paged_cache",
+                message="paged_cache_direct_attention_enabled requires paged_cache_enabled",
+                status_code=400,
+            )
         if not self.settings.engine.paged_cache_enabled:
             return configured
         if self.settings.engine.prefix_cache_enabled:
@@ -490,6 +506,7 @@ class ModelRunner:
             kv_cache_type=cache_type,
             request_id=f"model-runner-cache-{id(configured)}",
             enable_block_pool=False,
+            enable_direct_attention=self.settings.engine.paged_cache_direct_attention_enabled,
         )
         return bundle.caches
 
@@ -826,7 +843,17 @@ class ModelRunner:
         if mx is None:
             return
         try:
-            mx.eval([cache.state for cache in prompt_cache])
+            eval_targets = []
+            for cache in prompt_cache:
+                if getattr(cache, "direct_attention_enabled", False):
+                    if getattr(cache, "_pool_enabled", False):
+                        pool_keys, pool_values, _ = cache.attention_view().block_pool()
+                        eval_targets.extend((pool_keys, pool_values))
+                    else:
+                        eval_targets.append(cache.state)
+                else:
+                    eval_targets.append(cache.state)
+            mx.eval(eval_targets)
         except Exception:
             pass
         try:
@@ -979,6 +1006,18 @@ class ModelRunner:
                     status_code=500,
                     details={"error": str(exc)},
                 ) from exc
+            if self.settings.engine.paged_cache_direct_attention_enabled:
+                if self._config.get("model_type") != "qwen3_5":
+                    raise ConfigurationError(
+                        code="paged_direct_attention_unsupported_model",
+                        message="Direct paged attention currently supports Qwen3.5 only",
+                        status_code=400,
+                    )
+                from aster.inference.paged_attention_bridge import (
+                    install_qwen3_next_paged_attention_bridge,
+                )
+
+                install_qwen3_next_paged_attention_bridge()
         self._model_fingerprint = self._compute_model_fingerprint()
         self._loaded = True
 

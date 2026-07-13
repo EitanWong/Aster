@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from aster.core.config import RuntimeSettings
+from aster.core.errors import ConfigurationError
 from aster.inference.constrained import ThinkingAwareJsonLogitsProcessor
 from aster.inference.contracts import InferenceRequest
 from aster.inference.model_runner import DecodeResult, DecodeWorkItem, ModelRunner
@@ -213,6 +216,47 @@ def test_opt_in_paged_prompt_cache_preserves_hybrid_list_shape_and_owner() -> No
     assert isinstance(configured[0], ArraysCache)
     assert configured[1].__class__.__name__ == "PagedKVCacheLayer"
     assert callable(getattr(configured, "release", None))
+    configured.release()
+
+
+def test_direct_paged_attention_requires_the_paged_cache_boundary() -> None:
+    settings = RuntimeSettings.model_validate(
+        {
+            "embeddings": {"enabled": False},
+            "engine": {"paged_cache_direct_attention_enabled": True},
+        }
+    )
+    runner = ModelRunner(settings)
+    runner._prompt_cache_factory = lambda _model: [KVCache()]
+    runner._kv_cache_type = KVCache
+
+    with pytest.raises(ConfigurationError) as exc_info:
+        runner._make_configured_prompt_cache(object())
+    assert exc_info.value.code == "paged_direct_attention_requires_paged_cache"
+
+
+def test_direct_paged_prompt_cache_uses_pool_only_after_prepare() -> None:
+    settings = RuntimeSettings.model_validate(
+        {
+            "embeddings": {"enabled": False},
+            "engine": {
+                "paged_cache_enabled": True,
+                "paged_cache_direct_attention_enabled": True,
+                "prefix_cache_enabled": False,
+                "max_decode_batch": 1,
+            },
+        }
+    )
+    runner = ModelRunner(settings)
+    runner._prompt_cache_factory = lambda _model: [KVCache()]
+    runner._kv_cache_type = KVCache
+    runner._paged_cache = PagedCacheManager(num_layers=1, block_size=4, max_blocks=8)
+
+    configured = runner._make_configured_prompt_cache(object())
+    layer = configured[0]
+
+    assert layer.direct_attention_enabled is True
+    assert layer._pool_enabled is False
     configured.release()
 
 

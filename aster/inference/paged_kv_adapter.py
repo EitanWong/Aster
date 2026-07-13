@@ -187,6 +187,7 @@ class PagedKVCacheLayer:
         request_id: str | None = None,
         pool: _PagedKVBlockPool | None = None,
         enable_block_pool: bool = True,
+        enable_direct_attention: bool = False,
     ) -> None:
         self.manager = manager
         self.layer_index = layer_index
@@ -200,6 +201,7 @@ class PagedKVCacheLayer:
         else:
             pool.retain()
             self._pool = pool
+        self.direct_attention_enabled = enable_direct_attention
         self._pool_enabled = enable_block_pool
         self._materialized_keys: Any | None = None
         self._materialized_values: Any | None = None
@@ -244,9 +246,12 @@ class PagedKVCacheLayer:
             self._write_segment(block, block_offset, segment)
             position += take
 
-        self._update_materialized(keys, values, start, end)
+        if not self.direct_attention_enabled or not self._pool_enabled:
+            self._update_materialized(keys, values, start, end)
         self.offset = end
         self.block_table.num_tokens = max(self.block_table.num_tokens, end)
+        if self.direct_attention_enabled:
+            return keys, values
         return self._materialize()
 
     def _validate_inputs(self, keys: Any, values: Any) -> None:
@@ -281,13 +286,9 @@ class PagedKVCacheLayer:
             self._pool.write(block.block_id, block_offset, segment[0], segment[1])
         if len(block.cache_data) < self.manager.num_layers:
             block.cache_data.extend([None] * (self.manager.num_layers - len(block.cache_data)))
-        if self._pool_enabled and self._pool.keys is not None and self._pool.values is not None:
-            block.cache_data[self.layer_index] = (
-                self._pool.keys[block.block_id],
-                self._pool.values[block.block_id],
-            )
-        else:
-            block.cache_data[self.layer_index] = None
+        # Pool ownership is held by _PagedKVBlockPool; retaining row views here
+        # would keep every intermediate MLX write version alive.
+        block.cache_data[self.layer_index] = None
         end = block_offset + int(segment[0].shape[2])
         self._storage_written_tokens[block.block_id] = max(
             self._storage_written_tokens.get(block.block_id, 0), end
@@ -347,6 +348,8 @@ class PagedKVCacheLayer:
     def _materialize(self) -> tuple[Any, Any]:
         if self.offset == 0:
             raise ValueError("Cannot materialize an empty paged KV cache")
+        if self.direct_attention_enabled and self._pool_enabled:
+            return self._materialize_from_pool()
         if self._materialized_keys is None or self._materialized_values is None:
             self._materialized_keys, self._materialized_values = self._materialize_from_pool()
             self._materialized_capacity = self.offset
@@ -372,25 +375,39 @@ class PagedKVCacheLayer:
             return
         if self._materialized_keys is None or self._materialized_values is None:
             raise RuntimeError("Cannot promote an empty storage-only paged KV cache")
-        position = 0
+        writable_block_ids: list[int] = []
         for logical_index in range(len(self.block_table.block_ids)):
-            block_id = self.manager.ensure_writable_block(
-                self.block_table, logical_index
+            writable_block_ids.append(
+                self.manager.ensure_writable_block(self.block_table, logical_index)
             )
+        max_block_id = max(writable_block_ids)
+        first_take = min(self.block_size, self.offset)
+        self._pool.ensure_capacity(
+            max_block_id,
+            self._materialized_keys[..., :first_take, :],
+            self._materialized_values[..., :first_take, :],
+        )
+        position = 0
+        for block_id in writable_block_ids:
             take = min(self.block_size, self.offset - position)
             segment_keys = self._materialized_keys[..., position : position + take, :]
             segment_values = self._materialized_values[..., position : position + take, :]
-            self._pool.ensure_capacity(block_id, segment_keys, segment_values)
             self._pool.write(block_id, 0, segment_keys, segment_values)
             block = self.manager.get_block(block_id)
             if len(block.cache_data) < self.manager.num_layers:
                 block.cache_data.extend([None] * (self.manager.num_layers - len(block.cache_data)))
-            block.cache_data[self.layer_index] = (
-                self._pool.keys[block_id],
-                self._pool.values[block_id],
-            )
+            block.cache_data[self.layer_index] = None
             position += take
         self._pool_enabled = True
+
+    def prepare_direct_attention(self) -> None:
+        if not self.direct_attention_enabled:
+            return
+        if not self._pool_enabled:
+            self._promote_pool()
+            self._materialized_keys = None
+            self._materialized_values = None
+            self._materialized_capacity = 0
 
     @property
     def state(self) -> tuple[Any, Any]:
@@ -424,6 +441,7 @@ class PagedKVCacheLayer:
             block_table=table,
             pool=self._pool,
             enable_block_pool=self._pool_enabled,
+            enable_direct_attention=self.direct_attention_enabled,
         )
         forked.offset = self.offset
         forked._storage_written_tokens = dict(self._storage_written_tokens)
@@ -479,11 +497,8 @@ class PagedKVCacheLayer:
             block.token_count = token_count
             if not self._pool_enabled:
                 self._storage_written_tokens[block_id] = token_count
-            if self._pool_enabled and self._pool.keys is not None and self._pool.values is not None:
-                block.cache_data[self.layer_index] = (
-                    self._pool.keys[block_id],
-                    self._pool.values[block_id],
-                )
+            if self._pool_enabled:
+                block.cache_data[self.layer_index] = None
         return trimmed
 
     def make_mask(self, *args: Any, **kwargs: Any) -> Any:
@@ -551,6 +566,7 @@ class PagedKVCacheBundle:
         *,
         request_id: str,
         enable_block_pool: bool = True,
+        enable_direct_attention: bool = False,
     ) -> None:
         if not layers:
             raise ValueError("Paged KV bundles require at least one layer")
@@ -567,6 +583,7 @@ class PagedKVCacheBundle:
         self.caches = PagedKVCacheList(caches, self)
         self.request_id = request_id
         self._enable_block_pool = enable_block_pool
+        self._enable_direct_attention = enable_direct_attention
         self._released = False
 
     @classmethod
@@ -578,6 +595,7 @@ class PagedKVCacheBundle:
         kv_cache_type: type[Any],
         request_id: str,
         enable_block_pool: bool = True,
+        enable_direct_attention: bool = False,
     ) -> PagedKVCacheBundle:
         if not prompt_cache:
             raise ValueError("Paged KV bundles require at least one cache layer")
@@ -591,6 +609,7 @@ class PagedKVCacheBundle:
                     layer_index=index,
                     block_table=table,
                     enable_block_pool=enable_block_pool,
+                    enable_direct_attention=enable_direct_attention,
                 )
                 layers.append(layer)
                 caches[index] = layer
@@ -603,6 +622,7 @@ class PagedKVCacheBundle:
             tuple(caches),
             request_id=request_id,
             enable_block_pool=enable_block_pool,
+            enable_direct_attention=enable_direct_attention,
         )
 
     def fork(self, request_id: str) -> PagedKVCacheBundle:
@@ -621,6 +641,7 @@ class PagedKVCacheBundle:
                 block_table=table,
                 pool=layer._pool,
                 enable_block_pool=layer._pool_enabled,
+                enable_direct_attention=layer.direct_attention_enabled,
             )
         for layer in fork_layers.values():
             layer.offset = source_offset
@@ -637,6 +658,7 @@ class PagedKVCacheBundle:
             fork_caches,
             request_id=request_id,
             enable_block_pool=self._enable_block_pool,
+            enable_direct_attention=self._enable_direct_attention,
         )
 
     def release(self) -> None:

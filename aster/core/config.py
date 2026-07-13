@@ -66,6 +66,7 @@ class EngineSettings(BaseModel):
     paged_cache_block_size: int = 64
     paged_cache_max_blocks: int = 1000
     paged_cache_enabled: bool = False
+    paged_cache_direct_attention_enabled: bool = False
 
 
 class CacheSettings(BaseModel):
