@@ -1,0 +1,56 @@
+[submodule "examples/Rapid-MLX"]
+	path = examples/Rapid-MLX
+	url = https://github.com/raullenchai/Rapid-MLX.git
+	branch = main
+[submodule "examples/cider"]
+	path = examples/cider
+	url = https://github.com/Mininglamp-AI/cider.git
+	branch = main
+[submodule "examples/exo"]
+	path = examples/exo
+	url = https://github.com/exo-explore/exo.git
+	branch = main
+[submodule "examples/llama.cpp"]
+	path = examples/llama.cpp
+	url = https://github.com/ggml-org/llama.cpp.git
+	branch = master
+[submodule "examples/lmstudio-mlx-engine"]
+	path = examples/lmstudio-mlx-engine
+	url = https://github.com/lmstudio-ai/mlx-engine.git
+	branch = main
+[submodule "examples/mistral.rs"]
+	path = examples/mistral.rs
+	url = https://github.com/EricLBuehler/mistral.rs.git
+	branch = master
+[submodule "examples/mlc-llm"]
+	path = examples/mlc-llm
+	url = https://github.com/mlc-ai/mlc-llm.git
+	branch = main
+[submodule "examples/mlx"]
+	path = examples/mlx
+	url = https://github.com/ml-explore/mlx.git
+	branch = main
+[submodule "examples/mlx-lm"]
+	path = examples/mlx-lm
+	url = https://github.com/ml-explore/mlx-lm.git
+	branch = main
+[submodule "examples/ollama"]
+	path = examples/ollama
+	url = https://github.com/ollama/ollama.git
+	branch = main
+[submodule "examples/omlx"]
+	path = examples/omlx
+	url = https://github.com/jundot/omlx.git
+	branch = main
+[submodule "examples/sglang"]
+	path = examples/sglang
+	url = https://github.com/sgl-project/sglang.git
+	branch = main
+[submodule "examples/vllm"]
+	path = examples/vllm
+	url = https://github.com/vllm-project/vllm.git
+	branch = main
+[submodule "examples/vllm-mlx"]
+	path = examples/vllm-mlx
+	url = https://github.com/waybarrios/vllm-mlx.git
+	branch = main
