@@ -167,7 +167,7 @@ def main() -> None:
     print(
         json.dumps(
             {
-                "kernel": "lane0-softmax-broadcast-correct-dispatch",
+                "kernel": "simdgroup-token-parallel-correct-dispatch",
                 "results": {
                     str(total_tokens): benchmark(total_tokens, args.measurements)
                     for total_tokens in args.tokens

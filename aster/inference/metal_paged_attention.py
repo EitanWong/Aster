@@ -7,6 +7,7 @@ from typing import Any
 _KERNEL: Any | None = None
 _DECODE_KERNEL: Any | None = None
 _TILED_KERNEL: Any | None = None
+_VECTOR_KERNEL: Any | None = None
 
 
 _SOURCE = r"""
@@ -238,6 +239,114 @@ _TILED_SOURCE = r"""
 """
 
 
+_VECTOR_SOURCE = r"""
+    constexpr uint BLOCKS = 32;
+    constexpr uint HEAD_DIM = 32;
+    constexpr uint QK_PER_THREAD = D / HEAD_DIM;
+    constexpr uint V_PER_THREAD = V / HEAD_DIM;
+    uint query_id = threadgroup_position_in_grid.x;
+    uint simd_group = simdgroup_index_in_threadgroup;
+    uint lane = thread_index_in_simdgroup;
+    uint B = queries_shape[0];
+    uint Hq = queries_shape[1];
+    uint Q = queries_shape[2];
+    uint Dk = queries_shape[3];
+    uint Hkv = key_pool_shape[2];
+    uint block_size = key_pool_shape[3];
+    uint Dv = value_pool_shape[4];
+    uint query_offset_value = query_offset[0];
+    uint total_tokens = total_kv_tokens[0];
+    uint gqa = Hq / Hkv;
+    uint query_index = query_id % Q;
+    uint head_index = (query_id / Q) % Hq;
+    uint batch_index = query_id / (Q * Hq);
+    uint kv_head_index = head_index / gqa;
+
+    thread float query_fragment[QK_PER_THREAD];
+    thread float key_fragment[QK_PER_THREAD];
+    thread float output_fragment[V_PER_THREAD];
+    threadgroup float max_scores[BLOCKS];
+    threadgroup float sum_exp_scores[BLOCKS];
+    ulong query_base =
+        (((ulong)batch_index * Hq + head_index) * Q + query_index) * Dk;
+    for (uint d = 0; d < QK_PER_THREAD; ++d) {
+        query_fragment[d] =
+            (float)queries[query_base + lane * QK_PER_THREAD + d] * scale[0];
+    }
+    for (uint d = 0; d < V_PER_THREAD; ++d) {
+        output_fragment[d] = 0.0f;
+    }
+
+    float max_score = -INFINITY;
+    float denominator = 0.0f;
+    float query_position = (float)(query_offset_value + query_index);
+    for (uint token = simd_group; token < total_tokens; token += BLOCKS) {
+        if (token > query_position) {
+            continue;
+        }
+        uint logical_block = token / block_size;
+        uint block_offset = token % block_size;
+        uint physical_block = block_indices[logical_block];
+        ulong key_base =
+            ((((ulong)physical_block * B + batch_index) * Hkv + kv_head_index)
+             * block_size + block_offset) * Dk;
+        for (uint d = 0; d < QK_PER_THREAD; ++d) {
+            key_fragment[d] =
+                (float)key_pool[key_base + lane * QK_PER_THREAD + d];
+        }
+        float partial_score = 0.0f;
+        for (uint d = 0; d < QK_PER_THREAD; ++d) {
+            partial_score += query_fragment[d] * key_fragment[d];
+        }
+        float score = simd_sum(partial_score);
+        float new_max = max(max_score, score);
+        float factor = metal::exp(max_score - new_max);
+        float exp_score = metal::exp(score - new_max);
+        max_score = new_max;
+        denominator = denominator * factor + exp_score;
+
+        ulong value_base =
+            ((((ulong)physical_block * B + batch_index) * Hkv + kv_head_index)
+             * block_size + block_offset) * Dv;
+        for (uint d = 0; d < V_PER_THREAD; ++d) {
+            output_fragment[d] = output_fragment[d] * factor + exp_score *
+                (float)value_pool[value_base + lane * V_PER_THREAD + d];
+        }
+    }
+
+    if (lane == 0) {
+        max_scores[simd_group] = max_score;
+        sum_exp_scores[simd_group] = denominator;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    max_score = max_scores[lane];
+    float new_max = simd_max(max_score);
+    float factor = metal::exp(max_score - new_max);
+    denominator = simd_sum(sum_exp_scores[lane] * factor);
+
+    threadgroup float partial_outputs[BLOCKS * HEAD_DIM];
+    ulong output_base =
+        (((ulong)batch_index * Hq + head_index) * Q + query_index) * Dv;
+    for (uint d = 0; d < V_PER_THREAD; ++d) {
+        partial_outputs[lane * HEAD_DIM + simd_group] = output_fragment[d];
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        output_fragment[d] = simd_sum(
+            partial_outputs[simd_group * HEAD_DIM + lane] * factor
+        );
+        output_fragment[d] = denominator == 0.0f
+            ? output_fragment[d]
+            : output_fragment[d] / denominator;
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    if (lane == 0) {
+        for (uint d = 0; d < V_PER_THREAD; ++d) {
+            out[output_base + simd_group * V_PER_THREAD + d] =
+                (T)output_fragment[d];
+        }
+    }
+"""
+
+
 def _get_kernel() -> Any:
     global _KERNEL
     if _KERNEL is None:
@@ -307,6 +416,29 @@ def _get_tiled_kernel() -> Any:
     return _TILED_KERNEL
 
 
+def _get_vector_kernel() -> Any:
+    global _VECTOR_KERNEL
+    if _VECTOR_KERNEL is None:
+        import mlx.core as mx
+
+        _VECTOR_KERNEL = mx.fast.metal_kernel(
+            name="aster_paged_block_attention_vector",
+            input_names=[
+                "queries",
+                "key_pool",
+                "value_pool",
+                "block_indices",
+                "query_offset",
+                "total_kv_tokens",
+                "scale",
+            ],
+            output_names=["out"],
+            source=_VECTOR_SOURCE,
+            compile_options={"math_mode": "safe"},
+        )
+    return _VECTOR_KERNEL
+
+
 def paged_block_attention(
     queries: Any,
     key_pool: Any,
@@ -321,9 +453,9 @@ def paged_block_attention(
 
     Shapes are ``queries=[B,Hq,Q,Dk]`` and
     ``key/value_pool=[P,B,Hkv,block,D]``. ``block_indices`` maps logical blocks
-    to physical pool rows. This is a correctness-first proof of the kernel
-    contract; it intentionally uses one thread per output element and is not
-    yet the production attention implementation.
+    to physical pool rows. Aligned long sequences use a token-parallel
+    simdgroup kernel; short or non-aligned shapes retain correctness-first
+    fallback kernels.
     """
     import mlx.core as mx
 
@@ -351,8 +483,11 @@ def paged_block_attention(
         value_pool.shape[4],
     )
     tiled = queries.shape[3] % 32 == 0 and value_pool.shape[4] % 32 == 0
+    vectorized = tiled and total_kv_tokens >= 32
     kernel = (
-        _get_tiled_kernel()
+        _get_vector_kernel()
+        if vectorized
+        else _get_tiled_kernel()
         if tiled
         else _get_decode_kernel()
         if queries.shape[2] == 1 and value_pool.shape[4] <= 256
@@ -370,17 +505,19 @@ def paged_block_attention(
         ],
         template=(
             [("T", value_pool.dtype), ("D", int(queries.shape[3])), ("V", int(value_pool.shape[4]))]
-            if tiled
+            if vectorized
             else [("T", value_pool.dtype)]
         ),
         grid=(
-            queries.shape[0] * queries.shape[1] * queries.shape[2] * 32
+            queries.shape[0] * queries.shape[1] * queries.shape[2] * 1024
+            if vectorized
+            else queries.shape[0] * queries.shape[1] * queries.shape[2] * 32
             if tiled
             else math.prod(output_shape),
             1,
             1,
         ),
-        threadgroup=(32, 1, 1) if tiled else (256, 1, 1),
+        threadgroup=(1024, 1, 1) if vectorized else (32, 1, 1) if tiled else (256, 1, 1),
         output_shapes=[output_shape],
         output_dtypes=[value_pool.dtype],
         stream=mx.gpu,

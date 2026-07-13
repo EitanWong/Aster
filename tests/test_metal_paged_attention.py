@@ -133,3 +133,43 @@ def test_tiled_block_indexed_attention_matches_native_attention() -> None:
     mx.eval(expected, actual)
 
     np.testing.assert_allclose(np.asarray(actual), np.asarray(expected), rtol=5e-3, atol=5e-3)
+
+
+@pytest.mark.skipif(not mx.metal.is_available(), reason="Metal is required")
+def test_vector_block_indexed_attention_handles_causal_query_tiles() -> None:
+    mx.random.seed(31)
+    batch, query_heads, kv_heads, query_tokens, head_dim = 1, 4, 2, 3, 32
+    block_size, past_tokens, total_tokens = 32, 32, 64
+    queries = mx.random.normal(
+        (batch, query_heads, query_tokens, head_dim)
+    ).astype(mx.float16)
+    key_pool = mx.random.normal(
+        (2, batch, kv_heads, block_size, head_dim)
+    ).astype(mx.float16)
+    value_pool = mx.random.normal(
+        (2, batch, kv_heads, block_size, head_dim)
+    ).astype(mx.float16)
+    block_indices = mx.array([1, 0], dtype=mx.uint32)
+    keys = mx.concatenate([key_pool[1], key_pool[0]], axis=2)
+    values = mx.concatenate([value_pool[1], value_pool[0]], axis=2)
+    mask = mx.arange(total_tokens)[None, :] <= (
+        past_tokens + mx.arange(query_tokens)
+    )[:, None]
+    mask = mask[None, None, :, :]
+    scale = 1.0 / math.sqrt(head_dim)
+
+    expected = mx.fast.scaled_dot_product_attention(
+        queries, keys, values, scale=scale, mask=mask
+    )
+    actual = paged_block_attention(
+        queries,
+        key_pool,
+        value_pool,
+        block_indices,
+        query_offset=past_tokens,
+        total_kv_tokens=total_tokens,
+        scale=scale,
+    )
+    mx.eval(expected, actual)
+
+    np.testing.assert_allclose(np.asarray(actual), np.asarray(expected), rtol=5e-3, atol=5e-3)
