@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import time
 import uuid
 from collections import deque
@@ -9,13 +10,16 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from aster.core.config import RuntimeSettings
-from aster.core.errors import AsterError, ConfigurationError, OverloadedError
-from aster.inference.constrained import ThinkingAwareJsonLogitsProcessor, build_json_logits_processor
+from aster.core.errors import AsterError, ConfigurationError
+from aster.inference.constrained import (
+    ThinkingAwareJsonLogitsProcessor,
+    build_json_logits_processor,
+)
 from aster.inference.contracts import InferenceRequest, InferenceResponse
 from aster.inference.decode_engine import DecodeChunk
 from aster.inference.embedding_backends import build_embedding_backend
-from aster.inference.model_runner import ModelRunner, PreparedPrompt
-from aster.inference.prefix_store import PrefixStore
+from aster.inference.model_runner import ModelRunner
+from aster.inference.prefix_store import PrefixStore, SnapshotEntry
 from aster.inference.thinking_processor import ThinkingAwareLogitsProcessor
 from aster.telemetry.logging import get_logger
 from aster.telemetry.metrics import MetricsRegistry
@@ -39,6 +43,7 @@ class _RequestState:
     finish_reason: str = "stop"
     cancel_requested: bool = False
     matched_prefix_tokens: int = 0
+    prefix_cache_key: str | None = None
     # Streaming support
     stream_event: asyncio.Event | None = None
     stream_chunks: deque[DecodeChunk] = field(default_factory=deque)
@@ -111,8 +116,6 @@ class BatchedEngine:
         # Prefix cache tracking
         self._model_fingerprint: str | None = None
         self._prefix_pin_count: int = 0
-        self._uid_cache: dict[int, Any] = {}
-        self._uid_cache_state: dict[int, int] = {}
 
     # ------------------------------------------------------------------
     # Public API (mirrors InferenceEngine)
@@ -225,7 +228,7 @@ class BatchedEngine:
                 code="request_timeout",
                 message=f"Request {state.request_id} timed out after {timeout_seconds:.1f}s",
                 status_code=504,
-            )
+            ) from None
         except asyncio.CancelledError:
             await self.cancel(state.request_id)
             raise
@@ -268,7 +271,7 @@ class BatchedEngine:
                         code="request_timeout",
                         message=f"Stream request {state.request_id} timed out",
                         status_code=504,
-                    )
+                    ) from None
 
                 event.clear()
                 try:
@@ -279,7 +282,7 @@ class BatchedEngine:
                         code="request_timeout",
                         message=f"Stream request {state.request_id} timed out",
                         status_code=504,
-                    )
+                    ) from None
         except (TimeoutError, AsterError):
             raise
         except Exception:
@@ -314,6 +317,116 @@ class BatchedEngine:
         self._waiting.append(state.request_id)
         self._state[state.request_id] = state
 
+    @staticmethod
+    def _cache_offset(prompt_cache: Any) -> int:
+        if not isinstance(prompt_cache, list) or not prompt_cache:
+            return 0
+        offsets = [
+            int(offset)
+            for layer in prompt_cache
+            if isinstance((offset := getattr(layer, "offset", None)), int)
+        ]
+        return min(offsets) if offsets else 0
+
+    @staticmethod
+    def _estimate_cache_bytes(prompt_cache: Any) -> int:
+        if not isinstance(prompt_cache, list):
+            return 0
+        total = 0
+        for layer in prompt_cache:
+            if hasattr(layer, "nbytes"):
+                total += int(layer.nbytes)
+                continue
+            state = getattr(layer, "state", None)
+            values = state if isinstance(state, (list, tuple)) else [state]
+            for value in values:
+                if hasattr(value, "nbytes"):
+                    total += int(value.nbytes)
+        return total
+
+    def _prepare_prefix_cache_insert(
+        self,
+        entry: SnapshotEntry,
+        prompt_tokens: list[int],
+    ) -> tuple[Any, list[int], int] | None:
+        prefix_token_count = entry.prefix_token_count
+        if prefix_token_count <= 0 or prefix_token_count > len(prompt_tokens):
+            return None
+
+        required_cache_tokens = max(prefix_token_count - 1, 0)
+        current_cache_tokens = self._cache_offset(entry.prompt_cache)
+        if current_cache_tokens < required_cache_tokens:
+            return None
+
+        try:
+            if current_cache_tokens == required_cache_tokens:
+                # BatchGenerator owns and mutates its cache objects after insert.
+                cached = copy.deepcopy(entry.prompt_cache)
+            else:
+                # Older snapshots may contain generated tokens. Only trim cache
+                # types that explicitly support safe rewind; hybrid caches are
+                # rejected rather than silently corrupting recurrent state.
+                cached = self.model_runner.clone_cache(
+                    entry.prompt_cache,
+                    required_cache_tokens,
+                )
+        except Exception:
+            return None
+
+        if self._cache_offset(cached) != required_cache_tokens:
+            return None
+        return cached, prompt_tokens[required_cache_tokens:], prefix_token_count
+
+    def _release_prefix_pin(self, state: _RequestState) -> None:
+        if state.prefix_cache_key is None:
+            return
+        self.prefix_store.unpin(state.prefix_cache_key)
+        self._prefix_pin_count = max(self._prefix_pin_count - 1, 0)
+        state.prefix_cache_key = None
+
+    def _process_prompt_responses(self, responses: list[Any]) -> None:
+        if not responses or not self.prefix_store.enabled or self._model_fingerprint is None:
+            return
+        for response in responses:
+            progress = getattr(response, "progress", ())
+            if (
+                not getattr(response, "end_of_segment", False)
+                or getattr(response, "end_of_prompt", False)
+                or not isinstance(progress, tuple)
+                or len(progress) < 2
+                or progress[0] + 1 != progress[1]
+            ):
+                continue
+            uid = response.uid
+            rid = self._uid_to_rid.get(uid)
+            if rid is None:
+                continue
+            state = self._state.get(rid)
+            if state is None or state.cancel_requested:
+                continue
+
+            try:
+                extracted = self._batch_generator.extract_cache([uid])
+                cache_data = extracted.get(uid)
+                prompt_cache = cache_data[0] if isinstance(cache_data, tuple) else cache_data
+                target_cache_tokens = max(len(state.prompt_tokens) - 1, 0)
+                if self._cache_offset(prompt_cache) != target_cache_tokens:
+                    continue
+                self.prefix_store.store(
+                    model_name=self.settings.model.name,
+                    model_fingerprint=self._model_fingerprint,
+                    prefix_tokens=state.prompt_tokens,
+                    cache_token_count=target_cache_tokens,
+                    prompt_cache=prompt_cache,
+                    approx_bytes=self._estimate_cache_bytes(prompt_cache),
+                )
+            except Exception:
+                self.logger.debug(
+                    "batch_generator_prompt_cache_store_failed",
+                    exc_info=True,
+                    extra={"request_id": rid},
+                )
+
     def _ensure_loaded(self) -> None:
         if self._model is not None:
             return
@@ -337,7 +450,6 @@ class BatchedEngine:
             model, tokenizer, config = result  # type: ignore[misc]
         elif result_len == 2:  # type: ignore[arg-type]
             model, tokenizer = result  # type: ignore[misc]
-            config = {}
         else:
             raise ConfigurationError(
                 code="invalid_model_load_result",
@@ -520,7 +632,8 @@ class BatchedEngine:
                 responses = []
                 if self._batch_generator is not None and self._running:
                     try:
-                        responses = self._batch_generator.next_generated()
+                        prompt_responses, responses = self._batch_generator.next()
+                        self._process_prompt_responses(prompt_responses)
                     except IndexError:
                         # mlx-lm _next() fails on empty segments — recover by
                         # aborting all running requests to unblock the loop
@@ -538,20 +651,7 @@ class BatchedEngine:
                         await asyncio.sleep(0.01)
                         continue
 
-                # 4. Update per-step KV cache for actively generating requests
-                if self.prefix_store.enabled and self._model_fingerprint and self._batch_generator is not None and self._running:
-                    pending_uids = [u for r, u in self._rid_to_uid.items() if r in self._running]
-                    if pending_uids:
-                        try:
-                            ext = self._batch_generator.extract_cache(pending_uids)
-                            for ext_uid, cd in ext.items():
-                                cl = cd[0] if isinstance(cd, tuple) and len(cd) >= 1 else cd
-                                if isinstance(cl, list) and len(cl) > 0:
-                                    self._uid_cache[ext_uid] = cl
-                        except Exception:
-                            pass
-
-                # 5. Process responses
+                # Process generated responses after prompt-boundary snapshots.
                 if responses:
                     self._process_responses(responses)
                 await asyncio.sleep(0)
@@ -563,6 +663,7 @@ class BatchedEngine:
                 extra={"error": str(exc)},
             )
             for state in list(self._state.values()):
+                self._release_prefix_pin(state)
                 if state.response_future is not None and not state.response_future.done():
                     state.response_future.set_exception(exc)
                 if state.stream_event is not None:
@@ -605,7 +706,6 @@ class BatchedEngine:
                     self._batch_generator.remove([uid])
                 except Exception:
                     pass
-                self._uid_cache.pop(uid, None)
                 self._uid_to_rid.pop(uid, None)
 
             if rid in self._running:
@@ -614,6 +714,7 @@ class BatchedEngine:
             state = self._state.pop(rid, None)
             if state is None:
                 continue
+            self._release_prefix_pin(state)
 
             if state.response_future is not None and not state.response_future.done():
                 state.response_future.set_exception(
@@ -659,9 +760,6 @@ class BatchedEngine:
                     [logits_processors] if logits_processors else []
                 )
 
-                # Stop token IDs
-                stop_ids = self._normalize_stop_token_ids(state.request)
-
                 # Create paged cache block table for this request
                 if self._paged_cache is not None:
                     try:
@@ -671,7 +769,7 @@ class BatchedEngine:
 
                 # Prefix cache lookup
                 prompt_cache = None
-                matched_prefix_tokens = 0
+                prompt_tokens_for_insert = tokens
                 if self.prefix_store.enabled and self._model_fingerprint:
                     matched = self.prefix_store.lookup(
                         self.settings.model.name,
@@ -681,26 +779,26 @@ class BatchedEngine:
                     if matched is not None:
                         self.prefix_store.pin(matched.key)
                         self._prefix_pin_count += 1
-                        prompt_cache = matched.prompt_cache
-                        matched_prefix_tokens = matched.prefix_token_count
-                        cache_token_count = matched.cache_token_count
-                        state.matched_prefix_tokens = matched_prefix_tokens
+                        prepared = self._prepare_prefix_cache_insert(matched, tokens)
+                        if prepared is not None:
+                            prompt_cache, prompt_tokens_for_insert, cached_tokens = prepared
+                            state.matched_prefix_tokens = cached_tokens
+                            state.prefix_cache_key = matched.key
+                        else:
+                            self._release_prefix_pin(state)
 
                 # Insert into batch generator
                 kwargs = dict(
                     max_tokens=[state.max_tokens],
                     samplers=[sampler],
                     logits_processors=wrapped_lps,
-                    all_tokens=[list(tokens)],
                 )
+                kwargs["prompts"] = [prompt_tokens_for_insert]
+                cached_prefix_tokens = max(len(tokens) - len(prompt_tokens_for_insert), 0)
+                kwargs["all_tokens"] = [list(tokens[:cached_prefix_tokens])]
                 if prompt_cache is not None:
-                    # Don't pass caches to BatchGenerator (causes slow tensor validation)
-                    # Pure prefix store hit detection + stats only
-                    kwargs["prompts"] = [tokens]
-                    uid_list = self._batch_generator.insert(**kwargs)
-                else:
-                    kwargs["prompts"] = [tokens]
-                    uid_list = self._batch_generator.insert(**kwargs)
+                    kwargs["caches"] = [prompt_cache]
+                uid_list = self._batch_generator.insert(**kwargs)
                 uid = uid_list[0]
                 self._uid_to_rid[uid] = rid
                 self._rid_to_uid[rid] = uid
@@ -713,6 +811,7 @@ class BatchedEngine:
                 )
                 state = self._state.pop(rid, None)
                 if state is not None:
+                    self._release_prefix_pin(state)
                     if state.response_future is not None and not state.response_future.done():
                         state.response_future.set_exception(exc)
                     if state.stream_event is not None:
@@ -738,7 +837,6 @@ class BatchedEngine:
             state.generated_tokens += 1
 
             # Extract KV cache for finishing requests (uid is still in generation batch)
-            cache_for_store = None
             finish_reason = ""
             if response.finish_reason is not None:
                 finish_reason = response.finish_reason
@@ -748,8 +846,7 @@ class BatchedEngine:
                 finish_reason = "stop"
 
             if finish_reason:
-                cache_for_store = self._uid_cache.pop(uid, None)
-                self._finish_request(state, finish_reason=finish_reason, cache_for_store=cache_for_store)
+                self._finish_request(state, finish_reason=finish_reason)
             else:
                 # Stream the token
                 try:
@@ -761,7 +858,7 @@ class BatchedEngine:
                     state.stream_chunks.append(chunk)
                     state.stream_event.set()
 
-    def _finish_request(self, state: _RequestState, *, finish_reason: str, cache_for_store: Any = None) -> None:
+    def _finish_request(self, state: _RequestState, *, finish_reason: str) -> None:
         state.completed_at = time.monotonic()
         state.finish_reason = finish_reason
 
@@ -772,7 +869,6 @@ class BatchedEngine:
             except Exception:
                 pass
 
-        elapsed = state.completed_at - state.created_at
         prompt_seconds = (state.started_at or state.created_at) - state.created_at
         gen_seconds = state.completed_at - (state.started_at or state.created_at)
 
@@ -790,9 +886,9 @@ class BatchedEngine:
             text=state.output_text,
             prompt_tokens=len(state.prompt_tokens),
             completion_tokens=state.generated_tokens,
-            cache_hit=False,
-            prefill_cache_hit=False,
-            generation_cache_reuse=False,
+            cache_hit=state.matched_prefix_tokens > 0,
+            prefill_cache_hit=state.matched_prefix_tokens > 0,
+            generation_cache_reuse=state.matched_prefix_tokens > 0,
             speculative_enabled=False,
             speculative_path_mode="disabled",
             prompt_tps=state.prompt_tps,
@@ -811,41 +907,15 @@ class BatchedEngine:
         self._total_prompt_tokens += len(state.prompt_tokens)
         self._total_completion_tokens += state.generated_tokens
 
-        # Remove from batch generator and store prefix cache
+        # Remove from batch generator and release any pinned prefix snapshot.
         uid = self._rid_to_uid.pop(state.request_id, None)
         if uid is not None and self._batch_generator is not None:
             self._uid_to_rid.pop(uid, None)
-            self._uid_cache.pop(uid, None)
-            # Store KV cache (already extracted before _finish_request was called)
-            if cache_for_store is not None:
-                try:
-                    total_tokens = len(state.prompt_tokens) + state.generated_tokens
-                    if total_tokens > 0:
-                        # Estimate bytes from cache tensors
-                        try:
-                            est = 0
-                            for layer in cache_for_store:
-                                for item in (layer if isinstance(layer, (list, tuple)) else [layer]):
-                                    if hasattr(item, "nbytes"):
-                                        est += item.nbytes
-                                    elif hasattr(item, "state") and hasattr(item.state, "nbytes"):
-                                        est += item.state.nbytes
-                        except Exception:
-                            est = 0
-                        self.prefix_store.store(
-                            model_name=self.settings.model.name,
-                            model_fingerprint=self._model_fingerprint,
-                            prefix_tokens=state.prompt_tokens,
-                            cache_token_count=total_tokens,
-                            prompt_cache=cache_for_store,
-                            approx_bytes=est,
-                        )
-                except Exception:
-                    pass
             try:
                 self._batch_generator.remove([uid])
             except Exception:
                 pass
+        self._release_prefix_pin(state)
 
         # Signal completion
         if state.response_future is not None and not state.response_future.done():
