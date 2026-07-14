@@ -59,6 +59,8 @@ class EngineSettings(BaseModel):
     snapshot_chunk_checkpoint_max_tokens: int = 0
     snapshot_max_entries: int = 256
     snapshot_max_chat_reuse_points: int = Field(default=8, ge=0)
+    snapshot_chat_reuse_sparse_points: int = Field(default=4, ge=0)
+    snapshot_chat_reuse_sparse_min_tokens: int = Field(default=2048, ge=0)
     kv_cache_step_tokens: int = 2048
     prefix_cache_enabled: bool = True
     prefix_cache_persist_path: str | None = None

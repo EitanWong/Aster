@@ -138,7 +138,10 @@ def test_chat_reuse_points_limit_keeps_most_recent_boundaries() -> None:
         RuntimeSettings.model_validate(
             {
                 "embeddings": {"enabled": False},
-                "engine": {"snapshot_max_chat_reuse_points": 2},
+                "engine": {
+                    "snapshot_max_chat_reuse_points": 2,
+                    "snapshot_chat_reuse_sparse_points": 0,
+                },
             }
         )
     )
@@ -171,6 +174,110 @@ def test_chat_reuse_points_limit_keeps_most_recent_boundaries() -> None:
     )
 
     assert len(all_points) > 2
+    assert runner._chat_reuse_points(
+        messages,
+        full_prompt_tokens=full_tokens,
+        enable_thinking=False,
+    ) == all_points[-2:]
+
+
+def test_chat_reuse_points_keep_sparse_older_boundaries() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {
+                    "snapshot_max_chat_reuse_points": 2,
+                    "snapshot_chat_reuse_sparse_points": 1,
+                    "snapshot_chat_reuse_sparse_min_tokens": 0,
+                },
+            }
+        )
+    )
+    runner._loaded = True
+    runner._tokenizer = FakeChatTokenizer()
+    messages = [
+        {"role": "system", "content": "same rules"},
+        {"role": "user", "content": "first question"},
+        {"role": "assistant", "content": "first answer"},
+        {"role": "user", "content": "second question"},
+        {"role": "assistant", "content": "second answer"},
+        {"role": "user", "content": "third question"},
+        {"role": "assistant", "content": "third answer"},
+        {"role": "user", "content": "fourth question"},
+    ]
+    full_tokens = runner._encode_chat(messages, enable_thinking=False)
+
+    all_points_runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {"snapshot_max_chat_reuse_points": 0},
+            }
+        )
+    )
+    all_points_runner._loaded = True
+    all_points_runner._tokenizer = FakeChatTokenizer()
+    all_points = all_points_runner._chat_reuse_points(
+        messages,
+        full_prompt_tokens=full_tokens,
+        enable_thinking=False,
+    )
+    eligible = [point for point in all_points if point >= 32]
+    selected = runner._chat_reuse_points(
+        messages,
+        full_prompt_tokens=full_tokens,
+        enable_thinking=False,
+    )
+
+    assert len(all_points) > 2
+    assert selected[-2:] == all_points[-2:]
+    assert selected[0] == eligible[0]
+    assert len(selected) == 3
+
+
+def test_chat_reuse_points_skip_sparse_retention_below_long_context_threshold() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {
+                    "snapshot_max_chat_reuse_points": 2,
+                    "snapshot_chat_reuse_sparse_points": 1,
+                    "snapshot_chat_reuse_sparse_min_tokens": 2048,
+                },
+            }
+        )
+    )
+    runner._loaded = True
+    runner._tokenizer = FakeChatTokenizer()
+    messages = [
+        {"role": "system", "content": "same rules"},
+        {"role": "user", "content": "first question"},
+        {"role": "assistant", "content": "first answer"},
+        {"role": "user", "content": "second question"},
+        {"role": "assistant", "content": "second answer"},
+        {"role": "user", "content": "third question"},
+    ]
+    full_tokens = runner._encode_chat(messages, enable_thinking=False)
+
+    all_points_runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {"snapshot_max_chat_reuse_points": 0},
+            }
+        )
+    )
+    all_points_runner._loaded = True
+    all_points_runner._tokenizer = FakeChatTokenizer()
+    all_points = all_points_runner._chat_reuse_points(
+        messages,
+        full_prompt_tokens=full_tokens,
+        enable_thinking=False,
+    )
+
+    assert len(full_tokens) < 2048
     assert runner._chat_reuse_points(
         messages,
         full_prompt_tokens=full_tokens,

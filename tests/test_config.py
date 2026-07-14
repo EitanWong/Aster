@@ -47,6 +47,8 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     assert RuntimeSettings().engine.batch_generator_longest_lane_step_quanta == 1
     assert RuntimeSettings().engine.chat_prompt_cache_max_entries == 32
     assert RuntimeSettings().engine.snapshot_max_chat_reuse_points == 8
+    assert RuntimeSettings().engine.snapshot_chat_reuse_sparse_points == 4
+    assert RuntimeSettings().engine.snapshot_chat_reuse_sparse_min_tokens == 2048
     assert (
         RuntimeSettings.model_validate(
             {
@@ -106,6 +108,10 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
         RuntimeSettings.model_validate({"engine": {"chat_prompt_cache_max_entries": -1}})
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate({"engine": {"snapshot_max_chat_reuse_points": -1}})
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"snapshot_chat_reuse_sparse_points": -1}})
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"snapshot_chat_reuse_sparse_min_tokens": -1}})
 
 
 def test_load_settings_preserves_legacy_runtime_as_ignored_metadata(tmp_path: Path) -> None:

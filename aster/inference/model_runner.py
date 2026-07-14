@@ -688,9 +688,25 @@ class ModelRunner:
             reuse_points.add(len(boundary_tokens))
         ordered_points = tuple(sorted(reuse_points))
         max_points = self.settings.engine.snapshot_max_chat_reuse_points
-        if max_points > 0:
-            return ordered_points[-max_points:]
-        return ordered_points
+        if max_points <= 0 or len(ordered_points) <= max_points:
+            return ordered_points
+
+        selected_points = set(ordered_points[-max_points:])
+        sparse_points = self.settings.engine.snapshot_chat_reuse_sparse_points
+        sparse_min_tokens = self.settings.engine.snapshot_chat_reuse_sparse_min_tokens
+        if sparse_points > 0 and len(full_prompt_tokens) >= sparse_min_tokens:
+            # Keep recent boundaries dense and older history logarithmically sparse.
+            offset = max_points * 2
+            for _ in range(max(sparse_points - 1, 0)):
+                if offset > len(ordered_points):
+                    break
+                selected_points.add(ordered_points[-offset])
+                offset *= 2
+            for point in ordered_points:
+                if point >= self.settings.engine.snapshot_min_prefix_tokens:
+                    selected_points.add(point)
+                    break
+        return tuple(sorted(selected_points))
 
     def _chat_lcp_reuse_point(
         self,
