@@ -433,3 +433,23 @@
 - Rollback: set `engine.batch_generator_max_lanes=1`, or revert `9dbfc7d`.
 - Next experiment: event-driven cohort closure or fixed-batch/state isolation
   that removes the p95 wait without reopening late membership changes.
+
+## 2026-07-14: Keep Longest-Lane Priority Experimental
+
+- Decision: retain `5807641` as an explicit BatchGenerator scheduling control;
+  keep the default quantum at `1` and the production runtime unchanged.
+- Change: a sealed active lane with the longest prompt profile may run a
+  bounded number of generator steps before the next lane. Cohort target size
+  is independently configurable and defaults to automatic behavior.
+- Evidence: lane `2`, a `160ms` window, target size `3`, and quantum `2`
+  preserved exact response hashes across 8 mixed/staggered records, with zero
+  errors, zero swap growth, and `1.495 GB` peak. Staggered p95 improved
+  `3.82%~6.42%` versus quantum `1`.
+- Tradeoff: versus lane `1`, staggered elapsed remained `18.13%~18.77%`
+  slower and p95 remained `3.72%~4.78%` higher. This is a tail-latency
+  improvement inside the safe multi-lane mode, not a global throughput win.
+- Rollback: leave `batch_generator_longest_lane_step_quanta=1`, use
+  `batch_generator_max_lanes=1`, or revert `5807641`.
+- Next experiment: event-driven cohort closure or model-native fixed-batch
+  isolation to remove the remaining multi-lane scheduling cost without
+  reopening arrival-dependent membership.
