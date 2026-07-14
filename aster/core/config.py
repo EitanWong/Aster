@@ -48,6 +48,7 @@ class EngineSettings(BaseModel):
     batch_generator_lane_admission_window_ms: float = Field(default=0.0, ge=0.0)
     batch_generator_lane_target_size: int = Field(default=0, ge=0)
     batch_generator_longest_lane_step_quanta: int = Field(default=1, ge=1)
+    chat_prompt_cache_max_entries: int = Field(default=32, ge=0)
     max_decode_batch: int = 4
     prefill_token_budget: int = 1024
     idle_prefill_token_limit: int = 4096

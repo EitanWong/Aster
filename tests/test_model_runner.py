@@ -170,6 +170,62 @@ def test_encode_request_keeps_reuse_analysis_when_prefix_cache_is_enabled() -> N
     assert prepared.reuse_points == (7,)
 
 
+def test_encode_request_reuses_bounded_chat_prompt_cache() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {"chat_prompt_cache_max_entries": 1},
+            }
+        )
+    )
+    runner._loaded = True
+    runner._tokenizer = FakeChatTokenizer()
+    calls: list[list[dict[str, str]]] = []
+    runner._encode_chat = lambda messages, **kwargs: calls.append(messages) or [1, 2, 3]  # type: ignore[method-assign]
+
+    first = runner.encode_request(
+        InferenceRequest(messages=[{"role": "user", "content": "first"}])
+    )
+    second = runner.encode_request(
+        InferenceRequest(messages=[{"role": "user", "content": "first"}])
+    )
+
+    assert first.prompt_tokens == [1, 2, 3]
+    assert second.prompt_tokens == [1, 2, 3]
+    assert second.prompt_tokens is not first.prompt_tokens
+    assert len(calls) == 1
+
+
+def test_encode_request_chat_prompt_cache_eviction_is_bounded() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {"chat_prompt_cache_max_entries": 1},
+            }
+        )
+    )
+    runner._loaded = True
+    runner._tokenizer = FakeChatTokenizer()
+    calls = 0
+
+    def encode_chat(_messages, **_kwargs):
+        nonlocal calls
+        calls += 1
+        return [calls]
+
+    runner._encode_chat = encode_chat  # type: ignore[method-assign]
+    first = InferenceRequest(messages=[{"role": "user", "content": "first"}])
+    second = InferenceRequest(messages=[{"role": "user", "content": "second"}])
+
+    runner.encode_request(first)
+    runner.encode_request(second)
+    runner.encode_request(first)
+
+    assert calls == 3
+
+
 def test_clone_cache_trims_oversized_arrays_at_matching_offset() -> None:
     runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
     cache = [RewindableCacheLayer(offset=3, capacity=8)]

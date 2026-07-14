@@ -45,6 +45,7 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     assert RuntimeSettings().engine.batch_generator_lane_admission_window_ms == 0.0
     assert RuntimeSettings().engine.batch_generator_lane_target_size == 0
     assert RuntimeSettings().engine.batch_generator_longest_lane_step_quanta == 1
+    assert RuntimeSettings().engine.chat_prompt_cache_max_entries == 32
     assert (
         RuntimeSettings.model_validate(
             {
@@ -53,6 +54,7 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
                     "batch_generator_lane_admission_window_ms": 200,
                     "batch_generator_lane_target_size": 3,
                     "batch_generator_longest_lane_step_quanta": 2,
+                    "chat_prompt_cache_max_entries": 8,
                 }
             }
         ).engine.batch_generator_max_lanes
@@ -76,6 +78,12 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
         ).engine.batch_generator_longest_lane_step_quanta
         == 2
     )
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"chat_prompt_cache_max_entries": 8}}
+        ).engine.chat_prompt_cache_max_entries
+        == 8
+    )
 
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate({"engine": {"batch_generator_max_lanes": 0}})
@@ -93,6 +101,8 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
         RuntimeSettings.model_validate(
             {"engine": {"batch_generator_longest_lane_step_quanta": 0}}
         )
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"chat_prompt_cache_max_entries": -1}})
 
 
 def test_load_settings_preserves_legacy_runtime_as_ignored_metadata(tmp_path: Path) -> None:

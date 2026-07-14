@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 import math
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any
 
@@ -109,6 +111,8 @@ class ModelRunner:
         self._config: dict[str, Any] = {}
         self._model_fingerprint: str | None = None
         self._paged_cache: Any | None = None
+        self._chat_prompt_cache_max_entries = settings.engine.chat_prompt_cache_max_entries
+        self._chat_prompt_cache: OrderedDict[str, PreparedPrompt] = OrderedDict()
         self._decode_batch_attempts = 0
         self._decode_batch_successes = 0
         self._decode_batch_fallbacks = 0
@@ -126,6 +130,15 @@ class ModelRunner:
     def encode_request(self, request: InferenceRequest) -> PreparedPrompt:
         self._ensure_loaded()
         if request.messages:
+            cache_key = self._chat_prompt_cache_key(request)
+            if cache_key is not None:
+                cached = self._chat_prompt_cache.pop(cache_key, None)
+                if cached is not None:
+                    self._chat_prompt_cache[cache_key] = cached
+                    return PreparedPrompt(
+                        prompt_tokens=list(cached.prompt_tokens),
+                        reuse_points=cached.reuse_points,
+                    )
             prompt_tokens = self._encode_chat(
                 request.messages,
                 enable_thinking=request.enable_thinking,
@@ -139,7 +152,15 @@ class ModelRunner:
                     enable_thinking=request.enable_thinking,
                     chat_template_kwargs=request.chat_template_kwargs,
                 )
-            return PreparedPrompt(prompt_tokens=prompt_tokens, reuse_points=reuse_points)
+            prepared = PreparedPrompt(prompt_tokens=prompt_tokens, reuse_points=reuse_points)
+            if cache_key is not None:
+                self._chat_prompt_cache[cache_key] = PreparedPrompt(
+                    prompt_tokens=list(prompt_tokens),
+                    reuse_points=reuse_points,
+                )
+                while len(self._chat_prompt_cache) > self._chat_prompt_cache_max_entries:
+                    self._chat_prompt_cache.popitem(last=False)
+            return prepared
         if request.prompt is None:
             raise ConfigurationError(
                 code="missing_prompt",
@@ -147,6 +168,20 @@ class ModelRunner:
                 status_code=400,
             )
         return PreparedPrompt(prompt_tokens=self._encode_text(request.prompt))
+
+    def _chat_prompt_cache_key(self, request: InferenceRequest) -> str | None:
+        if self._chat_prompt_cache_max_entries <= 0 or not request.messages:
+            return None
+        try:
+            payload = {
+                "messages": request.messages,
+                "enable_thinking": request.enable_thinking,
+                "chat_template_kwargs": request.chat_template_kwargs,
+            }
+            encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        except (TypeError, ValueError):
+            return None
+        return hashlib.sha256(encoded.encode()).hexdigest()
 
     def clone_cache(
         self,
@@ -353,6 +388,7 @@ class ModelRunner:
         return total
 
     def clear_runtime_caches(self) -> dict[str, object]:
+        self._chat_prompt_cache.clear()
         if self._mx is None:
             return {"mlx_cache_cleared": False, "reason": "model_not_loaded"}
         try:
