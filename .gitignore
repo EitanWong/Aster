@@ -142,6 +142,11 @@ models/
 *.sqlite
 .hfd/
 
+# Cloned third-party reference repositories (kept as local working copies).
+examples/dflash-z-lab/
+examples/dflash-mlx-bstnxbt/
+examples/dflash-mlx-aryagm/
+
 # Temporary files
 *.tmp
 *.bak
