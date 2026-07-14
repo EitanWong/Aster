@@ -477,3 +477,21 @@
   candidate-owned uncommitted changes after ownership is confirmed.
 - Next experiment: event-driven cohort closure or model-native fixed-batch
   state isolation with arrival-independent token parity.
+
+## 2026-07-14: Roll Back Event-Driven Cohort Closure
+
+- Decision: remove the event-driven repeated-profile-lane candidate; keep the
+  validated 160 ms admission window and one-lane default.
+- Design tested: seal each lane before its first step, then create a new lane
+  for a late request with the same profile instead of waiting for a cohort.
+- Evidence: mixed elapsed improved `0.89%~2.77%`, but staggered elapsed became
+  `24.50%~27.73%` slower, p95 became `7.98%~11.22%` higher, and throughput
+  fell about 20%. Peak MLX memory stayed at `1.495 GB`, with zero errors and
+  zero swap growth.
+- Root cause: staggered same-profile arrivals were isolated into repeated
+  single-request lanes, while the engine still stepped lanes sequentially.
+  Removing the wait therefore removed batching rather than overlapping work.
+- Rollback: source and test changes were reverted in the working tree; no
+  pre-existing independent-stream changes were modified.
+- Next experiment: fixed-shape padding/masking or a model-native state
+  isolation boundary that preserves batching without late membership drift.

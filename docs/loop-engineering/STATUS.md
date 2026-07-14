@@ -60,6 +60,10 @@ Updated: 2026-07-14
   growth, and unchanged `1.495 GB` peak MLX memory, but elapsed improvement
   was only `0.84%~2.53%`. Interleaved reruns did not clear the 3% gate and
   staggered p95 once regressed `4.79%`; the candidate is not promoted.
+- Iteration 033 evaluated event-driven cohort closure and rolled it back:
+  mixed elapsed improved `0.89%~2.77%`, but staggered elapsed regressed
+  `24.50%~27.73%`, p95 `7.98%~11.22%`, and completion throughput about 20%.
+  The cause was repeated single-request lanes after staggered arrivals.
 
 ## Active Risks
 
@@ -69,4 +73,4 @@ Updated: 2026-07-14
 
 ## Next Priority
 
-Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next remove the remaining multi-lane staggered elapsed cost while preserving exact parity; evaluate event-driven closure or model-native fixed-batch isolation. Keep the dependency lock aligned with project declarations on each package refresh.
+Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
