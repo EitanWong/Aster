@@ -16,6 +16,13 @@ class _RewindableCacheLayer:
         self.values = _Array()
 
 
+class _NoSliceList(list[tuple[int, ...]]):
+    def __getitem__(self, index):  # type: ignore[no-untyped-def]
+        if isinstance(index, slice):
+            raise AssertionError("prefix lookup must not copy the candidate index")
+        return super().__getitem__(index)
+
+
 def test_prefix_store_returns_longest_matching_snapshot() -> None:
     store = PrefixStore(
         budget_bytes=1024 * 1024,
@@ -45,6 +52,40 @@ def test_prefix_store_returns_longest_matching_snapshot() -> None:
     assert hit.cache_token_count == 4
     assert hit.match_type == "prefix"
     assert store.last_match_type == "prefix"
+
+
+def test_prefix_store_prefix_lookup_does_not_slice_candidate_index() -> None:
+    store = PrefixStore(
+        budget_bytes=1024 * 1024,
+        max_entries=64,
+        min_prefix_tokens=2,
+        enabled=True,
+    )
+    store.store(
+        model_name="test-model",
+        prefix_tokens=[1, 2, 3],
+        cache_token_count=2,
+        prompt_cache={"name": "prefix"},
+        approx_bytes=128,
+    )
+    for branch in range(32):
+        store.store(
+            model_name="test-model",
+            prefix_tokens=[1, 2, 3, branch, 100 + branch],
+            cache_token_count=4,
+            prompt_cache={"name": f"branch-{branch}"},
+            approx_bytes=128,
+        )
+    namespace = ("test-model", None)
+    store._sorted_tokens_by_namespace[namespace] = _NoSliceList(
+        store._sorted_tokens_by_namespace[namespace]
+    )
+
+    hit = store.lookup("test-model", [1, 2, 3, 99, 999])
+
+    assert hit is not None
+    assert list(hit.prefix_tokens) == [1, 2, 3]
+    assert hit.match_type == "prefix"
 
 
 def test_prefix_store_respects_budget_with_size_aware_eviction() -> None:

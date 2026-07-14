@@ -4,7 +4,7 @@ Updated: 2026-07-15
 
 ## Current State
 
-- Current code commit: `07bd566` (avoid branch-only full prompt snapshots).
+- Current measured baseline commit: `2ad78dc` (record prefix clone baseline).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -25,6 +25,9 @@ Updated: 2026-07-15
 - Iteration 044 ruled out snapshot clone as the next primary hot path for a
   single 9B exact hit: 8,372 reused tokens had only 9.545 ms admission work;
   decode dominated the 2.521 s exact-hot request.
+- Iteration 045 bounds high-cardinality prefix lookup by probing only the
+  distinct retained snapshot lengths and using direct token-key lookups. It
+  keeps Aster's bounded flat index instead of importing a trie/radix owner.
 
 ## Evidence
 
@@ -124,6 +127,12 @@ Updated: 2026-07-15
   GB` (`-3.53%`), with median total latency `89.753 -> 89.241s` (`-0.57%`).
   Candidate runs used 28 prefill steps versus 27 and added no swap; this is a
   long-context resource optimization, not a general throughput claim.
+- Iteration 045 reduced the 256-entry / 8,192-token divergent-branch lookup
+  median from `4.984 ms` to `0.228 ms` (`-95.4%`, `21.8x`) while retaining
+  longest-prefix behavior. Exact and ordinary prefix medians changed only by
+  microseconds. A same-shape Rapid-MLX trie probe measured `0.247 ms` for the
+  divergent branch, but ownership semantics differ, so this is an index-level
+  cross-check rather than an engine-level performance claim.
 
 ## Active Risks
 
@@ -142,4 +151,4 @@ Updated: 2026-07-15
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next isolate `PrefixStore.lookup` under high snapshot cardinality and long Agent histories; the single exact-hit clone path is not a primary bottleneck. Then evaluate manual runtime KV ownership, model-native fixed-shape padding/masking, or BatchGenerator state isolation. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Prefix lookup cardinality is now bounded by distinct retained lengths; next profile manual runtime KV ownership, model-native fixed-shape padding/masking, or BatchGenerator state isolation under real model load. Maintain a paper/implementation radar, but reproduce one candidate at a time and admit it only after deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates pass. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

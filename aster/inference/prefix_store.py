@@ -192,7 +192,7 @@ class PrefixStore:
                     return self._record_hit(entry, "exact")
 
             index = bisect_left(sorted_keys, tokens_key)
-            prefix_entry = self._find_prefix_match(namespace, sorted_keys, tokens_key, index)
+            prefix_entry = self._find_prefix_match(namespace, tokens_key)
             if prefix_entry is not None:
                 self._stats.prefix_hits += 1
                 return self._record_hit(prefix_entry, "prefix")
@@ -405,23 +405,17 @@ class PrefixStore:
     def _find_prefix_match(
         self,
         namespace: tuple[str, str | None],
-        sorted_keys: list[tuple[int, ...]],
         tokens_key: tuple[int, ...],
-        index: int,
     ) -> SnapshotEntry | None:
-        best: SnapshotEntry | None = None
-        for candidate in reversed(sorted_keys[:index]):
-            if len(candidate) >= len(tokens_key):
+        lengths = self._lengths_by_namespace.get(namespace, [])
+        for prefix_length in reversed(lengths):
+            if prefix_length >= len(tokens_key):
                 continue
-            if tokens_key[: len(candidate)] == candidate:
-                key = self._keys_by_namespace_tokens.get((*namespace, candidate))
-                if key is None:
-                    continue
-                best = self._entries.get(key)
-                break
-            if candidate and tokens_key and candidate[0] != tokens_key[0]:
-                break
-        return best
+            candidate = tokens_key[:prefix_length]
+            key = self._keys_by_namespace_tokens.get((*namespace, candidate))
+            if key is not None:
+                return self._entries.get(key)
+        return None
 
     def _find_lcp_match(
         self,
