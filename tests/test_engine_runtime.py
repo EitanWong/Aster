@@ -317,6 +317,71 @@ def test_engine_cleanup_releases_owned_prompt_cache() -> None:
     assert state.request_id not in engine._requests
 
 
+def test_activate_decode_skips_full_checkpoint_after_prefix_hit() -> None:
+    async def scenario() -> None:
+        engine, _runner = _make_engine()
+        state = RequestState(
+            request_id="prefix-branch-checkpoint",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            prompt_cache={"cache_tokens": 5},
+            matched_prefix_tokens=3,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._activate_decode(state)
+            assert engine.prefix_store.entry_count == 0
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_activate_decode_keeps_full_checkpoint_for_exact_hit() -> None:
+    async def scenario() -> None:
+        engine, _runner = _make_engine()
+        state = RequestState(
+            request_id="exact-checkpoint",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            prompt_cache={"cache_tokens": 5},
+            matched_prefix_tokens=6,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._activate_decode(state)
+            assert engine.prefix_store.entry_count == 1
+        finally:
+            await engine.aclose()
+
+
+    asyncio.run(scenario())
+
+
+def test_maybe_checkpoint_skips_full_prompt_after_prefix_hit() -> None:
+    async def scenario() -> None:
+        engine, _runner = _make_engine()
+        state = RequestState(
+            request_id="prefill-prefix-branch-checkpoint",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            cache_token_count=5,
+            prompt_cache={"cache_tokens": 5},
+            matched_prefix_tokens=3,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._maybe_checkpoint(state)
+            assert engine.prefix_store.entry_count == 0
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
+
+
 def test_decode_work_item_does_not_duplicate_current_token_for_logits_processors() -> None:
     engine, _runner = _make_engine()
     state = RequestState(

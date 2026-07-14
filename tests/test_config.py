@@ -49,6 +49,7 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     assert RuntimeSettings().engine.snapshot_max_chat_reuse_points == 8
     assert RuntimeSettings().engine.snapshot_chat_reuse_sparse_points == 4
     assert RuntimeSettings().engine.snapshot_chat_reuse_sparse_min_tokens == 2048
+    assert RuntimeSettings().engine.snapshot_skip_full_prompt_on_prefix_hit is True
     assert (
         RuntimeSettings.model_validate(
             {

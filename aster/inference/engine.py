@@ -1010,9 +1010,19 @@ class InferenceEngine:
                     max_length = max(max_length, length)
         return max_length
 
+    def _should_store_full_prompt_checkpoint(self, state: RequestState) -> bool:
+        if not self.settings.engine.snapshot_skip_full_prompt_on_prefix_hit:
+            return True
+        return not (0 < state.matched_prefix_tokens < len(state.prompt_tokens))
+
     async def _activate_decode(self, state: RequestState) -> None:
         full_cache_tokens = state.target_cache_token_count
-        await self._store_checkpoint(state, logical_prefix_tokens=len(state.prompt_tokens), cache_token_count=full_cache_tokens)
+        if self._should_store_full_prompt_checkpoint(state):
+            await self._store_checkpoint(
+                state,
+                logical_prefix_tokens=len(state.prompt_tokens),
+                cache_token_count=full_cache_tokens,
+            )
         if not self._is_live_request(state):
             return
         if state.request.max_tokens <= 0:
@@ -1044,7 +1054,7 @@ class InferenceEngine:
             return
 
         checkpoints: set[int] = set(state.reuse_points)
-        if logical_prefix_tokens == len(state.prompt_tokens):
+        if logical_prefix_tokens == len(state.prompt_tokens) and self._should_store_full_prompt_checkpoint(state):
             checkpoints.add(logical_prefix_tokens)
         prefill_budget = max(self.settings.engine.prefill_token_budget, 1)
         chunk_checkpoint_max_tokens = self.settings.engine.snapshot_chunk_checkpoint_max_tokens
@@ -1074,6 +1084,11 @@ class InferenceEngine:
         cache_token_count: int,
     ) -> None:
         if not self.settings.engine.prefix_cache_enabled:
+            return
+        if (
+            logical_prefix_tokens == len(state.prompt_tokens)
+            and not self._should_store_full_prompt_checkpoint(state)
+        ):
             return
         if not self._is_live_request(state):
             return
