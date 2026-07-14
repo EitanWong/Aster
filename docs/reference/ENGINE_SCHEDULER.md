@@ -210,7 +210,10 @@ heterogeneous prompt/cache profiles are conservatively kept out of the same
 active batch because hybrid-cache offsets are not proven safe. Divergent
 hybrid-cache LCP rewind and the separate `BatchGeneratorRuntimeKernel` adapter
 remain outside the eligible serving boundary. A future per-profile lane
-design must preserve token parity before relaxing this guard.
+design must preserve token parity before relaxing this guard. Iteration 029
+implemented lane-local generators behind `engine.batch_generator_max_lanes`,
+but staggered admission still changes BatchGenerator membership and greedy
+hashes; the default remains one lane until cohort admission is deterministic.
 
 The current manual runtime now binds mlx-lm/mlx-vlm generation streams at every
 runner-entry boundary. This is separate from single-thread ownership: the

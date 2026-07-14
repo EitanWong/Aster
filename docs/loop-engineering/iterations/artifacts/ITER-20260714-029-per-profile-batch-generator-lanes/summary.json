@@ -1,0 +1,80 @@
+{
+  "date": "2026-07-14",
+  "start_commit": "5b750b9",
+  "design_commit": "297a557",
+  "source_commit": "d791253",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "memory": "24 GB unified"
+  },
+  "implementation": {
+    "setting": "engine.batch_generator_max_lanes",
+    "default": 1,
+    "experimental": 2,
+    "shared_model": true,
+    "single_engine_loop": true
+  },
+  "matrix": {
+    "workloads": ["mixed", "staggered"],
+    "concurrency_levels": [2, 4],
+    "rounds": 2,
+    "records_per_lane_limit": 8,
+    "prefix_cache_enabled": false,
+    "mixed_hash_parity_records": 4,
+    "staggered_hash_mismatch_records": 4,
+    "mixed_lane2_elapsed_improvement_percent": {
+      "c2_round0": 5.78,
+      "c2_round1": 2.90,
+      "c4_round0": 3.12,
+      "c4_round1": 3.70
+    },
+    "staggered_lane2_elapsed_change_percent": {
+      "c2_round0": -5.80,
+      "c2_round1": -5.25,
+      "c4_round0": -3.46,
+      "c4_round1": -3.88
+    },
+    "peak_mlx_gb_lane1": 1.495,
+    "peak_mlx_gb_lane2": 1.495,
+    "swap_delta_bytes_all_records": 0,
+    "errors_all_records": 0
+  },
+  "structured": {
+    "lane_limit": 2,
+    "concurrency_levels": [2, 4],
+    "records": 2,
+    "valid_responses": 6,
+    "errors": 0,
+    "stop_finish_reasons": true
+  },
+  "prefix_reuse": {
+    "lane_limit": 2,
+    "concurrency": 2,
+    "rounds": 2,
+    "cache_hits": [1, 2],
+    "errors": 0
+  },
+  "cancellation": {
+    "lane_limit": 1,
+    "request_count": 4,
+    "completed": 3,
+    "cancelled": 1,
+    "follow_up_completion_tokens": 8,
+    "running_after": 0,
+    "pinned_entries_after": 0
+  },
+  "verification": {
+    "pytest_passed": 432,
+    "pytest_skipped": 9,
+    "pytest_warnings": 1,
+    "ruff": true,
+    "compileall": true,
+    "uv_lock_check": true,
+    "pip_check": true,
+    "diff_check": true
+  },
+  "decision": "retain opt-in lanes with default limit 1; do not promote lane 2 until staggered admission preserves token parity"
+}

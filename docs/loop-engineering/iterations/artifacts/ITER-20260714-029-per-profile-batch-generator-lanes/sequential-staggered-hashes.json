@@ -1,0 +1,13 @@
+{
+  "workload": "staggered",
+  "prompt_words": 64,
+  "temperature": 0.0,
+  "submission_mode": "sequential",
+  "lane_limit": 1,
+  "response_hashes": [
+    "44f0a99c3c594c09f426e7d5a8799ef8192ce41dae9b82ff938123ec17fc3581",
+    "54d82b336dac3c1a3dd307c4e503e84a8a3ee1a9b6160b637185ed58a88b61cf",
+    "54d82b336dac3c1a3dd307c4e503e84a8a3ee1a9b6160b637185ed58a88b61cf",
+    "54d82b336dac3c1a3dd307c4e503e84a8a3ee1a9b6160b637185ed58a88b61cf"
+  ]
+}

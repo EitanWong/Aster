@@ -387,3 +387,26 @@
 - Rollback: revert `17f20ee`.
 - Next experiment: use separate per-profile BatchGenerator lanes or an
   equivalent scheduler boundary, with the same token parity and memory gates.
+
+## 2026-07-14: Keep Per-Profile BatchGenerator Lanes Experimental
+
+- Decision: retain `d791253` behind `engine.batch_generator_max_lanes`, but
+  keep the default at `1` and do not change the manual production runtime.
+- Hypothesis: independent BatchGenerator instances would let heterogeneous
+  prompt/cache profiles make progress without merging hybrid cache state.
+- Change: lane-local generators, UID maps, request ownership, prefix
+  extraction, finish, cancellation, and cleanup; all MLX calls remain
+  sequential on one engine-loop owner. Empty lanes are recycled when a new
+  profile arrives.
+- Evidence: with lane `2`, simultaneous mixed records preserved exact hashes
+  and improved elapsed time by `2.90%~5.78%` at unchanged `1.495 GB` peak and
+  zero swap delta. Structured output was valid for 6/6 responses, prefix reuse
+  hit on both rounds, and cancellation/follow-up left zero running or pinned
+  entries.
+- Failure: staggered arrival produced hash drift in all four lane-2 records
+  and was `3.46%~5.80%` slower. The first request starts a profile lane before
+  later requests arrive; subsequent membership changes alter BatchGenerator's
+  greedy output. This fails the token-parity gate.
+- Rollback: set `engine.batch_generator_max_lanes: 1` or revert `d791253`.
+- Next experiment: deterministic cohort admission or a BatchGenerator state
+  isolation strategy that makes output independent of arrival timing.
