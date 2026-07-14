@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current code commit: `0e13e8f` (tiered long-context chat snapshots).
+- Current code commit: `07bd566` (avoid branch-only full prompt snapshots).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -15,7 +15,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `444 passed, 9 skipped, 1 warning` across 453 collected tests.
+- Full suite: `447 passed, 9 skipped, 1 warning` across 456 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -86,6 +86,11 @@ Updated: 2026-07-14
   (`-79.7%`), and exact/recent/mid/old branches all retained cache hits and
   output hashes. A 40-turn probe stayed on the recent-only path, avoiding the
   short-chat memory and latency regression seen in the first sparse trial.
+- Iteration 039 skips full-prompt snapshots for non-exact prefix-hit branches.
+  In a sustained 80-turn / 12-branch A/B, post-recovery snapshot memory fell
+  `1.511 GB -> 0.739 GB` (`-51.1%`) with identical hashes, hits, and saved
+  tokens. Exact/append/branch latency changed by `+0.5%~+5.5%`; this is an
+  explicit memory-lifecycle tradeoff, not a global latency claim.
 
 ## Active Risks
 
@@ -97,8 +102,11 @@ Updated: 2026-07-14
 - The tiered policy trades old-branch reuse depth for memory: in the 80-turn
   probe mid/old branches saved fewer tokens and were slower than unlimited
   snapshots, although they still hit and preserved output parity.
+- Skipping branch-only full snapshots reduces sustained memory, but the
+  grouped A/B showed a small append/branch latency cost; randomized sustained
+  ordering is still required before tuning this policy further.
 - Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes, cohort windows, and lane priority remain opt-in because the safe multi-lane path still carries a staggered elapsed cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
 
 ## Next Priority
 
-Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Expand sustained bounded-snapshot branching/long-context Agent measurements, cancellation, and recovery checks. Keep the dependency lock aligned with project declarations on each package refresh.
+Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next randomize sustained bounded-snapshot branching/cancellation/recovery workloads to separate lifecycle gains from latency noise, then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

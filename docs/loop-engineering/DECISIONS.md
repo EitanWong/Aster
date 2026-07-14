@@ -585,3 +585,23 @@
   `engine.snapshot_max_chat_reuse_points=0`.
 - Next experiment: sustained repeated-branch/cancellation/recovery traces,
   followed by model-native fixed-shape state isolation for batching.
+
+## 2026-07-14: Skip Full Snapshots for Non-Exact Prefix Hits
+
+- Decision: retain `07bd566` with
+  `engine.snapshot_skip_full_prompt_on_prefix_hit=true` by default.
+- Design: cold requests and exact prefix hits retain full prompt snapshots;
+  non-exact prefix-hit branches reuse their ancestor and do not create another
+  full-prompt KV clone. The rule is enforced in both prefill-end checkpointing
+  and decode activation.
+- Evidence: a Qwen3.5-0.8B 80-turn / 12-branch 3x3 A/B reduced post-recovery
+  snapshot memory `1.511 GB -> 0.739 GB` (`-51.1%`) and entries `29 -> 15`.
+  All scenario hashes, token counts, hit flags, and saved-token counts matched;
+  cancellation left zero pinned entries and recovery hit the cache.
+- Tradeoff: grouped append/branch medians were `0.5%~5.5%` slower. This is
+  accepted as a bounded-memory lifecycle tradeoff pending randomized
+  sustained validation, not as a general latency improvement.
+- Rollback: `git revert 07bd566` or set
+  `engine.snapshot_skip_full_prompt_on_prefix_hit=false`.
+- Next experiment: randomized sustained branch/cancel/recovery ordering, then
+  model-native fixed-shape state isolation for batching.
