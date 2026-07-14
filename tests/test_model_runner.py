@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from mlx_lm.models.cache import ArraysCache, KVCache
 
 from aster.core.config import RuntimeSettings
 from aster.core.errors import ConfigurationError
@@ -15,7 +16,6 @@ from aster.inference.model_runner import (
 )
 from aster.inference.paged_cache import PagedCacheManager
 from aster.inference.thinking_processor import ThinkingAwareLogitsProcessor
-from mlx_lm.models.cache import ArraysCache, KVCache
 
 
 class FakeChatTokenizer:
@@ -131,6 +131,43 @@ def test_chat_reuse_points_include_lcp_boundary_for_last_user() -> None:
 
     assert reuse_points
     assert max(reuse_points) > old_boundary
+
+
+def test_encode_request_skips_reuse_analysis_when_prefix_cache_is_disabled() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {"embeddings": {"enabled": False}, "engine": {"prefix_cache_enabled": False}}
+        )
+    )
+    runner._loaded = True
+    runner._tokenizer = FakeChatTokenizer()
+    runner._chat_reuse_points = lambda *args, **kwargs: (_ for _ in ()).throw(  # type: ignore[method-assign]
+        AssertionError("reuse analysis must be skipped when prefix cache is disabled")
+    )
+
+    prepared = runner.encode_request(
+        InferenceRequest(messages=[{"role": "user", "content": "hello"}])
+    )
+
+    assert prepared.prompt_tokens
+    assert prepared.reuse_points == ()
+
+
+def test_encode_request_keeps_reuse_analysis_when_prefix_cache_is_enabled() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {"embeddings": {"enabled": False}, "engine": {"prefix_cache_enabled": True}}
+        )
+    )
+    runner._loaded = True
+    runner._tokenizer = FakeChatTokenizer()
+    runner._chat_reuse_points = lambda *args, **kwargs: (7,)  # type: ignore[method-assign]
+
+    prepared = runner.encode_request(
+        InferenceRequest(messages=[{"role": "user", "content": "hello"}])
+    )
+
+    assert prepared.reuse_points == (7,)
 
 
 def test_clone_cache_trims_oversized_arrays_at_matching_offset() -> None:

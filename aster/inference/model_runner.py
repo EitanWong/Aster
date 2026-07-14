@@ -131,12 +131,14 @@ class ModelRunner:
                 enable_thinking=request.enable_thinking,
                 chat_template_kwargs=request.chat_template_kwargs,
             )
-            reuse_points = self._chat_reuse_points(
-                request.messages,
-                full_prompt_tokens=prompt_tokens,
-                enable_thinking=request.enable_thinking,
-                chat_template_kwargs=request.chat_template_kwargs,
-            )
+            reuse_points = ()
+            if self.settings.engine.prefix_cache_enabled:
+                reuse_points = self._chat_reuse_points(
+                    request.messages,
+                    full_prompt_tokens=prompt_tokens,
+                    enable_thinking=request.enable_thinking,
+                    chat_template_kwargs=request.chat_template_kwargs,
+                )
             return PreparedPrompt(prompt_tokens=prompt_tokens, reuse_points=reuse_points)
         if request.prompt is None:
             raise ConfigurationError(
