@@ -45,7 +45,12 @@ def _apply_benchmark_overrides(
     concurrency_levels: list[int],
     prefix_cache_enabled: bool,
     max_lanes: int,
+    lane_admission_window_ms: float = 0.0,
 ) -> RuntimeSettings:
+    if max_lanes > 1 and lane_admission_window_ms <= 0:
+        raise ValueError(
+            "lane_admission_window_ms must be positive when max_lanes is greater than one"
+        )
     return settings.model_copy(
         update={
             "engine": settings.engine.model_copy(
@@ -57,6 +62,7 @@ def _apply_benchmark_overrides(
                     ),
                     "prefix_cache_enabled": prefix_cache_enabled,
                     "batch_generator_max_lanes": max_lanes,
+                    "batch_generator_lane_admission_window_ms": lane_admission_window_ms,
                 }
             )
         }
@@ -282,6 +288,7 @@ async def run_benchmark(
     long_prompt_words: int,
     prefix_cache_enabled: bool,
     max_lanes: int,
+    lane_admission_window_ms: float,
 ) -> dict[str, Any]:
     settings = load_settings(config_path)
     settings = _apply_benchmark_overrides(
@@ -289,6 +296,7 @@ async def run_benchmark(
         concurrency_levels=concurrency_levels,
         prefix_cache_enabled=prefix_cache_enabled,
         max_lanes=max_lanes,
+        lane_admission_window_ms=lane_admission_window_ms,
     )
     engine = BatchedEngine(settings, MetricsRegistry(settings.telemetry.metrics_namespace))
     await engine.start()
@@ -352,6 +360,7 @@ async def run_benchmark(
         "engine": "batched",
         "prefix_cache_enabled": prefix_cache_enabled,
         "batch_generator_max_lanes": max_lanes,
+        "batch_generator_lane_admission_window_ms": lane_admission_window_ms,
         "workloads": workloads,
         "concurrency_levels": concurrency_levels,
         "rounds": rounds,
@@ -374,6 +383,7 @@ def main() -> None:
     parser.add_argument("--long-prompt-words", type=int, default=1024)
     parser.add_argument("--prefix-cache", choices=("on", "off"), default="on")
     parser.add_argument("--max-lanes", type=int, default=1)
+    parser.add_argument("--lane-admission-window-ms", type=float, default=0.0)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
@@ -389,6 +399,7 @@ def main() -> None:
             long_prompt_words=args.long_prompt_words,
             prefix_cache_enabled=args.prefix_cache == "on",
             max_lanes=args.max_lanes,
+            lane_admission_window_ms=args.lane_admission_window_ms,
         )
     )
     rendered = json.dumps(payload, indent=2)

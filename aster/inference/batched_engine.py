@@ -34,6 +34,9 @@ class _BatchLane:
     request_ids: set[str] = field(default_factory=set)
     uid_to_rid: dict[int, str] = field(default_factory=dict)
     rid_to_uid: dict[str, int] = field(default_factory=dict)
+    created_at: float = field(default_factory=time.monotonic)
+    admission_window_ms: float = 0.0
+    sealed: bool = False
 
 
 @dataclass(slots=True)
@@ -83,6 +86,18 @@ class BatchedEngine:
     """High-performance continuous batching engine wrapping mlx_lm.BatchGenerator."""
 
     def __init__(self, settings: RuntimeSettings, metrics: MetricsRegistry) -> None:
+        if (
+            settings.engine.batch_generator_max_lanes > 1
+            and settings.engine.batch_generator_lane_admission_window_ms <= 0
+        ):
+            raise ConfigurationError(
+                code="unsafe_batch_generator_lane_config",
+                message=(
+                    "batch_generator_lane_admission_window_ms must be positive "
+                    "when batch_generator_max_lanes is greater than one"
+                ),
+                status_code=400,
+            )
         self.settings = settings
         self.metrics = metrics
         self.logger = get_logger(__name__)
@@ -106,6 +121,9 @@ class BatchedEngine:
         # BatchGenerator (created during start)
         self._batch_lanes: dict[_BatchProfile, _BatchLane] = {}
         self._batch_generator_max_lanes = settings.engine.batch_generator_max_lanes
+        self._batch_generator_lane_admission_window_ms = (
+            settings.engine.batch_generator_lane_admission_window_ms
+        )
         self._mx: Any | None = None
         self._model: Any | None = None
         self._tokenizer: Any | None = None
@@ -557,10 +575,23 @@ class BatchedEngine:
             prefill_step_size=engine.prefill_token_budget,
         )
 
-    def _get_or_create_lane(self, profile: _BatchProfile) -> _BatchLane | None:
+    def _get_or_create_lane(
+        self,
+        profile: _BatchProfile,
+        *,
+        wait_for_cohort: bool = False,
+    ) -> _BatchLane | None:
         lane = self._batch_lanes.get(profile)
         if lane is not None:
-            return lane
+            if not lane.sealed:
+                return lane
+            if lane.request_ids:
+                return None
+            try:
+                lane.generator.close()
+            except Exception:
+                pass
+            del self._batch_lanes[profile]
         if len(self._batch_lanes) >= self._batch_generator_max_lanes:
             for old_profile, old_lane in tuple(self._batch_lanes.items()):
                 if old_lane.request_ids:
@@ -573,9 +604,24 @@ class BatchedEngine:
                 break
             else:
                 return None
-        lane = _BatchLane(profile=profile, generator=self._create_batch_generator())
+        lane = _BatchLane(
+            profile=profile,
+            generator=self._create_batch_generator(),
+            admission_window_ms=(
+                self._batch_generator_lane_admission_window_ms if wait_for_cohort else 0.0
+            ),
+        )
         self._batch_lanes[profile] = lane
         return lane
+
+    def _lane_ready_for_step(self, lane: _BatchLane, *, now: float | None = None) -> bool:
+        if lane.sealed:
+            return True
+        window_ms = lane.admission_window_ms
+        if window_ms <= 0:
+            return True
+        current = time.monotonic() if now is None else now
+        return current - lane.created_at + 1e-9 >= window_ms / 1000.0
 
     def _prepare_prompt_tokens(self, state: _RequestState) -> list[int]:
         request = state.request
@@ -718,6 +764,9 @@ class BatchedEngine:
                 for lane in tuple(self._batch_lanes.values()):
                     if not lane.request_ids:
                         continue
+                    if not self._lane_ready_for_step(lane):
+                        continue
+                    lane.sealed = True
                     try:
                         prompt_responses, responses = lane.generator.next()
                         self._process_prompt_responses(lane, prompt_responses)
@@ -895,7 +944,10 @@ class BatchedEngine:
                     prompt_cache is not None,
                     cached_prefix_tokens if prompt_cache is not None else 0,
                 )
-                lane = self._get_or_create_lane(profile)
+                lane = self._get_or_create_lane(
+                    profile,
+                    wait_for_cohort=bool(self._running) and not self._waiting,
+                )
                 if lane is None:
                     self._release_prefix_pin(state)
                     state.matched_prefix_tokens = 0

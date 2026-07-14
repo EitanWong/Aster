@@ -42,15 +42,33 @@ def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:
 
 def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     assert RuntimeSettings().engine.batch_generator_max_lanes == 1
+    assert RuntimeSettings().engine.batch_generator_lane_admission_window_ms == 0.0
     assert (
         RuntimeSettings.model_validate(
-            {"engine": {"batch_generator_max_lanes": 2}}
+            {
+                "engine": {
+                    "batch_generator_max_lanes": 2,
+                    "batch_generator_lane_admission_window_ms": 200,
+                }
+            }
         ).engine.batch_generator_max_lanes
         == 2
+    )
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_lane_admission_window_ms": 200}}
+        ).engine.batch_generator_lane_admission_window_ms
+        == 200
     )
 
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate({"engine": {"batch_generator_max_lanes": 0}})
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"batch_generator_max_lanes": 2}})
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_lane_admission_window_ms": -1}}
+        )
 
 
 def test_load_settings_preserves_legacy_runtime_as_ignored_metadata(tmp_path: Path) -> None:

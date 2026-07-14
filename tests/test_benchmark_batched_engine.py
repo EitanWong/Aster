@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
+
 from aster.core.config import RuntimeSettings
 from aster.inference.contracts import InferenceRequest
 from scripts.dev.benchmark_batched_engine import (
@@ -58,9 +60,19 @@ def test_benchmark_overrides_lane_limit_without_mutating_settings() -> None:
         concurrency_levels=[2, 4],
         prefix_cache_enabled=False,
         max_lanes=2,
+        lane_admission_window_ms=200.0,
     )
 
     assert settings.engine.batch_generator_max_lanes == 1
     assert overridden.engine.batch_generator_max_lanes == 2
+    assert overridden.engine.batch_generator_lane_admission_window_ms == 200.0
     assert overridden.engine.prefix_cache_enabled is False
     assert overridden.engine.max_active_requests >= 4
+
+    with pytest.raises(ValueError):
+        _apply_benchmark_overrides(
+            settings,
+            concurrency_levels=[2],
+            prefix_cache_enabled=False,
+            max_lanes=2,
+        )

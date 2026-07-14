@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from types import SimpleNamespace
 
 import aster.inference.batched_engine as batched_engine_module
@@ -133,6 +134,53 @@ def test_batched_engine_creates_bounded_lanes_for_incompatible_profiles() -> Non
     assert recycled is not second
     assert len(created) == 3
     assert len(engine._batch_lanes) == 2
+
+
+def test_batched_engine_seals_a_lane_after_first_step() -> None:
+    engine = object.__new__(BatchedEngine)
+    engine._batch_lanes = {}
+    engine._batch_generator_max_lanes = 2
+    engine._create_batch_generator = lambda: object()
+
+    lane = engine._get_or_create_lane((4, False, 0))
+    assert lane is not None
+    lane.request_ids.add("active")
+    lane.sealed = True
+
+    assert engine._get_or_create_lane((4, False, 0)) is None
+
+
+def test_batched_engine_admission_window_delays_first_step() -> None:
+    engine = object.__new__(BatchedEngine)
+    lane = _BatchLane(profile=(4, False, 0), generator=object())
+    lane.created_at = 10.0
+    lane.admission_window_ms = 100.0
+
+    assert engine._lane_ready_for_step(lane, now=10.099) is False
+    assert engine._lane_ready_for_step(lane, now=10.100) is True
+
+
+def test_batched_engine_applies_cohort_window_only_to_isolated_secondary_lane() -> None:
+    engine = object.__new__(BatchedEngine)
+    engine._batch_lanes = {}
+    engine._batch_generator_max_lanes = 2
+    engine._batch_generator_lane_admission_window_ms = 200.0
+    engine._create_batch_generator = lambda: object()
+    engine._running = {"existing"}
+    engine._waiting = deque()
+
+    isolated = engine._get_or_create_lane((4, False, 0), wait_for_cohort=True)
+
+    assert isolated is not None
+    assert isolated.admission_window_ms == 200.0
+
+    engine._batch_lanes = {}
+    engine._running = {"existing"}
+    engine._waiting = deque(["another-request"])
+    backlog = engine._get_or_create_lane((5, False, 0), wait_for_cohort=False)
+
+    assert backlog is not None
+    assert backlog.admission_window_ms == 0.0
 
 
 def test_batched_engine_abort_removes_request_from_its_lane() -> None:

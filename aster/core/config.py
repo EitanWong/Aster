@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from aster.core.errors import ConfigurationError
 
@@ -45,6 +45,7 @@ class EngineSettings(BaseModel):
     runtime_kernel: Literal["manual", "batch_generator"] = "manual"
     max_active_requests: int = 16
     batch_generator_max_lanes: int = Field(default=1, ge=1)
+    batch_generator_lane_admission_window_ms: float = Field(default=0.0, ge=0.0)
     max_decode_batch: int = 4
     prefill_token_budget: int = 1024
     idle_prefill_token_limit: int = 4096
@@ -68,6 +69,15 @@ class EngineSettings(BaseModel):
     paged_cache_max_blocks: int = 1000
     paged_cache_enabled: bool = False
     paged_cache_direct_attention_enabled: bool = False
+
+    @model_validator(mode="after")
+    def validate_batch_generator_lanes(self) -> EngineSettings:
+        if self.batch_generator_max_lanes > 1 and self.batch_generator_lane_admission_window_ms <= 0:
+            raise ValueError(
+                "batch_generator_lane_admission_window_ms must be positive when "
+                "batch_generator_max_lanes is greater than one"
+            )
+        return self
 
 
 class CacheSettings(BaseModel):
