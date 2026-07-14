@@ -4,7 +4,7 @@ Updated: 2026-07-15
 
 ## Current State
 
-- Current measured baseline commit: `2ad78dc` (record prefix clone baseline).
+- Current measured baseline commit: `5a92477` (bound high-cardinality prefix lookup).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -28,6 +28,10 @@ Updated: 2026-07-15
 - Iteration 045 bounds high-cardinality prefix lookup by probing only the
   distinct retained snapshot lengths and using direct token-key lookups. It
   keeps Aster's bounded flat index instead of importing a trie/radix owner.
+- Iteration 046 starts the frontier intake and reproduction track. Uzu and
+  vllm-metal are pinned as open Apple Silicon references; the first M5
+  reproduction rejects vllm-metal's current split-KV occupancy gate while
+  retaining its fused-scatter/lazy-Primitive integration as a candidate.
 
 ## Evidence
 
@@ -133,6 +137,17 @@ Updated: 2026-07-15
   microseconds. A same-shape Rapid-MLX trie probe measured `0.247 ms` for the
   divergent branch, but ownership semantics differ, so this is an index-level
   cross-check rather than an engine-level performance claim.
+- Iteration 046 reproduced vllm-metal commit `4c18ee0` on this Apple M5 with
+  MLX 0.32.0. Its full split-KV correctness matrix passed `19/19`, including
+  FP16/BF16/FP32, mixed lengths, high-occupancy gate-off, sliding windows,
+  fully masked partitions, and TurboQuant. Same-binary runtime A/B found the
+  adaptive split slower at 8K by `7.27%`, `30.93%`, and `69.63%` for batch
+  1/2/4; gate-off batch 5/8 controls were within `-1.83%/+0.22%`.
+- In the same Qwen3-shaped 2K/8K kernel matrix, Aster's existing block-indexed
+  kernel retained max absolute error at or below `6.10e-05`. At 8K it was
+  `0.67%~25.33%` faster than MLX native SDPA and `6%~32%` faster than the
+  vllm-metal single-pass kernel across batch 1/2/4/5/8. Layouts differ, so this
+  is a kernel boundary result, not an end-to-end engine claim.
 
 ## Active Risks
 
@@ -148,7 +163,11 @@ Updated: 2026-07-15
   sustained ordering found no material branch-latency regression. Cold/exact
   deltas remain about `+2.13%/+1.34%` and should be monitored.
 - Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes, cohort windows, and lane priority remain opt-in because the safe multi-lane path still carries a staggered elapsed cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
+- A native MLX C++ Primitive can remove Python/JIT graph boundaries, but it
+  binds to MLX private C++ ABI. Any experiment must pin the exact MLX version,
+  remain optional, fail closed, and prove packaging/build behavior before
+  serving integration.
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Prefix lookup cardinality is now bounded by distinct retained lengths; next profile manual runtime KV ownership, model-native fixed-shape padding/masking, or BatchGenerator state isolation under real model load. Maintain a paper/implementation radar, but reproduce one candidate at a time and admit it only after deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates pass. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. The next bounded experiment is vllm-metal-inspired fused KV scatter plus an MLX C++ Primitive around Aster's already faster block-indexed kernel; first prove the lazy boundary in a standalone benchmark, then require at least a 3% real-model win before an opt-in serving bridge. Do not import the reference split-KV gate on M5. Maintain `FRONTIER_RADAR.md`, reproduce one candidate at a time, and require deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

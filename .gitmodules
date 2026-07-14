@@ -54,3 +54,11 @@
 	path = examples/vllm-mlx
 	url = https://github.com/waybarrios/vllm-mlx.git
 	branch = main
+[submodule "examples/uzu"]
+	path = examples/uzu
+	url = https://github.com/trymirai/uzu.git
+	branch = main
+[submodule "examples/vllm-metal"]
+	path = examples/vllm-metal
+	url = https://github.com/vllm-project/vllm-metal.git
+	branch = main
