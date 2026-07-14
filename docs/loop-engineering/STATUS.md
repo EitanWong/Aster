@@ -89,8 +89,9 @@ Updated: 2026-07-14
 - Iteration 039 skips full-prompt snapshots for non-exact prefix-hit branches.
   In a sustained 80-turn / 12-branch A/B, post-recovery snapshot memory fell
   `1.511 GB -> 0.739 GB` (`-51.1%`) with identical hashes, hits, and saved
-  tokens. Exact/append/branch latency changed by `+0.5%~+5.5%`; this is an
-  explicit memory-lifecycle tradeoff, not a global latency claim.
+  tokens. Randomized 4-seed pairing showed branch deltas of `-0.17%~+0.49%`,
+  append `+0.63%`, and recovery `+0.51%`; the initial grouped branch variance
+  did not reproduce.
 
 ## Active Risks
 
@@ -102,9 +103,9 @@ Updated: 2026-07-14
 - The tiered policy trades old-branch reuse depth for memory: in the 80-turn
   probe mid/old branches saved fewer tokens and were slower than unlimited
   snapshots, although they still hit and preserved output parity.
-- Skipping branch-only full snapshots reduces sustained memory, but the
-  grouped A/B showed a small append/branch latency cost; randomized sustained
-  ordering is still required before tuning this policy further.
+- Skipping branch-only full snapshots reduces sustained memory; randomized
+  sustained ordering found no material branch-latency regression. Cold/exact
+  deltas remain about `+2.13%/+1.34%` and should be monitored.
 - Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes, cohort windows, and lane priority remain opt-in because the safe multi-lane path still carries a staggered elapsed cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
 
 ## Next Priority

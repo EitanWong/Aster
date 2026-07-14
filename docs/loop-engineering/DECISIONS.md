@@ -598,9 +598,11 @@
   snapshot memory `1.511 GB -> 0.739 GB` (`-51.1%`) and entries `29 -> 15`.
   All scenario hashes, token counts, hit flags, and saved-token counts matched;
   cancellation left zero pinned entries and recovery hit the cache.
-- Tradeoff: grouped append/branch medians were `0.5%~5.5%` slower. This is
-  accepted as a bounded-memory lifecycle tradeoff pending randomized
-  sustained validation, not as a general latency improvement.
+- Randomized follow-up: four same-seed fresh-process pairs measured candidate
+  deltas of `+2.13%` cold, `+1.34%` exact, `+0.63%` append, `+0.49%/-0.17%/-0.03%`
+  for branch 1/6/12, and `+0.51%` recovery. The grouped `+5.5%` branch result
+  did not reproduce; final memory remained `1.511 GB -> 0.739 GB` in every
+  seed. This clears the memory goal without a material branch regression.
 - Rollback: `git revert 07bd566` or set
   `engine.snapshot_skip_full_prompt_on_prefix_hit=false`.
 - Next experiment: randomized sustained branch/cancel/recovery ordering, then

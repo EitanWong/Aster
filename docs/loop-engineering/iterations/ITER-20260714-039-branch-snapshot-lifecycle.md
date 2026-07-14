@@ -82,12 +82,28 @@ The final cancellation probe accepted cancellation, returned the expected
 `AsterError`, left `pinned_entries=0` and `pinned_bytes=0`, and the following
 recovery request hit the prefix cache.
 
+## Randomized follow-up
+
+Four fresh-process seeds per arm used the same cold-first workload but
+randomized the order of exact, append, branch, and recovery requests. Paired
+candidate-minus-old median changes were `+2.13%` cold, `+1.34%` exact hot,
+`+0.63%` append, `+0.49%` branch 1, `-0.17%` branch 6, `-0.03%` branch 12,
+and `+0.51%` recovery. Final memory was stable at `1.511 GB` / 29 entries
+for the old arm versus `0.739 GB` / 15 entries for the candidate in all four
+seeds. Cross-arm hashes and token counts matched in every seed.
+
+The randomized result indicates that the larger grouped branch deltas were
+arrival/order noise rather than a repeatable branch-latency regression. The
+remaining cold/exact differences are below the project's 3% performance gate
+and are retained as a small, explicit tradeoff for the memory reduction.
+
 ## Decision
 
-**KEEP, with a measured tradeoff.** The default prevents unique branch
-prompts from accumulating redundant full snapshots while preserving exact
-reuse and branch correctness. This is not a claim of a universal latency
-improvement; append/branch latency is slightly higher in the grouped A/B.
+**KEEP.** The default prevents unique branch prompts from accumulating
+redundant full snapshots while preserving exact reuse and branch correctness.
+Randomized sustained measurements show no material branch-latency regression;
+the small cold/exact differences remain an explicit tradeoff for the memory
+reduction rather than a global latency claim.
 
 Rollback: `git revert 07bd566` or set
 `engine.snapshot_skip_full_prompt_on_prefix_hit: false`.
