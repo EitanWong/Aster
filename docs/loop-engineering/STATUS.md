@@ -92,6 +92,10 @@ Updated: 2026-07-14
   tokens. Randomized 4-seed pairing showed branch deltas of `-0.17%~+0.49%`,
   append `+0.63%`, and recovery `+0.51%`; the initial grouped branch variance
   did not reproduce.
+- Iteration 040 resets the active priority to core manual-runtime work. A
+  prefix-off Qwen3.5-0.8B baseline at concurrency 4 measured `5.307s` and
+  `31.16` average generation tok/s for the 4,820-token long workload, with
+  `1.626GB` peak MLX memory and zero swap growth. DFlash remains reference-only.
 
 ## Active Risks
 
@@ -110,4 +114,4 @@ Updated: 2026-07-14
 
 ## Next Priority
 
-Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next randomize sustained bounded-snapshot branching/cancellation/recovery workloads to separate lifecycle gains from latency noise, then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. First profile and improve the manual runtime's long/concurrent prefill-decode path, KV ownership, scheduling, and correctness gates; then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

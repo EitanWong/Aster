@@ -607,3 +607,19 @@
   `engine.snapshot_skip_full_prompt_on_prefix_hit=false`.
 - Next experiment: randomized sustained branch/cancel/recovery ordering, then
   model-native fixed-shape state isolation for batching.
+
+## 2026-07-14: Make Core Manual Runtime the Active Workstream
+
+- Decision: prioritize Aster's manual runtime foundation before integrating
+  DFlash or any other speculative-decoding reference design.
+- Scope: request lifecycle, prefill/decode scheduling, KV and prefix ownership,
+  state isolation, memory pressure, cancellation, correctness, and benchmark
+  infrastructure. `examples/dflash-*` remains read-only reference material.
+- Baseline: prefix-off Qwen3.5-0.8B manual runtime at concurrency 4 measured
+  `5.307s`, `31.16` average generation tok/s, and `1.626GB` peak MLX memory on
+  a 4,820-token long workload, with zero swap growth and zero failures.
+- Reason: speculative decoding multiplies cache, rollback, sampling, and
+  correctness surfaces; the core runtime must first have stable ownership and
+  measurement gates so any later draft/verify path can be judged honestly.
+- Next experiment: profile the manual long/concurrent path and test one
+  model-native state-isolation or scheduling change without touching DFlash.
