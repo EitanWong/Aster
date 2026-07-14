@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current code commit: `2d1bb49` (longest-lane evaluation recorded).
+- Current code commit: `acf785f` (skip disabled chat reuse analysis).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -15,7 +15,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `437 passed, 9 skipped, 1 warning` across 446 collected tests.
+- Full suite: `439 passed, 9 skipped, 1 warning` across 448 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -64,6 +64,13 @@ Updated: 2026-07-14
   mixed elapsed improved `0.89%~2.77%`, but staggered elapsed regressed
   `24.50%~27.73%`, p95 `7.98%~11.22%`, and completion throughput about 20%.
   The cause was repeated single-request lanes after staggered arrivals.
+- Iteration 034 evaluated a greedy batch-wide argmax path and rolled it back:
+  six candidate runs were `1.07%` slower and `1.02%` lower throughput than
+  three baselines at manual decode batch 4.
+- Iteration 035 keeps the disabled-prefix chat reuse guard: 40-turn Agent
+  encoding improved `73.136ms -> 1.787ms`, and five end-to-end runs improved
+  median elapsed `2.7199s -> 1.8380s` with identical output hash and finish
+  reason.
 
 ## Active Risks
 
@@ -73,4 +80,4 @@ Updated: 2026-07-14
 
 ## Next Priority
 
-Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Expand Agent prefix-cache/long-context measurements. Keep the dependency lock aligned with project declarations on each package refresh.

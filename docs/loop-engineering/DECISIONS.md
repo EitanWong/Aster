@@ -495,3 +495,31 @@
   pre-existing independent-stream changes were modified.
 - Next experiment: fixed-shape padding/masking or a model-native state
   isolation boundary that preserves batching without late membership drift.
+
+## 2026-07-14: Roll Back Greedy Batch Argmax Fast Path
+
+- Decision: remove the batch-wide greedy argmax candidate from the manual
+  decode path.
+- Evidence: Qwen3.5-0.8B manual batch=4 mixed workload measured baseline
+  median `1.6682s / 172.642 tok/s` versus candidate
+  `1.6860s / 170.884 tok/s`, with unchanged `1.541 GB` peak and zero swap
+  growth.
+- Root cause: the extra batch reduction/evaluation did not amortize against
+  the existing per-row greedy sampling on this MLX workload.
+- Rollback: source and test changes were removed; no user working-tree lane
+  changes were touched.
+
+## 2026-07-14: Skip Chat Reuse Analysis When Prefix Cache Is Disabled
+
+- Decision: retain `acf785f` in the manual runtime.
+- Change: `ModelRunner.encode_request()` skips `_chat_reuse_points()` when
+  `engine.prefix_cache_enabled` is false; the enabled path is unchanged.
+- Evidence: real 40-turn Qwen3.5-0.8B Agent encoding improved
+  `73.136ms -> 1.787ms` median. Five end-to-end 1,718-token / 16-token
+  requests improved `2.7199s -> 1.8380s` median, with identical text SHA,
+  prompt/completion counts, and finish reason.
+- Scope: this is a default-path Agent preprocessing improvement, not a global
+  decode throughput claim. Full suite passed with `439 passed, 9 skipped`.
+- Rollback: `git revert acf785f`.
+- Next experiment: safe fixed-shape/state isolation for multi-lane batching,
+  plus prefix-enabled long-context Agent measurements.
