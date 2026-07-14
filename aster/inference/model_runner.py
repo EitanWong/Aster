@@ -686,7 +686,11 @@ class ModelRunner:
             if full_prompt_tokens[: len(boundary_tokens)] != boundary_tokens:
                 continue
             reuse_points.add(len(boundary_tokens))
-        return tuple(sorted(reuse_points))
+        ordered_points = tuple(sorted(reuse_points))
+        max_points = self.settings.engine.snapshot_max_chat_reuse_points
+        if max_points > 0:
+            return ordered_points[-max_points:]
+        return ordered_points
 
     def _chat_lcp_reuse_point(
         self,
