@@ -24,6 +24,17 @@ from aster.inference.thinking_processor import ThinkingAwareLogitsProcessor
 from aster.telemetry.logging import get_logger
 from aster.telemetry.metrics import MetricsRegistry
 
+_BatchProfile = tuple[int, bool, int]
+
+
+@dataclass(slots=True)
+class _BatchLane:
+    profile: _BatchProfile
+    generator: Any
+    request_ids: set[str] = field(default_factory=set)
+    uid_to_rid: dict[int, str] = field(default_factory=dict)
+    rid_to_uid: dict[str, int] = field(default_factory=dict)
+
 
 @dataclass(slots=True)
 class _RequestState:
@@ -45,6 +56,7 @@ class _RequestState:
     matched_prefix_tokens: int = 0
     prefix_cache_key: str | None = None
     effective_stop_token_ids: frozenset[int] = frozenset()
+    batch_profile: _BatchProfile | None = None
     # Streaming support
     stream_event: asyncio.Event | None = None
     stream_chunks: deque[DecodeChunk] = field(default_factory=deque)
@@ -89,12 +101,11 @@ class BatchedEngine:
         self._running: set[str] = set()
         self._finished: dict[str, InferenceResponse] = {}
         self._pending_aborts: set[str] = set()
-        self._uid_to_rid: dict[int, str] = {}
-        self._rid_to_uid: dict[str, int] = {}
         self._stream_events: dict[str, asyncio.Event] = {}
 
         # BatchGenerator (created during start)
-        self._batch_generator: Any | None = None
+        self._batch_lanes: dict[_BatchProfile, _BatchLane] = {}
+        self._batch_generator_max_lanes = settings.engine.batch_generator_max_lanes
         self._mx: Any | None = None
         self._model: Any | None = None
         self._tokenizer: Any | None = None
@@ -164,11 +175,12 @@ class BatchedEngine:
 
     async def aclose(self) -> None:
         await self.stop()
-        if self._batch_generator is not None:
+        for lane in self._batch_lanes.values():
             try:
-                self._batch_generator.close()
+                lane.generator.close()
             except Exception:
                 pass
+        self._batch_lanes.clear()
         await self.embedding_backend.aclose()
 
     async def warmup(self) -> None:
@@ -401,13 +413,16 @@ class BatchedEngine:
         use_cache: bool,
         cache_token_count: int,
         prompt_token_count: int,
+        *,
+        lane: _BatchLane | None = None,
     ) -> bool:
         profile = (
             prompt_token_count,
             use_cache,
             cache_token_count if use_cache else 0,
         )
-        for rid in self._running:
+        active_request_ids = lane.request_ids if lane is not None else self._running
+        for rid in active_request_ids:
             state = self._state.get(rid)
             if state is None:
                 continue
@@ -429,7 +444,11 @@ class BatchedEngine:
             if (state := self._state.get(rid)) is not None
         )
 
-    def _process_prompt_responses(self, responses: list[Any]) -> None:
+    def _process_prompt_responses(
+        self,
+        lane: _BatchLane,
+        responses: list[Any],
+    ) -> None:
         if not responses or not self.prefix_store.enabled or self._model_fingerprint is None:
             return
         for response in responses:
@@ -443,7 +462,7 @@ class BatchedEngine:
             ):
                 continue
             uid = response.uid
-            rid = self._uid_to_rid.get(uid)
+            rid = lane.uid_to_rid.get(uid)
             if rid is None:
                 continue
             state = self._state.get(rid)
@@ -451,7 +470,7 @@ class BatchedEngine:
                 continue
 
             try:
-                extracted = self._batch_generator.extract_cache([uid])
+                extracted = lane.generator.extract_cache([uid])
                 cache_data = extracted.get(uid)
                 prompt_cache = cache_data[0] if isinstance(cache_data, tuple) else cache_data
                 target_cache_tokens = max(len(state.prompt_tokens) - 1, 0)
@@ -525,6 +544,38 @@ class BatchedEngine:
             )
         except Exception:
             self._paged_cache = None
+
+    def _create_batch_generator(self) -> Any:
+        from mlx_lm.generate import BatchGenerator
+
+        engine = self.settings.engine
+        return BatchGenerator(
+            self._model,
+            max_tokens=engine.max_active_requests * 512,
+            completion_batch_size=engine.max_active_requests,
+            prefill_batch_size=engine.max_active_requests,
+            prefill_step_size=engine.prefill_token_budget,
+        )
+
+    def _get_or_create_lane(self, profile: _BatchProfile) -> _BatchLane | None:
+        lane = self._batch_lanes.get(profile)
+        if lane is not None:
+            return lane
+        if len(self._batch_lanes) >= self._batch_generator_max_lanes:
+            for old_profile, old_lane in tuple(self._batch_lanes.items()):
+                if old_lane.request_ids:
+                    continue
+                try:
+                    old_lane.generator.close()
+                except Exception:
+                    pass
+                del self._batch_lanes[old_profile]
+                break
+            else:
+                return None
+        lane = _BatchLane(profile=profile, generator=self._create_batch_generator())
+        self._batch_lanes[profile] = lane
+        return lane
 
     def _prepare_prompt_tokens(self, state: _RequestState) -> list[int]:
         request = state.request
@@ -647,18 +698,7 @@ class BatchedEngine:
     # ------------------------------------------------------------------
 
     async def _engine_loop(self) -> None:
-        from mlx_lm.generate import BatchGenerator
-
         self._ensure_loaded()
-
-        engine = self.settings.engine
-        self._batch_generator = BatchGenerator(
-            self._model,
-            max_tokens=engine.max_active_requests * 512,
-            completion_batch_size=engine.max_active_requests,
-            prefill_batch_size=engine.max_active_requests,
-            prefill_step_size=engine.prefill_token_budget,
-        )
 
         # Install chunked prefill for fairness on long prompts
         # NOTE: disabled because mlx-lm internal API differs by version
@@ -673,32 +713,34 @@ class BatchedEngine:
                 # 2. Schedule waiting requests
                 self._schedule_waiting()
 
-                # 3. Run one generation step
-                responses = []
-                if self._batch_generator is not None and self._running:
+                # 3. Run one generation step per profile lane. Calls remain
+                # sequential so MLX stream ownership stays with this loop.
+                for lane in tuple(self._batch_lanes.values()):
+                    if not lane.request_ids:
+                        continue
                     try:
-                        prompt_responses, responses = self._batch_generator.next()
-                        self._process_prompt_responses(prompt_responses)
+                        prompt_responses, responses = lane.generator.next()
+                        self._process_prompt_responses(lane, prompt_responses)
+                        if responses:
+                            self._process_responses(lane, responses)
                     except IndexError:
                         # mlx-lm _next() fails on empty segments — recover by
-                        # aborting all running requests to unblock the loop
-                        self.logger.warning("batch_generator_empty_segments_recovering")
-                        for rid in list(self._running):
+                        # aborting only this lane's requests.
+                        self.logger.warning(
+                            "batch_generator_empty_segments_recovering",
+                            extra={"profile": lane.profile},
+                        )
+                        for rid in list(lane.request_ids):
                             self._pending_aborts.add(rid)
-                        await asyncio.sleep(0.01)
                         continue
                     except Exception as exc:
                         self.logger.warning(
                             "batch_generator_step_failed",
                             exc_info=True,
-                            extra={"error": str(exc)},
+                            extra={"error": str(exc), "profile": lane.profile},
                         )
-                        await asyncio.sleep(0.01)
                         continue
 
-                # Process generated responses after prompt-boundary snapshots.
-                if responses:
-                    self._process_responses(responses)
                 await asyncio.sleep(0)
         except asyncio.CancelledError:
             pass
@@ -734,24 +776,32 @@ class BatchedEngine:
                     state.stream_event.set()
             self._state.clear()
             self._finished.clear()
-            if self._batch_generator is not None:
+            for lane in self._batch_lanes.values():
                 try:
-                    self._batch_generator.close()
+                    lane.generator.close()
                 except Exception:
                     pass
-            self._batch_generator = None
+            self._batch_lanes.clear()
 
     def _process_aborts(self) -> None:
         for rid in list(self._pending_aborts):
             self._pending_aborts.discard(rid)
 
-            uid = self._rid_to_uid.pop(rid, None)
-            if uid is not None and self._batch_generator is not None:
-                try:
-                    self._batch_generator.remove([uid])
-                except Exception:
-                    pass
-                self._uid_to_rid.pop(uid, None)
+            state = self._state.get(rid)
+            lane = (
+                self._batch_lanes.get(state.batch_profile)
+                if state is not None and state.batch_profile is not None
+                else None
+            )
+            if lane is not None:
+                uid = lane.rid_to_uid.pop(rid, None)
+                if uid is not None:
+                    try:
+                        lane.generator.remove([uid])
+                    except Exception:
+                        pass
+                    lane.uid_to_rid.pop(uid, None)
+                lane.request_ids.discard(rid)
 
             if rid in self._running:
                 self._running.discard(rid)
@@ -779,27 +829,25 @@ class BatchedEngine:
 
     def _schedule_waiting(self) -> None:
         engine = self.settings.engine
+        attempts = len(self._waiting)
         while (
             len(self._running) < engine.max_active_requests
             and self._waiting
-            and self._batch_generator is not None
+            and attempts > 0
         ):
+            attempts -= 1
             rid = self._waiting.popleft()
             state = self._state.get(rid)
             if state is None:
                 continue
 
             try:
-                # Tokenize
-                tokens = self._prepare_prompt_tokens(state)
+                # Tokenization is retained while a request waits for a free
+                # compatible lane, avoiding repeated tokenizer work.
+                tokens = state.prompt_tokens or self._prepare_prompt_tokens(state)
                 state.prompt_tokens = tokens
-                state.started_at = time.monotonic()
-
-                if not self._prompt_length_compatible(len(tokens)):
-                    state.prompt_tokens = []
-                    state.started_at = None
-                    self._waiting.appendleft(rid)
-                    break
+                if state.started_at is None:
+                    state.started_at = time.monotonic()
 
                 # Sampler
                 sampler = self._make_sampler_for_request(state.request)
@@ -842,24 +890,40 @@ class BatchedEngine:
                             self._release_prefix_pin(state)
 
                 cached_prefix_tokens = max(len(tokens) - len(prompt_tokens_for_insert), 0)
-                if not self._cache_restore_compatible(
-                    prompt_cache is not None,
-                    cached_prefix_tokens,
+                profile: _BatchProfile = (
                     len(tokens),
-                ):
+                    prompt_cache is not None,
+                    cached_prefix_tokens if prompt_cache is not None else 0,
+                )
+                lane = self._get_or_create_lane(profile)
+                if lane is None:
                     self._release_prefix_pin(state)
                     state.matched_prefix_tokens = 0
-                    state.prompt_tokens = []
-                    state.started_at = None
                     if self._paged_cache is not None:
                         try:
                             self._paged_cache.remove_table(rid)
                         except Exception:
                             pass
-                    self._waiting.appendleft(rid)
-                    break
+                    self._waiting.append(rid)
+                    continue
 
-                # Insert into batch generator
+                if not self._cache_restore_compatible(
+                    prompt_cache is not None,
+                    cached_prefix_tokens,
+                    len(tokens),
+                    lane=lane,
+                ):
+                    self._release_prefix_pin(state)
+                    state.matched_prefix_tokens = 0
+                    if self._paged_cache is not None:
+                        try:
+                            self._paged_cache.remove_table(rid)
+                        except Exception:
+                            pass
+                    self._waiting.append(rid)
+                    continue
+
+                # Insert into the compatible profile lane.
                 kwargs = dict(
                     max_tokens=[state.max_tokens],
                     samplers=[sampler],
@@ -869,10 +933,12 @@ class BatchedEngine:
                 kwargs["all_tokens"] = [list(tokens[:cached_prefix_tokens])]
                 if prompt_cache is not None:
                     kwargs["caches"] = [prompt_cache]
-                uid_list = self._batch_generator.insert(**kwargs)
+                uid_list = lane.generator.insert(**kwargs)
                 uid = uid_list[0]
-                self._uid_to_rid[uid] = rid
-                self._rid_to_uid[rid] = uid
+                state.batch_profile = profile
+                lane.request_ids.add(rid)
+                lane.uid_to_rid[uid] = rid
+                lane.rid_to_uid[rid] = uid
                 self._running.add(rid)
             except Exception as exc:
                 self.logger.warning(
@@ -889,13 +955,13 @@ class BatchedEngine:
                         state.stream_error = exc
                         state.stream_event.set()
 
-    def _process_responses(self, responses: list[Any]) -> None:
+    def _process_responses(self, lane: _BatchLane, responses: list[Any]) -> None:
         if not responses:
             return
 
         for response in responses:
             uid = response.uid
-            rid = self._uid_to_rid.get(uid)
+            rid = lane.uid_to_rid.get(uid)
             if rid is None:
                 continue
 
@@ -917,7 +983,7 @@ class BatchedEngine:
                 finish_reason = "stop"
 
             if finish_reason:
-                self._finish_request(state, finish_reason=finish_reason)
+                self._finish_request(state, lane=lane, finish_reason=finish_reason)
             else:
                 # Stream the token
                 try:
@@ -929,7 +995,13 @@ class BatchedEngine:
                     state.stream_chunks.append(chunk)
                     state.stream_event.set()
 
-    def _finish_request(self, state: _RequestState, *, finish_reason: str) -> None:
+    def _finish_request(
+        self,
+        state: _RequestState,
+        *,
+        lane: _BatchLane,
+        finish_reason: str,
+    ) -> None:
         state.completed_at = time.monotonic()
         state.finish_reason = finish_reason
 
@@ -975,14 +1047,15 @@ class BatchedEngine:
         self._total_prompt_tokens += len(state.prompt_tokens)
         self._total_completion_tokens += state.generated_tokens
 
-        # Remove from batch generator and release any pinned prefix snapshot.
-        uid = self._rid_to_uid.pop(state.request_id, None)
-        if uid is not None and self._batch_generator is not None:
-            self._uid_to_rid.pop(uid, None)
+        # Remove from the owning lane and release any pinned prefix snapshot.
+        uid = lane.rid_to_uid.pop(state.request_id, None)
+        if uid is not None:
+            lane.uid_to_rid.pop(uid, None)
             try:
-                self._batch_generator.remove([uid])
+                lane.generator.remove([uid])
             except Exception:
                 pass
+        lane.request_ids.discard(state.request_id)
         self._release_prefix_pin(state)
 
         # Signal completion

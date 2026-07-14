@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 
+from aster.core.config import RuntimeSettings
 from aster.inference.contracts import InferenceRequest
 from scripts.dev.benchmark_batched_engine import (
+    _apply_benchmark_overrides,
     _build_structured_workload,
     _requests_for_workload,
     _submit_requests,
@@ -46,3 +48,19 @@ def test_submit_requests_preserves_sequential_order() -> None:
         assert engine.completed == ["one", "two"]
 
     asyncio.run(scenario())
+
+
+def test_benchmark_overrides_lane_limit_without_mutating_settings() -> None:
+    settings = RuntimeSettings()
+
+    overridden = _apply_benchmark_overrides(
+        settings,
+        concurrency_levels=[2, 4],
+        prefix_cache_enabled=False,
+        max_lanes=2,
+    )
+
+    assert settings.engine.batch_generator_max_lanes == 1
+    assert overridden.engine.batch_generator_max_lanes == 2
+    assert overridden.engine.prefix_cache_enabled is False
+    assert overridden.engine.max_active_requests >= 4

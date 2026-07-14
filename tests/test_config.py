@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aster.core.config import load_settings
+import pytest
+from pydantic import ValidationError
+
+from aster.core.config import RuntimeSettings, load_settings
 
 
 def test_load_settings(tmp_path: Path) -> None:
@@ -35,6 +38,19 @@ def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:
     settings = load_settings(str(path))
 
     assert settings.api.responses_store_max_entries == 3
+
+
+def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
+    assert RuntimeSettings().engine.batch_generator_max_lanes == 1
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_max_lanes": 2}}
+        ).engine.batch_generator_max_lanes
+        == 2
+    )
+
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"batch_generator_max_lanes": 0}})
 
 
 def test_load_settings_preserves_legacy_runtime_as_ignored_metadata(tmp_path: Path) -> None:

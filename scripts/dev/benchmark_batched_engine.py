@@ -20,7 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from aster.core.config import load_settings  # noqa: E402
+from aster.core.config import RuntimeSettings, load_settings  # noqa: E402
 from aster.inference.batched_engine import BatchedEngine  # noqa: E402
 from aster.inference.contracts import InferenceRequest  # noqa: E402
 from aster.telemetry.metrics import MetricsRegistry  # noqa: E402
@@ -37,6 +37,30 @@ def _package_version(name: str) -> str:
         return importlib.metadata.version(name)
     except importlib.metadata.PackageNotFoundError:
         return "unavailable"
+
+
+def _apply_benchmark_overrides(
+    settings: RuntimeSettings,
+    *,
+    concurrency_levels: list[int],
+    prefix_cache_enabled: bool,
+    max_lanes: int,
+) -> RuntimeSettings:
+    return settings.model_copy(
+        update={
+            "engine": settings.engine.model_copy(
+                update={
+                    "engine_type": "batched",
+                    "max_active_requests": max(
+                        settings.engine.max_active_requests,
+                        max(concurrency_levels),
+                    ),
+                    "prefix_cache_enabled": prefix_cache_enabled,
+                    "batch_generator_max_lanes": max_lanes,
+                }
+            )
+        }
+    )
 
 
 def _build_structured_workload(concurrency: int, *, temperature: float) -> list[InferenceRequest]:
@@ -257,21 +281,14 @@ async def run_benchmark(
     temperature: float,
     long_prompt_words: int,
     prefix_cache_enabled: bool,
+    max_lanes: int,
 ) -> dict[str, Any]:
     settings = load_settings(config_path)
-    settings = settings.model_copy(
-        update={
-            "engine": settings.engine.model_copy(
-                update={
-                    "engine_type": "batched",
-                    "max_active_requests": max(
-                        settings.engine.max_active_requests,
-                        max(concurrency_levels),
-                    ),
-                    "prefix_cache_enabled": prefix_cache_enabled,
-                }
-            )
-        }
+    settings = _apply_benchmark_overrides(
+        settings,
+        concurrency_levels=concurrency_levels,
+        prefix_cache_enabled=prefix_cache_enabled,
+        max_lanes=max_lanes,
     )
     engine = BatchedEngine(settings, MetricsRegistry(settings.telemetry.metrics_namespace))
     await engine.start()
@@ -334,6 +351,7 @@ async def run_benchmark(
         "config": str(config_path),
         "engine": "batched",
         "prefix_cache_enabled": prefix_cache_enabled,
+        "batch_generator_max_lanes": max_lanes,
         "workloads": workloads,
         "concurrency_levels": concurrency_levels,
         "rounds": rounds,
@@ -355,6 +373,7 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--long-prompt-words", type=int, default=1024)
     parser.add_argument("--prefix-cache", choices=("on", "off"), default="on")
+    parser.add_argument("--max-lanes", type=int, default=1)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
@@ -369,6 +388,7 @@ def main() -> None:
             temperature=args.temperature,
             long_prompt_words=args.long_prompt_words,
             prefix_cache_enabled=args.prefix_cache == "on",
+            max_lanes=args.max_lanes,
         )
     )
     rendered = json.dumps(payload, indent=2)

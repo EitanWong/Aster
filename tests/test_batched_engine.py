@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import aster.inference.batched_engine as batched_engine_module
-from aster.inference.batched_engine import BatchedEngine, _RequestState
+from aster.inference.batched_engine import BatchedEngine, _BatchLane, _RequestState
 from aster.inference.contracts import InferenceRequest
 from aster.inference.prefix_store import SnapshotEntry
 
@@ -45,17 +45,23 @@ def test_batch_generator_prefix_insert_starts_with_first_uncached_token() -> Non
 def test_batch_generator_stores_prompt_boundary_cache() -> None:
     captured: list[dict[str, object]] = []
     engine = object.__new__(BatchedEngine)
-    engine._batch_generator = SimpleNamespace(
+    profile = (4, False, 0)
+    lane = _BatchLane(
+        profile=profile,
+        generator=SimpleNamespace(
         extract_cache=lambda uids: {
             uids[0]: ([_FakeKVCache(3)], [10, 11, 12])
         }
+        ),
     )
-    engine._uid_to_rid = {7: "request-7"}
+    lane.uid_to_rid = {7: "request-7"}
+    engine._batch_lanes = {profile: lane}
     engine._state = {
         "request-7": _RequestState(
             request_id="request-7",
             request=InferenceRequest(prompt="ignored", trace_id="request-7"),
             prompt_tokens=[10, 11, 12, 13],
+            batch_profile=profile,
         )
     }
     engine.prefix_store = SimpleNamespace(
@@ -66,6 +72,7 @@ def test_batch_generator_stores_prompt_boundary_cache() -> None:
     engine.settings = SimpleNamespace(model=SimpleNamespace(name="test-model"))
 
     engine._process_prompt_responses(
+        lane,
         [
             SimpleNamespace(
                 uid=7,
@@ -100,6 +107,113 @@ def test_batch_generator_rejects_mixed_cached_batch_profiles() -> None:
     assert engine._cache_restore_compatible(True, 4, 4) is False
     assert engine._cache_restore_compatible(False, 0, 4) is False
     assert engine._cache_restore_compatible(True, 3, 5) is False
+
+
+def test_batched_engine_creates_bounded_lanes_for_incompatible_profiles() -> None:
+    created: list[object] = []
+    engine = object.__new__(BatchedEngine)
+    engine._batch_lanes = {}
+    engine._batch_generator_max_lanes = 2
+    engine._create_batch_generator = lambda: created.append(object()) or created[-1]
+
+    first = engine._get_or_create_lane((4, False, 0))
+    second = engine._get_or_create_lane((5, False, 0))
+    reused = engine._get_or_create_lane((4, False, 0))
+    first.request_ids.add("active-first")
+    second.request_ids.add("active-second")
+    rejected = engine._get_or_create_lane((6, False, 0))
+    second.request_ids.clear()
+    recycled = engine._get_or_create_lane((6, False, 0))
+
+    assert first is not None
+    assert second is not None
+    assert reused is first
+    assert rejected is None
+    assert recycled is not None
+    assert recycled is not second
+    assert len(created) == 3
+    assert len(engine._batch_lanes) == 2
+
+
+def test_batched_engine_abort_removes_request_from_its_lane() -> None:
+    removed: list[list[int]] = []
+
+    class Generator:
+        def remove(self, uids: list[int]) -> None:
+            removed.append(uids)
+
+    profile = (4, False, 0)
+    lane = _BatchLane(profile=profile, generator=Generator())
+    lane.request_ids.add("cancel")
+    lane.uid_to_rid[41] = "cancel"
+    lane.rid_to_uid["cancel"] = 41
+
+    engine = object.__new__(BatchedEngine)
+    engine._batch_lanes = {profile: lane}
+    engine._pending_aborts = {"cancel"}
+    engine._running = {"cancel"}
+    engine._state = {
+        "cancel": _RequestState(
+            request_id="cancel",
+            request=InferenceRequest(prompt="cancel", trace_id="cancel"),
+            prompt_tokens=[1, 2, 3, 4],
+            batch_profile=profile,
+        )
+    }
+    engine._cancelled_requests = 1
+
+    engine._process_aborts()
+
+    assert removed == [[41]]
+    assert lane.request_ids == set()
+    assert lane.uid_to_rid == {}
+    assert lane.rid_to_uid == {}
+    assert engine._running == set()
+    assert engine._state == {}
+
+
+def test_batched_engine_extracts_prompt_cache_from_the_owning_lane() -> None:
+    captured: list[dict[str, object]] = []
+
+    class Generator:
+        def extract_cache(self, uids: list[int]) -> dict[int, object]:
+            return {uids[0]: ([_FakeKVCache(3)], [10, 11, 12])}
+
+    profile = (4, False, 0)
+    lane = _BatchLane(profile=profile, generator=Generator())
+    lane.uid_to_rid[7] = "request-7"
+
+    engine = object.__new__(BatchedEngine)
+    engine._batch_lanes = {profile: lane}
+    engine._state = {
+        "request-7": _RequestState(
+            request_id="request-7",
+            request=InferenceRequest(prompt="ignored", trace_id="request-7"),
+            prompt_tokens=[10, 11, 12, 13],
+            batch_profile=profile,
+        )
+    }
+    engine.prefix_store = SimpleNamespace(
+        enabled=True,
+        store=lambda **kwargs: captured.append(kwargs),
+    )
+    engine._model_fingerprint = "fingerprint"
+    engine.settings = SimpleNamespace(model=SimpleNamespace(name="test-model"))
+
+    engine._process_prompt_responses(
+        lane,
+        [
+            SimpleNamespace(
+                uid=7,
+                end_of_segment=True,
+                end_of_prompt=False,
+                progress=(3, 4),
+            )
+        ],
+    )
+
+    assert len(captured) == 1
+    assert captured[0]["cache_token_count"] == 3
 
 
 def test_batched_engine_passes_structured_schema_before_tokenizer(monkeypatch) -> None:
