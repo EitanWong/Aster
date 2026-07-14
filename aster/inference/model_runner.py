@@ -85,6 +85,18 @@ class DecodeResult:
 DecodeStepResult = DecodeResult | BaseException
 
 
+@dataclass(frozen=True, slots=True)
+class PrefillTransientProfile:
+    n_q_heads: int
+    head_dim: int
+    score_dtype_size: int
+
+    def estimate(self, query_tokens: int, kv_tokens: int) -> int:
+        scores = self.n_q_heads * query_tokens * kv_tokens * self.score_dtype_size
+        output = self.n_q_heads * query_tokens * self.head_dim * 4
+        return int(scores + output)
+
+
 def _array_memory(arr: Any) -> int:
     shape = getattr(arr, "shape", None)
     dtype = getattr(arr, "dtype", None)
@@ -488,6 +500,36 @@ class ModelRunner:
             * bytes_per_scalar
         )
         return full_attention_per_token * sequence_tokens + linear_state_bytes + linear_conv_bytes
+
+    def estimate_prefill_transient_bytes(self, query_tokens: int, kv_tokens: int) -> int:
+        """Estimate transient score/output tensors for one full-attention call."""
+        profile = self.prefill_transient_profile()
+        if profile is None or query_tokens <= 0 or kv_tokens <= 0:
+            return 0
+        return profile.estimate(query_tokens, kv_tokens)
+
+    def prefill_transient_profile(self) -> PrefillTransientProfile | None:
+        """Return immutable full-attention dimensions for scheduler-side pricing."""
+
+        config = self._config
+        text_config = config.get("text_config")
+        if isinstance(text_config, dict):
+            config = {**config, **text_config}
+
+        layer_types = config.get("layer_types")
+        if isinstance(layer_types, list) and layer_types and not any(
+            layer == "full_attention" for layer in layer_types
+        ):
+            return None
+
+        n_q_heads = int(config.get("num_attention_heads", config.get("n_heads", 0)))
+        head_dim = int(config.get("head_dim", 0))
+        if n_q_heads <= 0 or head_dim <= 0:
+            return None
+
+        dtype = str(config.get("dtype", "float16")).lower()
+        score_dtype_size = 4 if "32" in dtype else 2
+        return PrefillTransientProfile(n_q_heads, head_dim, score_dtype_size)
 
     def current_peak_memory_gb(self) -> float:
         mx = self._mx

@@ -12,6 +12,7 @@ from aster.inference.model_runner import (
     DecodeWorkItem,
     ModelRunner,
     PrefillChunkResult,
+    PrefillTransientProfile,
     PreparedPrompt,
 )
 
@@ -34,6 +35,8 @@ class RuntimeKernel(Protocol):
     def encode_request(self, request: InferenceRequest) -> PreparedPrompt: ...
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int: ...
+
+    def prefill_transient_profile(self) -> PrefillTransientProfile | None: ...
 
     def model_fingerprint(self) -> str: ...
 
@@ -107,6 +110,10 @@ class ManualRuntimeKernel:
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
         return self.runner.estimate_request_bytes(prompt_tokens, max_tokens)
+
+    def prefill_transient_profile(self) -> PrefillTransientProfile | None:
+        profile = getattr(self.runner, "prefill_transient_profile", None)
+        return profile() if callable(profile) else None
 
     def model_fingerprint(self) -> str:
         return self.runner.model_fingerprint()
@@ -223,6 +230,9 @@ class BatchGeneratorRuntimeKernel:
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
         self._not_ready()
+
+    def prefill_transient_profile(self) -> PrefillTransientProfile | None:
+        return None
 
     def model_fingerprint(self) -> str:
         self._not_ready()

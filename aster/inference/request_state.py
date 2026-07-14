@@ -38,6 +38,7 @@ class RequestState:
     cache_token_count: int = 0
     attached_snapshot_key: str | None = None
     estimated_bytes: int = 0
+    prefill_transient_profile: Any | None = None
     admission_retries: int = 0
     checkpoints_created: set[int] = field(default_factory=set)
     decode_sampler: Any | None = None

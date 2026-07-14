@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-07-14
+Updated: 2026-07-15
 
 ## Current State
 
@@ -12,6 +12,13 @@ Updated: 2026-07-14
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
 - Manual runtime is the production path. `BatchGeneratorRuntimeKernel` remains an unavailable adapter boundary.
 - The admission-before-prefill scheduler experiment was rolled back after randomized mixed and staggered A/B did not show a reliable short-request benefit.
+- Core reference matrix: `docs/loop-engineering/CORE_REFERENCE_MATRIX.md`.
+- Iteration 041 selected transient-aware prefill memory admission as the next
+  bounded core candidate, based on OMLX's route-aware prefill guard.
+- Iteration 042 retains a production manual-runtime guard: the runner thread
+  extracts immutable full-attention dimensions, the scheduler caps each
+  prefill chunk against transient score/output memory, and it rejects an
+  unaffordable chunk before model execution.
 
 ## Evidence
 
@@ -96,6 +103,14 @@ Updated: 2026-07-14
   prefix-off Qwen3.5-0.8B baseline at concurrency 4 measured `5.307s` and
   `31.16` average generation tok/s for the 4,820-token long workload, with
   `1.626GB` peak MLX memory and zero swap growth. DFlash remains reference-only.
+- Iteration 042 adds an OMLX-inspired transient full-attention prefill guard.
+  Unit and fake-runtime lifecycle coverage verify chunk clamping, preflight
+  rejection before model execution, output completion under pressure, and
+  single-runner-thread ownership. Prefix-off 0.8B smoke probes for long and
+  mixed workloads at concurrency 1/4 completed with zero failures, zero
+  admission rejections, and zero swap growth. Their single-run timings are
+  not treated as a throughput claim because no interleaved guard-off control
+  was run.
 
 ## Active Risks
 
@@ -114,4 +129,4 @@ Updated: 2026-07-14
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. First profile and improve the manual runtime's long/concurrent prefill-decode path, KV ownership, scheduling, and correctness gates; then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. First validate the retained transient prefill guard under an interleaved control or real long-context pressure workload, then profile prefix snapshot lookup/clone cost and manual runtime KV ownership. Only then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

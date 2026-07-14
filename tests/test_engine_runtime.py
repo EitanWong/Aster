@@ -19,6 +19,7 @@ from aster.inference.model_runner import (
     DecodeInit,
     DecodeResult,
     PrefillChunkResult,
+    PrefillTransientProfile,
     PreparedPrompt,
 )
 from aster.inference.request_state import RequestPhase, RequestState
@@ -98,6 +99,7 @@ class FakeRunner:
         self.strict_prefix_calls: list[list[dict[str, str]]] = []
         self.clone_cache_token_counts: list[int | None] = []
         self.available_memory_bytes_value = 1 << 30
+        self.transient_profile: PrefillTransientProfile | None = None
         self.initialize_requests: list[InferenceRequest] = []
         self.decode_diagnostics_payload: dict[str, object] = {"batch_attempts": 0}
 
@@ -122,6 +124,10 @@ class FakeRunner:
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
         self._record_thread()
         return max(prompt_tokens + max_tokens, 1) * 8
+
+    def prefill_transient_profile(self) -> PrefillTransientProfile | None:
+        self._record_thread()
+        return self.transient_profile
 
     def model_fingerprint(self) -> str:
         self._record_thread()
@@ -315,6 +321,98 @@ def test_engine_cleanup_releases_owned_prompt_cache() -> None:
 
     assert cache.released == 1
     assert state.request_id not in engine._requests
+
+
+def test_prefill_chunk_target_is_clamped_by_transient_memory_budget() -> None:
+    engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 16})
+    runner.available_memory_bytes_value = 1000
+    state = RequestState(
+        request_id="transient-budget",
+        request=InferenceRequest(prompt="ignored"),
+        prompt_tokens=list(range(21)),
+        cache_token_count=0,
+        prefill_transient_profile=PrefillTransientProfile(
+            n_q_heads=1,
+            head_dim=1,
+            score_dtype_size=10,
+        ),
+    )
+
+    assert engine._prefill_chunk_target(state, remaining=20) == 9
+
+
+def test_prefill_chunk_target_rejects_unaffordable_transient_activation() -> None:
+    engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 16})
+    runner.available_memory_bytes_value = 200
+    state = RequestState(
+        request_id="unaffordable-transient-budget",
+        request=InferenceRequest(prompt="ignored"),
+        prompt_tokens=list(range(22)),
+        cache_token_count=20,
+        prefill_transient_profile=PrefillTransientProfile(
+            n_q_heads=1,
+            head_dim=1,
+            score_dtype_size=10,
+        ),
+    )
+
+    assert engine._prefill_chunk_target(state, remaining=1) is None
+
+
+def test_prefill_rejects_unaffordable_transient_before_model_execution() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 16})
+        runner.available_memory_bytes_value = 200
+        state = RequestState(
+            request_id="unaffordable-transient-prefill",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=list(range(22)),
+            cache_token_count=20,
+            prefill_transient_profile=PrefillTransientProfile(
+                n_q_heads=1,
+                head_dim=1,
+                score_dtype_size=10,
+            ),
+        )
+        engine._requests[state.request_id] = state
+        engine._prefill_queue.append(state.request_id)
+        try:
+            assert await engine._step_prefill()
+        finally:
+            await engine.aclose()
+
+        assert runner.prefill_calls == 0
+        assert state.request_id not in engine._requests
+        assert engine.status()["failed_requests"] == 1
+
+    asyncio.run(scenario())
+
+
+def test_transient_prefill_guard_completes_with_chunked_prefill() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 16})
+        runner.available_memory_bytes_value = 1000
+        runner.transient_profile = PrefillTransientProfile(
+            n_q_heads=1,
+            head_dim=1,
+            score_dtype_size=10,
+        )
+        await engine.start()
+        try:
+            result = await engine.submit(
+                InferenceRequest(prompt=" ".join("token" for _ in range(20)), max_tokens=2)
+            )
+            status = engine.status()
+        finally:
+            await engine.stop()
+
+        assert result.text == "ab"
+        assert runner.prefill_calls >= 3
+        assert len(set(runner.thread_ids)) == 1
+        assert status["completed_requests"] == 1
+        assert status["failed_requests"] == 0
+
+    asyncio.run(scenario())
 
 
 def test_activate_decode_skips_full_checkpoint_after_prefix_hit() -> None:

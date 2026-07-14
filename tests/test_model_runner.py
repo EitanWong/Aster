@@ -426,6 +426,25 @@ def test_estimate_request_bytes_accounts_for_nested_hybrid_attention_config() ->
     )
 
 
+def test_estimate_prefill_transient_bytes_prices_one_full_attention_call() -> None:
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._loaded = True
+    runner._config = {
+        "text_config": {
+            "dtype": "bfloat16",
+            "head_dim": 256,
+            "num_attention_heads": 8,
+            "layer_types": ["linear_attention", "full_attention"],
+        }
+    }
+
+    query_tokens = 128
+    kv_tokens = 1024
+    expected = (8 * query_tokens * kv_tokens * 2) + (8 * query_tokens * 256 * 4)
+
+    assert runner.estimate_prefill_transient_bytes(query_tokens, kv_tokens) == expected
+
+
 def test_configure_prompt_cache_step_only_updates_matching_cache_type() -> None:
     class FakeKVCache:
         def __init__(self) -> None:

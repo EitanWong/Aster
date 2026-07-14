@@ -21,6 +21,7 @@ from aster.inference.model_runner import (
     DecodeWorkItem,
     ModelRunner,
     PrefillChunkResult,
+    PrefillTransientProfile,
 )
 from aster.inference.prefix_store import PrefixStore
 from aster.inference.prompt_warmup import ensure_user_terminator, load_warmup_file
@@ -624,6 +625,9 @@ class InferenceEngine:
                     len(state.prompt_tokens),
                     state.request.max_tokens,
                 )
+                state.prefill_transient_profile = await self._runner_call(
+                    self.runtime_kernel.prefill_transient_profile
+                )
                 if not self._is_live_request(state) or state.cancel_requested:
                     return _PREPARE_TERMINAL
                 state.admission_prepared = True
@@ -726,6 +730,12 @@ class InferenceEngine:
 
         state.mark_prefill_started()
         target = self._prefill_chunk_target(state, remaining=remaining)
+        if target is None:
+            await self._recover_from_memory_pressure(
+                state,
+                MemoryError("prefill transient activation exceeds the admission budget"),
+            )
+            return True
         next_reuse_point = self._next_checkpoint_reuse_point(
             state,
             target_cache_token_count=target,
@@ -1273,11 +1283,40 @@ class InferenceEngine:
                 cancelled = True
         return cancelled
 
-    def _prefill_chunk_target(self, state: RequestState, *, remaining: int) -> int:
+    def _prefill_chunk_target(self, state: RequestState, *, remaining: int) -> int | None:
         budget = self._prefill_budget()
+        budget = self._prefill_transient_budget(state, budget=budget)
+        if budget is None:
+            return None
         if self._can_finish_prefill_in_idle_step(remaining=remaining, budget=budget):
             budget = remaining
         return min(state.target_cache_token_count, state.cache_token_count + max(budget, 1))
+
+    def _prefill_transient_budget(self, state: RequestState, *, budget: int) -> int | None:
+        profile = state.prefill_transient_profile
+        if not isinstance(profile, PrefillTransientProfile) or budget <= 1:
+            return max(budget, 1)
+
+        available = self.runtime_kernel.available_memory_bytes()
+        memory_budget = int(
+            available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1)
+        )
+        transient_budget = memory_budget - self._active_estimated_bytes - self.prefix_store.current_bytes
+        if transient_budget <= 0:
+            return None
+
+        low = 1
+        high = max(budget, 1)
+        safe = 0
+        while low <= high:
+            candidate = (low + high) // 2
+            estimate = profile.estimate(candidate, state.cache_token_count + candidate)
+            if estimate <= 0 or estimate <= transient_budget:
+                safe = candidate
+                low = candidate + 1
+            else:
+                high = candidate - 1
+        return min(safe, budget) if safe else None
 
     def _next_checkpoint_reuse_point(
         self,
