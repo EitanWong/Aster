@@ -523,3 +523,23 @@
 - Rollback: `git revert acf785f`.
 - Next experiment: safe fixed-shape/state isolation for multi-lane batching,
   plus prefix-enabled long-context Agent measurements.
+
+## 2026-07-14: Keep Bounded Chat Prompt Token Cache
+
+- Decision: retain `b82599b` in the manual runtime with default capacity 32.
+- Design: an LRU scoped to one `ModelRunner` caches a hash of messages,
+  thinking mode, and chat-template kwargs, returning copied token IDs and
+  reuse-point metadata. KV caches are unaffected; clearing runtime caches also
+  clears tokenized prompts.
+- Evidence: prefix-enabled 40-turn Agent encode median improved
+  `74.082ms -> 0.028ms`. Three fresh-process e2e medians improved exact hot
+  reuse `0.2548s -> 0.1788s` (`-29.8%`) and append-only turns
+  `0.3032s -> 0.2846s` (`-6.1%`); cold was `1.6%` faster. Hash, token-count,
+  finish-reason, memory, and swap checks held.
+- Tradeoff: bounded token metadata consumes memory proportional to cached
+  prompt length; capacity `0` disables it and the LRU prevents unbounded
+  growth.
+- Rollback: `git revert b82599b` or set
+  `engine.chat_prompt_cache_max_entries=0`.
+- Next experiment: fixed-shape/state isolation for multi-lane batching and
+  longer branching Agent workload validation.
