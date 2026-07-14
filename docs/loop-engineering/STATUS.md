@@ -4,7 +4,9 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `5807641` (prioritize the longest BatchGenerator lane).
+- Current code commit: `2d1bb49` (longest-lane evaluation recorded).
+- Working tree: an uncommitted opt-in independent-MLX-stream candidate is
+  present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
@@ -13,7 +15,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `436 passed, 9 skipped, 1 warning` across 445 collected tests.
+- Full suite: `437 passed, 9 skipped, 1 warning` across 446 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -53,6 +55,11 @@ Updated: 2026-07-14
 - A corrected cache-only microbatch probe found a narrow performance region: batch=4 with 128/256-token chunks had lower isolated model time than four serial calls, while 512/1024-token chunks had no stable gain. End-to-end 0.8B prefill256 A/B improved elapsed `22.818s -> 20.182s` (`-11.5%`) and throughput `22.439 -> 25.369 tok/s` (`+13.1%`), with peak memory `1.662 -> 1.931 GB`; however, greedy parity failed for one of four prompts (different text SHA). A 9B one-shot prefill256 probe improved `25.355s -> 24.358s` but raised peak `5.997 -> 6.622 GB`; no swap growth. The implementation was rolled back because deterministic correctness is a hard gate.
 - Direct benchmark records now include MLX allocator peak memory; the 9B single smoke measured 5.169 GB and the 12K run measured 12.187 GB.
 - `powermetrics` is unavailable without superuser privileges. `memory_pressure` reported 58% system-wide free memory and no thermal/performance warning was recorded by `pmset`.
+- Iteration 032 evaluated a separate MLX stream per opt-in BatchGenerator
+  lane. The matched 8-record A/B had zero errors, exact hashes, zero swap
+  growth, and unchanged `1.495 GB` peak MLX memory, but elapsed improvement
+  was only `0.84%~2.53%`. Interleaved reruns did not clear the 3% gate and
+  staggered p95 once regressed `4.79%`; the candidate is not promoted.
 
 ## Active Risks
 

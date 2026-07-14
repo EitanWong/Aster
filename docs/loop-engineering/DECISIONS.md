@@ -453,3 +453,27 @@
 - Next experiment: event-driven cohort closure or model-native fixed-batch
   isolation to remove the remaining multi-lane scheduling cost without
   reopening arrival-dependent membership.
+
+## 2026-07-14: Do Not Promote Independent MLX Lane Streams
+
+- Decision: retain the uncommitted `lane_streams` candidate as an explicit
+  opt-in experiment only; keep the production/default lane configuration
+  unchanged.
+- Design: pass a dedicated `mx.new_stream(mx.default_device())` to each
+  opt-in `BatchGenerator`, while preserving the single engine-loop owner and
+  sequential lane stepping.
+- Correctness: the matched 8-record A/B completed with zero errors, identical
+  response hashes, zero swap growth, and `1.495 GB` peak MLX memory. Both
+  arms' cancellation probes ended with zero running requests and zero pinned
+  entries.
+- Performance: matched elapsed changes were `-0.84%~-2.53%`, below the 3%
+  gate. Interleaved reruns showed only about `0.5%~1.1%` mixed-workload gain;
+  staggered p95 varied with arrival timing and once regressed `4.79%`.
+- Interpretation: `BatchGenerator.next()` already binds execution to its
+  configured stream and synchronously evaluates current tokens, while Aster
+  still steps lanes sequentially. Stream assignment alone does not remove the
+  scheduler/cohort bottleneck.
+- Rollback: disable `batch_generator_lane_streams` or remove only the
+  candidate-owned uncommitted changes after ownership is confirmed.
+- Next experiment: event-driven cohort closure or model-native fixed-batch
+  state isolation with arrival-independent token parity.

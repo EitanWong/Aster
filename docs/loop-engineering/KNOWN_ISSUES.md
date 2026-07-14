@@ -1,5 +1,10 @@
 # Known Issues
 
+- Independent MLX streams for opt-in BatchGenerator lanes do not clear the 3%
+  end-to-end gate. `BatchGenerator.next()` already performs stream-bound
+  synchronous evaluation, and staggered cohort membership remains sensitive to
+  arrival timing; the candidate is not enabled by default.
+
 - Benchmark sampling is now explicit and defaults to greedy `temperature=0.0`; non-greedy runs remain intentionally stochastic.
 - Randomized A/B is available in the recorded harness runs; future candidates must use it rather than grouped execution.
 - Direct benchmark records include RSS, swap deltas, prompt token counts, prefix-store counters, admission rejections, overall MLX peak, and prefill active/peak memory for completed responses, but not energy or allocator peaks for failed requests. The paged-attention probe separately records randomized A/B timing and allocator peaks.
