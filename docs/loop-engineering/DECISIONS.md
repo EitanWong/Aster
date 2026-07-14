@@ -564,3 +564,24 @@
 - Next experiment: validate the budget across longer and branchier Agent
   traces, then return to fixed-shape/state-isolation work for safe multi-lane
   batching.
+
+## 2026-07-14: Add a Sparse Tier for Long-Context Chat Snapshots
+
+- Decision: retain `0e13e8f` with recent eight-point retention plus four sparse
+  older points for prompts at least `2048` tokens.
+- Design: older points are selected at exponentially increasing distances from
+  the recent window, plus the earliest point that meets the snapshot minimum.
+  Shorter prompts remain recent-only. Unlimited behavior remains available
+  with `snapshot_max_chat_reuse_points=0`.
+- Evidence: the 80-turn Qwen3.5-0.8B 3x3 A/B improved cold median
+  `3.6749s -> 2.2592s` (`-38.5%`) and reduced initial snapshot memory
+  `3.092 GB -> 0.628 GB` (`-79.7%`). Exact, append, recent, mid, and old
+  branches all retained cache hits, identical hashes, and zero swap growth.
+- Tradeoff: mid/old branches saved fewer tokens and took longer than the
+  unlimited baseline because they resume from a sparse ancestor; this is an
+  explicit bounded-memory tradeoff, not a universal branch-latency claim.
+- Rollback: `git revert 0e13e8f`, set
+  `engine.snapshot_chat_reuse_sparse_points=0`, or set
+  `engine.snapshot_max_chat_reuse_points=0`.
+- Next experiment: sustained repeated-branch/cancellation/recovery traces,
+  followed by model-native fixed-shape state isolation for batching.
