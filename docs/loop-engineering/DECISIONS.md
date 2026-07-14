@@ -543,3 +543,24 @@
   `engine.chat_prompt_cache_max_entries=0`.
 - Next experiment: fixed-shape/state isolation for multi-lane batching and
   longer branching Agent workload validation.
+
+## 2026-07-14: Bound Chat Snapshot Reuse Points
+
+- Decision: retain `a8913e6` in the manual runtime with the default
+  `engine.snapshot_max_chat_reuse_points=8`.
+- Design: after chat reuse analysis, keep only the most recent eight reusable
+  boundaries. A value of `0` preserves unlimited historical reuse points for
+  workloads that prefer cache breadth over retained memory.
+- Evidence: on a Qwen3.5-0.8B 40-turn Agent A/B, cold median improved
+  `2.5375s -> 1.8549s` (`-26.9%`). Exact, append-only, and branch requests
+  retained identical response hashes, cache-hit flags, and saved-token counts.
+  Snapshot memory fell from `1.192 GB` / 39 entries to `0.326 GB` / 9 entries
+  (`-72.7%`), with zero swap growth.
+- Tradeoff: older historical branch points are no longer retained by default;
+  longer or unusually branch-diverse conversations may benefit from a larger
+  configured budget.
+- Rollback: `git revert a8913e6` or set
+  `engine.snapshot_max_chat_reuse_points=0`.
+- Next experiment: validate the budget across longer and branchier Agent
+  traces, then return to fixed-shape/state-isolation work for safe multi-lane
+  batching.

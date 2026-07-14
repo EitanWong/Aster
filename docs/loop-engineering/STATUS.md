@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current code commit: `b82599b` (bounded chat prompt token cache).
+- Current code commit: `a8913e6` (bounded chat snapshot reuse points).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -15,7 +15,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `441 passed, 9 skipped, 1 warning` across 450 collected tests.
+- Full suite: `442 passed, 9 skipped, 1 warning` across 451 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -75,13 +75,21 @@ Updated: 2026-07-14
   prefix-enabled 40-turn Agent workload, repeated encode time improved
   `74.082ms -> 0.028ms`; fresh-process e2e medians improved `29.8%` for exact
   hot reuse and `6.1%` for append-only turns, with cold latency `1.6%` lower.
+- Iteration 037 keeps only the most recent eight chat snapshot reuse points by
+  default. In a fresh-process 40-turn Agent A/B, cold latency improved
+  `2.5375s -> 1.8549s` (`-26.9%`), while exact/append/branch hashes and cache
+  hits remained identical. Snapshot memory fell from `1.192 GB` / 39 entries
+  to `0.326 GB` / 9 entries (`-72.7%`), with zero swap growth.
 
 ## Active Risks
 
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
 - The 9B/32K mixed-agent matrix and sustained-run matrix are not yet complete; long-context prefill still incurs substantial transient memory and swap costs.
+- The bounded chat snapshot policy has only been measured at 40 turns; longer
+  and more branch-diverse conversations may need a different recent-point
+  budget or a tiered retention policy.
 - Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes, cohort windows, and lane priority remain opt-in because the safe multi-lane path still carries a staggered elapsed cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
 
 ## Next Priority
 
-Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Expand branching/long-context Agent measurements and sustained-run checks. Keep the dependency lock aligned with project declarations on each package refresh.
+Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation; do not create repeated same-profile single-request lanes. Expand bounded-snapshot branching/long-context Agent measurements and sustained-run checks. Keep the dependency lock aligned with project declarations on each package refresh.
