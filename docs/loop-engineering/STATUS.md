@@ -22,6 +22,9 @@ Updated: 2026-07-15
 - Iteration 043 makes that guard adaptive: each request tracks observed chunk
   peak growth over the prior active MLX baseline and combines it with the
   static estimate before selecting the next chunk.
+- Iteration 044 ruled out snapshot clone as the next primary hot path for a
+  single 9B exact hit: 8,372 reused tokens had only 9.545 ms admission work;
+  decode dominated the 2.521 s exact-hot request.
 
 ## Evidence
 
@@ -139,4 +142,4 @@ Updated: 2026-07-15
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next profile prefix snapshot lookup/clone cost and manual runtime KV ownership under long Agent histories, then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next isolate `PrefixStore.lookup` under high snapshot cardinality and long Agent histories; the single exact-hit clone path is not a primary bottleneck. Then evaluate manual runtime KV ownership, model-native fixed-shape padding/masking, or BatchGenerator state isolation. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
