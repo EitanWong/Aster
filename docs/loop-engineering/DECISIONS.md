@@ -410,3 +410,26 @@
 - Rollback: set `engine.batch_generator_max_lanes: 1` or revert `d791253`.
 - Next experiment: deterministic cohort admission or a BatchGenerator state
   isolation strategy that makes output independent of arrival timing.
+
+## 2026-07-14: Seal Isolated BatchGenerator Cohorts
+
+- Decision: retain `9dbfc7d` as an opt-in safety improvement; keep one lane
+  and a zero admission window as the default profile.
+- Root cause addressed: a secondary lane could execute with one request and
+  then accept later arrivals, changing BatchGenerator batch membership and
+  greedy hashes.
+- Change: isolated secondary lanes wait for a bounded first-step window,
+  then seal permanently until drained. Simultaneous backlog skips the window;
+  later requests cannot join a sealed lane. Configurations with more than one
+  lane and no positive window are rejected.
+- Evidence: lane `2` with `160ms` dynamic cohort admission restored exact
+  response-hash parity across 8 mixed/staggered records, with zero errors,
+  zero swap delta, and `1.495 GB` peak. Elapsed improved `0.19%~4.99%`.
+  Structured, streaming, cancellation, follow-up, and pinned-entry cleanup
+  passed.
+- Tradeoff: staggered p95 increased `9%~12%`; `100ms` and `140ms` windows
+  still missed the final cohort request, while `160ms` and `200ms` had zero
+  mismatches. The window is therefore not promoted to the default.
+- Rollback: set `engine.batch_generator_max_lanes=1`, or revert `9dbfc7d`.
+- Next experiment: event-driven cohort closure or fixed-batch/state isolation
+  that removes the p95 wait without reopening late membership changes.

@@ -1,0 +1,77 @@
+{
+  "date": "2026-07-14",
+  "start_commit": "5b0096a",
+  "source_commit": "9dbfc7d",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "memory": "24 GB unified"
+  },
+  "configuration": {
+    "batch_generator_max_lanes": 2,
+    "safe_experiment_window_ms": 160.0,
+    "default_window_ms": 0.0,
+    "default_lane_limit": 1,
+    "unsafe_multi_lane_without_window": "rejected"
+  },
+  "matrix": {
+    "workloads": ["mixed", "staggered"],
+    "concurrency_levels": [2, 4],
+    "rounds": 2,
+    "records": 8,
+    "response_hash_parity_vs_lane1": true,
+    "errors": 0,
+    "swap_delta_bytes": 0,
+    "peak_mlx_gb": 1.495149802,
+    "elapsed_change_percent_vs_lane1": {
+      "min": -4.99,
+      "max": -0.19,
+      "average": -2.52
+    },
+    "p95_change_percent_vs_lane1": {
+      "min": -4.99,
+      "max": 12.12,
+      "average": 3.50
+    }
+  },
+  "window_threshold_probe": {
+    "100ms_staggered_mismatch_records": 2,
+    "140ms_staggered_mismatch_records": 2,
+    "160ms_staggered_mismatch_records": 0,
+    "200ms_staggered_mismatch_records": 0
+  },
+  "structured": {
+    "records": 2,
+    "valid_responses": 6,
+    "errors": 0,
+    "finish_reasons_stop": true,
+    "swap_delta_bytes": 0
+  },
+  "streaming": {
+    "completed_requests": 2,
+    "failed_requests": 0,
+    "running_after": 0,
+    "hashes_equal": true
+  },
+  "cancellation": {
+    "request_count": 4,
+    "completed": 3,
+    "cancelled": 1,
+    "follow_up_completion_tokens": 8,
+    "running_after": 0,
+    "pinned_entries_after": 0
+  },
+  "verification": {
+    "pytest_passed": 435,
+    "pytest_skipped": 9,
+    "pytest_warnings": 1,
+    "ruff": true,
+    "compileall": true,
+    "uv_lock_check": true,
+    "pip_check": true,
+    "diff_check": true
+  },
+  "decision": "retain deterministic cohort window as opt-in; keep one lane and zero window by default because staggered p95 regresses"
+}

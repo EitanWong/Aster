@@ -4,7 +4,7 @@ Updated: 2026-07-14
 
 ## Current State
 
-- Current commit: `d791253` (add bounded per-profile BatchGenerator lanes).
+- Current commit: `9dbfc7d` (seal BatchGenerator cohorts before first step).
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
 - Orthogonal baseline repair: `25067b8` (`fix: report continuous batching compatibility warning`).
 - Dependency refresh: `1a0b993` (latest compatible MLX and serving package set).
@@ -13,7 +13,7 @@ Updated: 2026-07-14
 
 ## Evidence
 
-- Full suite: `432 passed, 9 skipped, 1 warning` across 441 collected tests.
+- Full suite: `435 passed, 9 skipped, 1 warning` across 444 collected tests.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -36,6 +36,7 @@ Updated: 2026-07-14
 - BatchGenerator prefix restore is now implemented in the experimental engine: prompt-boundary cache extraction, cloned `caches=` insertion, correct cached-token history, terminal pin release, and response cache flags. The 0.8B 4-request repeated-prompt matrix improved hot median throughput from `204.0` to `261.6 tok/s` (`+28.2%`) and reduced elapsed from `1.255s` to `0.979s` (`-22.0%`) with identical hashes and unchanged `1.486 GB` peak. Exact 12,295-token reuse measured `5.725s -> 0.484s` on 0.8B and `35.755s -> 3.375s` on 9B, both with zero swap delta and exact greedy parity. Cancellation and streaming probes left zero pinned entries.
 - Iteration 028 hardened the experimental BatchGenerator path after finding hybrid-cache batch invariance failures: active requests are now grouped by prompt length and cache profile. The corrected 0.8B 30-record on/off matrix had exact response-hash parity, zero errors, and zero swap delta. Warm cache-on elapsed improved `9%~34%` across reuse, mixed, divergent-reuse, staggered, and long workloads at concurrency 2/4/8. Structured JSON output passed at concurrency 2/4, and the 8-request cancellation probe left zero running/pinned entries. This is a conservative profile guard, not unrestricted continuous batching.
 - Iteration 029 added opt-in bounded per-profile BatchGenerator lanes with `engine.batch_generator_max_lanes`, default `1`. Lane limit `2` preserved exact hashes for simultaneous mixed requests and improved their elapsed time by `2.90%~5.78%`, with unchanged `1.495 GB` peak and zero swap delta. Real staggered arrival still changed batch membership and produced hash drift in all four records, so lane `2` remains experimental and is not a default performance claim. Structured output, prefix reuse, cancellation, follow-up, and lane cleanup passed their probes.
+- Iteration 030 added an opt-in cohort window and lane sealing. With lane `2` and a `160ms` window applied only to isolated secondary lanes, the 8-record mixed/staggered matrix restored exact hash parity, zero errors/swap, and `1.495 GB` peak; elapsed improved `0.19%~4.99%`. Staggered p95 increased `9%~12%`, so the default remains one lane. Multi-lane configurations without a positive window are now rejected.
 - A production-shaped 0.8B manual-runtime baseline completed without swap growth: 2,229 prompt tokens took `2.638s` at `48.52` completion tok/s with `1.677 GB` MLX peak / `0.999 GB` active; 8,373 prompt tokens took `5.279s` at `24.25` completion tok/s with `2.297 GB` peak / `1.277 GB` active. These are baselines, not an optimization claim.
 - Paged KV lifecycle probing showed `2,097,152` pool bytes retained after a child fork was released, then `0` pool bytes and `0` manager allocated blocks after the source bundle was released. After `mx.clear_cache()`, active MLX memory fell to `16` bytes in the isolated probe.
 - An opt-in hybrid prompt-cache boundary now preserves Qwen3.5's `ArraysCache + KVCache` list shape, deep-copies recurrent state on fork, and releases full-attention pools during request cleanup. Native and opt-in greedy parity matched exactly for a 10-token prompt and 32-token completion.
@@ -56,8 +57,8 @@ Updated: 2026-07-14
 
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
 - The 9B/32K mixed-agent matrix and sustained-run matrix are not yet complete; long-context prefill still incurs substantial transient memory and swap costs.
-- Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes remain opt-in because staggered admission can change greedy hashes. Broader model/mask/batch coverage, deterministic cohort admission, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
+- Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes and cohort windows remain opt-in because the safe window currently carries a staggered p95 cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
 
 ## Next Priority
 
-Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next design deterministic per-profile cohort admission or stronger BatchGenerator state isolation so lane `2` remains parity-safe under staggered arrival. Keep the dependency lock aligned with project declarations on each package refresh.
+Do not re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next reduce the cohort window's staggered p95 cost while preserving exact parity; evaluate event-driven closure or model-native fixed-batch isolation. Keep the dependency lock aligned with project declarations on each package refresh.
