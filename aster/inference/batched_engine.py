@@ -36,6 +36,7 @@ class _BatchLane:
     rid_to_uid: dict[str, int] = field(default_factory=dict)
     created_at: float = field(default_factory=time.monotonic)
     admission_window_ms: float = 0.0
+    target_request_count: int = 1
     sealed: bool = False
 
 
@@ -123,6 +124,9 @@ class BatchedEngine:
         self._batch_generator_max_lanes = settings.engine.batch_generator_max_lanes
         self._batch_generator_lane_admission_window_ms = (
             settings.engine.batch_generator_lane_admission_window_ms
+        )
+        self._batch_generator_longest_lane_step_quanta = (
+            settings.engine.batch_generator_longest_lane_step_quanta
         )
         self._mx: Any | None = None
         self._model: Any | None = None
@@ -584,6 +588,11 @@ class BatchedEngine:
         lane = self._batch_lanes.get(profile)
         if lane is not None:
             if not lane.sealed:
+                if (
+                    lane.admission_window_ms > 0
+                    and len(lane.request_ids) >= lane.target_request_count
+                ):
+                    return None
                 return lane
             if lane.request_ids:
                 return None
@@ -610,9 +619,22 @@ class BatchedEngine:
             admission_window_ms=(
                 self._batch_generator_lane_admission_window_ms if wait_for_cohort else 0.0
             ),
+            target_request_count=(
+                self._cohort_target_request_count() if wait_for_cohort else 1
+            ),
         )
         self._batch_lanes[profile] = lane
         return lane
+
+    def _cohort_target_request_count(self) -> int:
+        settings = getattr(self, "settings", None)
+        if settings is None:
+            return 1
+        configured_target = settings.engine.batch_generator_lane_target_size
+        if configured_target > 0:
+            return configured_target
+        remaining_slots = settings.engine.max_active_requests - len(self._running)
+        return max(remaining_slots, 1)
 
     def _lane_ready_for_step(self, lane: _BatchLane, *, now: float | None = None) -> bool:
         if lane.sealed:
@@ -620,8 +642,21 @@ class BatchedEngine:
         window_ms = lane.admission_window_ms
         if window_ms <= 0:
             return True
+        if len(lane.request_ids) >= lane.target_request_count:
+            return True
         current = time.monotonic() if now is None else now
         return current - lane.created_at + 1e-9 >= window_ms / 1000.0
+
+    def _lane_step_quanta(
+        self,
+        lane: _BatchLane,
+        active_lanes: list[_BatchLane] | tuple[_BatchLane, ...],
+    ) -> int:
+        quantum = getattr(self, "_batch_generator_longest_lane_step_quanta", 1)
+        if quantum <= 1 or not active_lanes:
+            return 1
+        longest_prompt_tokens = max(item.profile[0] for item in active_lanes)
+        return quantum if lane.profile[0] == longest_prompt_tokens else 1
 
     def _prepare_prompt_tokens(self, state: _RequestState) -> list[int]:
         request = state.request
@@ -759,36 +794,42 @@ class BatchedEngine:
                 # 2. Schedule waiting requests
                 self._schedule_waiting()
 
-                # 3. Run one generation step per profile lane. Calls remain
+                # 3. Run generation steps per profile lane. Calls remain
                 # sequential so MLX stream ownership stays with this loop.
-                for lane in tuple(self._batch_lanes.values()):
+                active_lanes = tuple(
+                    lane for lane in self._batch_lanes.values() if lane.request_ids
+                )
+                for lane in active_lanes:
                     if not lane.request_ids:
                         continue
                     if not self._lane_ready_for_step(lane):
                         continue
                     lane.sealed = True
-                    try:
-                        prompt_responses, responses = lane.generator.next()
-                        self._process_prompt_responses(lane, prompt_responses)
-                        if responses:
-                            self._process_responses(lane, responses)
-                    except IndexError:
-                        # mlx-lm _next() fails on empty segments — recover by
-                        # aborting only this lane's requests.
-                        self.logger.warning(
-                            "batch_generator_empty_segments_recovering",
-                            extra={"profile": lane.profile},
-                        )
-                        for rid in list(lane.request_ids):
-                            self._pending_aborts.add(rid)
-                        continue
-                    except Exception as exc:
-                        self.logger.warning(
-                            "batch_generator_step_failed",
-                            exc_info=True,
-                            extra={"error": str(exc), "profile": lane.profile},
-                        )
-                        continue
+                    for _ in range(self._lane_step_quanta(lane, active_lanes)):
+                        if not lane.request_ids:
+                            break
+                        try:
+                            prompt_responses, responses = lane.generator.next()
+                            self._process_prompt_responses(lane, prompt_responses)
+                            if responses:
+                                self._process_responses(lane, responses)
+                        except IndexError:
+                            # mlx-lm _next() fails on empty segments — recover by
+                            # aborting only this lane's requests.
+                            self.logger.warning(
+                                "batch_generator_empty_segments_recovering",
+                                extra={"profile": lane.profile},
+                            )
+                            for rid in list(lane.request_ids):
+                                self._pending_aborts.add(rid)
+                            break
+                        except Exception as exc:
+                            self.logger.warning(
+                                "batch_generator_step_failed",
+                                exc_info=True,
+                                extra={"error": str(exc), "profile": lane.profile},
+                            )
+                            break
 
                 await asyncio.sleep(0)
         except asyncio.CancelledError:

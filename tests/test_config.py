@@ -43,12 +43,16 @@ def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:
 def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     assert RuntimeSettings().engine.batch_generator_max_lanes == 1
     assert RuntimeSettings().engine.batch_generator_lane_admission_window_ms == 0.0
+    assert RuntimeSettings().engine.batch_generator_lane_target_size == 0
+    assert RuntimeSettings().engine.batch_generator_longest_lane_step_quanta == 1
     assert (
         RuntimeSettings.model_validate(
             {
                 "engine": {
                     "batch_generator_max_lanes": 2,
                     "batch_generator_lane_admission_window_ms": 200,
+                    "batch_generator_lane_target_size": 3,
+                    "batch_generator_longest_lane_step_quanta": 2,
                 }
             }
         ).engine.batch_generator_max_lanes
@@ -60,6 +64,18 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
         ).engine.batch_generator_lane_admission_window_ms
         == 200
     )
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_lane_target_size": 3}}
+        ).engine.batch_generator_lane_target_size
+        == 3
+    )
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_longest_lane_step_quanta": 2}}
+        ).engine.batch_generator_longest_lane_step_quanta
+        == 2
+    )
 
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate({"engine": {"batch_generator_max_lanes": 0}})
@@ -68,6 +84,14 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate(
             {"engine": {"batch_generator_lane_admission_window_ms": -1}}
+        )
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_lane_target_size": -1}}
+        )
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_longest_lane_step_quanta": 0}}
         )
 
 

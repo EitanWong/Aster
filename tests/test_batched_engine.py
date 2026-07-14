@@ -155,8 +155,11 @@ def test_batched_engine_admission_window_delays_first_step() -> None:
     lane = _BatchLane(profile=(4, False, 0), generator=object())
     lane.created_at = 10.0
     lane.admission_window_ms = 100.0
+    lane.target_request_count = 3
 
     assert engine._lane_ready_for_step(lane, now=10.099) is False
+    lane.request_ids.update({"one", "two", "three"})
+    assert engine._lane_ready_for_step(lane, now=10.099) is True
     assert engine._lane_ready_for_step(lane, now=10.100) is True
 
 
@@ -181,6 +184,16 @@ def test_batched_engine_applies_cohort_window_only_to_isolated_secondary_lane() 
 
     assert backlog is not None
     assert backlog.admission_window_ms == 0.0
+
+
+def test_batched_engine_prioritizes_the_longest_prompt_lane() -> None:
+    engine = object.__new__(BatchedEngine)
+    engine._batch_generator_longest_lane_step_quanta = 2
+    short = _BatchLane(profile=(8, False, 0), generator=object())
+    long = _BatchLane(profile=(128, False, 0), generator=object())
+
+    assert engine._lane_step_quanta(short, [short, long]) == 1
+    assert engine._lane_step_quanta(long, [short, long]) == 2
 
 
 def test_batched_engine_abort_removes_request_from_its_lane() -> None:

@@ -46,11 +46,17 @@ def _apply_benchmark_overrides(
     prefix_cache_enabled: bool,
     max_lanes: int,
     lane_admission_window_ms: float = 0.0,
+    cohort_target_size: int = 0,
+    longest_lane_step_quanta: int = 1,
 ) -> RuntimeSettings:
     if max_lanes > 1 and lane_admission_window_ms <= 0:
         raise ValueError(
             "lane_admission_window_ms must be positive when max_lanes is greater than one"
         )
+    if cohort_target_size < 0:
+        raise ValueError("cohort_target_size must be non-negative")
+    if longest_lane_step_quanta < 1:
+        raise ValueError("longest_lane_step_quanta must be at least one")
     return settings.model_copy(
         update={
             "engine": settings.engine.model_copy(
@@ -63,6 +69,8 @@ def _apply_benchmark_overrides(
                     "prefix_cache_enabled": prefix_cache_enabled,
                     "batch_generator_max_lanes": max_lanes,
                     "batch_generator_lane_admission_window_ms": lane_admission_window_ms,
+                    "batch_generator_lane_target_size": cohort_target_size,
+                    "batch_generator_longest_lane_step_quanta": longest_lane_step_quanta,
                 }
             )
         }
@@ -289,6 +297,8 @@ async def run_benchmark(
     prefix_cache_enabled: bool,
     max_lanes: int,
     lane_admission_window_ms: float,
+    cohort_target_size: int,
+    longest_lane_step_quanta: int,
 ) -> dict[str, Any]:
     settings = load_settings(config_path)
     settings = _apply_benchmark_overrides(
@@ -297,6 +307,8 @@ async def run_benchmark(
         prefix_cache_enabled=prefix_cache_enabled,
         max_lanes=max_lanes,
         lane_admission_window_ms=lane_admission_window_ms,
+        cohort_target_size=cohort_target_size,
+        longest_lane_step_quanta=longest_lane_step_quanta,
     )
     engine = BatchedEngine(settings, MetricsRegistry(settings.telemetry.metrics_namespace))
     await engine.start()
@@ -361,6 +373,8 @@ async def run_benchmark(
         "prefix_cache_enabled": prefix_cache_enabled,
         "batch_generator_max_lanes": max_lanes,
         "batch_generator_lane_admission_window_ms": lane_admission_window_ms,
+        "batch_generator_lane_target_size": cohort_target_size,
+        "batch_generator_longest_lane_step_quanta": longest_lane_step_quanta,
         "workloads": workloads,
         "concurrency_levels": concurrency_levels,
         "rounds": rounds,
@@ -384,6 +398,8 @@ def main() -> None:
     parser.add_argument("--prefix-cache", choices=("on", "off"), default="on")
     parser.add_argument("--max-lanes", type=int, default=1)
     parser.add_argument("--lane-admission-window-ms", type=float, default=0.0)
+    parser.add_argument("--cohort-target-size", type=int, default=0)
+    parser.add_argument("--longest-lane-step-quanta", type=int, default=1)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
@@ -400,6 +416,8 @@ def main() -> None:
             prefix_cache_enabled=args.prefix_cache == "on",
             max_lanes=args.max_lanes,
             lane_admission_window_ms=args.lane_admission_window_ms,
+            cohort_target_size=args.cohort_target_size,
+            longest_lane_step_quanta=args.longest_lane_step_quanta,
         )
     )
     rendered = json.dumps(payload, indent=2)
