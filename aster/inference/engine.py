@@ -37,6 +37,7 @@ PrepareResult = str
 _PREPARE_ADMITTED: PrepareResult = "admitted"
 _PREPARE_DEFERRED: PrepareResult = "deferred"
 _PREPARE_TERMINAL: PrepareResult = "terminal"
+_PREFILL_TRANSIENT_SAFETY = 1.3
 
 _WAITING_PHASES = {
     RequestPhase.SUBMITTED,
@@ -759,6 +760,11 @@ class InferenceEngine:
                 await self._cancel_request(state)
                 return True
             processed_tokens = max(result.cache_token_count - state.cache_token_count, 0)
+            self._record_prefill_memory_observation(
+                state,
+                result,
+                processed_tokens=processed_tokens,
+            )
             state.prompt_cache = result.prompt_cache
             state.cache_token_count = result.cache_token_count
             state.prefill_seconds += result.elapsed_seconds
@@ -1289,7 +1295,9 @@ class InferenceEngine:
         if budget is None:
             return None
         if self._can_finish_prefill_in_idle_step(remaining=remaining, budget=budget):
-            budget = remaining
+            budget = self._prefill_transient_budget(state, budget=remaining)
+            if budget is None:
+                return None
         return min(state.target_cache_token_count, state.cache_token_count + max(budget, 1))
 
     def _prefill_transient_budget(self, state: RequestState, *, budget: int) -> int | None:
@@ -1310,13 +1318,38 @@ class InferenceEngine:
         safe = 0
         while low <= high:
             candidate = (low + high) // 2
-            estimate = profile.estimate(candidate, state.cache_token_count + candidate)
+            static_estimate = profile.estimate(candidate, state.cache_token_count + candidate)
+            observed_estimate = int(
+                state.prefill_transient_bytes_per_token
+                * candidate
+                * _PREFILL_TRANSIENT_SAFETY
+            )
+            estimate = max(static_estimate, observed_estimate)
             if estimate <= 0 or estimate <= transient_budget:
                 safe = candidate
                 low = candidate + 1
             else:
                 high = candidate - 1
         return min(safe, budget) if safe else None
+
+    @staticmethod
+    def _record_prefill_memory_observation(
+        state: RequestState,
+        result: PrefillChunkResult,
+        *,
+        processed_tokens: int,
+    ) -> None:
+        previous_active = state.prefill_active_memory_gb
+        if previous_active is not None and previous_active > 0 and processed_tokens > 0:
+            observed_growth_bytes = max(
+                (result.peak_memory_gb - previous_active) * 1e9,
+                0.0,
+            )
+            state.prefill_transient_bytes_per_token = max(
+                state.prefill_transient_bytes_per_token,
+                observed_growth_bytes / processed_tokens,
+            )
+        state.prefill_active_memory_gb = result.active_memory_gb if result.active_memory_gb > 0 else None
 
     def _next_checkpoint_reuse_point(
         self,

@@ -19,6 +19,9 @@ Updated: 2026-07-15
   extracts immutable full-attention dimensions, the scheduler caps each
   prefill chunk against transient score/output memory, and it rejects an
   unaffordable chunk before model execution.
+- Iteration 043 makes that guard adaptive: each request tracks observed chunk
+  peak growth over the prior active MLX baseline and combines it with the
+  static estimate before selecting the next chunk.
 
 ## Evidence
 
@@ -111,6 +114,13 @@ Updated: 2026-07-15
   admission rejections, and zero swap growth. Their single-run timings are
   not treated as a throughput claim because no interleaved guard-off control
   was run.
+- Iteration 043 found and fixed an idle-fast-path bypass that could expand a
+  safe 1024-token chunk into an unsafe long tail. In two controlled Qwen3.5-9B
+  30,181-token greedy pairs against `9e64a98`, output SHA, token count, and
+  finish reason matched exactly; median peak MLX memory fell `11.378 -> 10.977
+  GB` (`-3.53%`), with median total latency `89.753 -> 89.241s` (`-0.57%`).
+  Candidate runs used 28 prefill steps versus 27 and added no swap; this is a
+  long-context resource optimization, not a general throughput claim.
 
 ## Active Risks
 
@@ -129,4 +139,4 @@ Updated: 2026-07-15
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. First validate the retained transient prefill guard under an interleaved control or real long-context pressure workload, then profile prefix snapshot lookup/clone cost and manual runtime KV ownership. Only then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Next profile prefix snapshot lookup/clone cost and manual runtime KV ownership under long Agent histories, then evaluate model-native fixed-shape padding/masking or BatchGenerator state isolation. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

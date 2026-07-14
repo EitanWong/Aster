@@ -62,6 +62,8 @@ class RequestState:
     decode_ready_at: float | None = None
     prefill_seconds: float = 0.0
     prefill_steps: int = 0
+    prefill_active_memory_gb: float | None = None
+    prefill_transient_bytes_per_token: float = 0.0
     decode_started_at: float | None = None
     first_token_at: float | None = None
     last_decode_step_at: float | None = None

@@ -89,6 +89,8 @@ class FakeRunner:
         self.decode_batch_sizes: list[int] = []
         self.decode_request_ids: list[tuple[str | None, ...]] = []
         self.prefill_delay_seconds = 0.0
+        self.prefill_peak_memory_gb = 1.5
+        self.prefill_active_memory_gb = 1.0
         self.decode_delay_seconds = 0.0
         self.decode_error: BaseException | None = None
         self.clear_runtime_cache_calls = 0
@@ -175,8 +177,8 @@ class FakeRunner:
             prompt_cache=live_cache,
             cache_token_count=target_cache_token_count,
             elapsed_seconds=0.001,
-            peak_memory_gb=1.5,
-            active_memory_gb=1.0,
+            peak_memory_gb=self.prefill_peak_memory_gb,
+            active_memory_gb=self.prefill_active_memory_gb,
         )
 
     def initialize_decode(
@@ -341,6 +343,64 @@ def test_prefill_chunk_target_is_clamped_by_transient_memory_budget() -> None:
     assert engine._prefill_chunk_target(state, remaining=20) == 9
 
 
+def test_prefill_idle_fast_path_does_not_bypass_transient_budget() -> None:
+    engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 4})
+    runner.available_memory_bytes_value = 200
+    state = RequestState(
+        request_id="idle-transient-budget",
+        request=InferenceRequest(prompt="ignored"),
+        prompt_tokens=list(range(9)),
+        cache_token_count=0,
+        prefill_transient_profile=PrefillTransientProfile(
+            n_q_heads=1,
+            head_dim=1,
+            score_dtype_size=10,
+        ),
+    )
+
+    assert engine._prefill_chunk_target(state, remaining=8) == 4
+
+
+def test_prefill_chunk_target_uses_observed_transient_growth() -> None:
+    engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 16})
+    runner.available_memory_bytes_value = 1000
+    state = RequestState(
+        request_id="observed-transient-budget",
+        request=InferenceRequest(prompt="ignored"),
+        prompt_tokens=list(range(21)),
+        cache_token_count=0,
+        prefill_transient_profile=PrefillTransientProfile(
+            n_q_heads=1,
+            head_dim=1,
+            score_dtype_size=1,
+        ),
+        prefill_transient_bytes_per_token=100.0,
+    )
+
+    assert engine._prefill_chunk_target(state, remaining=20) == 6
+
+
+def test_prefill_memory_observation_tracks_peak_growth_per_token() -> None:
+    engine, _runner = _make_engine()
+    state = RequestState(
+        request_id="observed-transient-growth",
+        request=InferenceRequest(prompt="ignored"),
+        prefill_active_memory_gb=1.0,
+    )
+    result = PrefillChunkResult(
+        prompt_cache={},
+        cache_token_count=4,
+        elapsed_seconds=0.001,
+        peak_memory_gb=1.4,
+        active_memory_gb=1.1,
+    )
+
+    engine._record_prefill_memory_observation(state, result, processed_tokens=4)
+
+    assert state.prefill_active_memory_gb == 1.1
+    assert state.prefill_transient_bytes_per_token == pytest.approx(100_000_000.0)
+
+
 def test_prefill_chunk_target_rejects_unaffordable_transient_activation() -> None:
     engine, runner = _make_engine(engine_overrides={"prefill_token_budget": 16})
     runner.available_memory_bytes_value = 200
@@ -397,6 +457,8 @@ def test_transient_prefill_guard_completes_with_chunked_prefill() -> None:
             head_dim=1,
             score_dtype_size=10,
         )
+        runner.prefill_active_memory_gb = 0.0000002
+        runner.prefill_peak_memory_gb = 0.0000004
         await engine.start()
         try:
             result = await engine.submit(
