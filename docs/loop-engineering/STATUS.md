@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-07-15
+Updated: 2026-07-16
 
 ## Current State
 
@@ -32,10 +32,18 @@ Updated: 2026-07-15
   vllm-metal are pinned as open Apple Silicon references; the first M5
   reproduction rejects vllm-metal's current split-KV occupancy gate while
   retaining its fused-scatter/lazy-Primitive integration as a candidate.
+- Iteration 047 rejects a native attention Primitive after a guarded,
+  same-math reproduction. Against a GPU-work-equivalent guarded `mx.fast`
+  control, two main cells had nominal >=3% medians but neither established a
+  >=3% interval. In a five-process confirmation one fell to 2.13% and the
+  other reversed to a 3.51% regression; every 32K/64K stress interval crossed
+  zero. Fused K/V scatter remains a separate candidate.
 
 ## Evidence
 
-- Full suite: `447 passed, 9 skipped, 1 warning` across 456 collected tests.
+- Current full worktree suite: `458 passed, 9 skipped, 1 failed, 1 warning`.
+  The single failure belongs to pre-existing, out-of-scope worktree changes;
+  explicitly excluding it yields `458 passed, 9 skipped, 1 deselected`.
 - Runtime, cache, scheduler, and benchmark suites: `55 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
@@ -148,6 +156,19 @@ Updated: 2026-07-15
   `0.67%~25.33%` faster than MLX native SDPA and `6%~32%` faster than the
   vllm-metal single-pass kernel across batch 1/2/4/5/8. Layouts differ, so this
   is a kernel boundary result, not an end-to-end engine claim.
+- A standalone MLX C++ Primitive around the same Aster attention math passed
+  18 boundary corners and every timed 2K/8K batch shape against native MLX;
+  maximum absolute errors were `6.10e-05` and `7.63e-06`, respectively. The
+  Metal guard prevented invalid physical-pool access and the harness rejected
+  its NaN sentinel. Five 30-warmup/200-measurement processes compared the
+  Primitive with public, direct, and GPU-work-equivalent guarded `mx.fast`
+  paths. No interval established a >=3% gain. A five-process confirmation
+  reduced the 2K/batch-1 nominal gain to 2.13% and reversed 8K/batch-2 to a
+  3.51% regression. Five-process 32K and 64K stress intervals also crossed
+  zero, exposing the guard as a confounder in the earlier unguarded comparison.
+  Probe peak MLX memory stayed at or below `268,813,526 B`, post-clear active
+  memory was `16 B`, and swap delta was zero across 22 archived process
+  records. No native extension was retained in the runtime.
 
 ## Active Risks
 
@@ -163,11 +184,11 @@ Updated: 2026-07-15
   sustained ordering found no material branch-latency regression. Cold/exact
   deltas remain about `+2.13%/+1.34%` and should be monitored.
 - Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes, cohort windows, and lane priority remain opt-in because the safe multi-lane path still carries a staggered elapsed cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
-- A native MLX C++ Primitive can remove Python/JIT graph boundaries, but it
-  binds to MLX private C++ ABI. Any experiment must pin the exact MLX version,
-  remain optional, fail closed, and prove packaging/build behavior before
-  serving integration.
+- MLX C++ extensions bind to a private ABI and a matching nanobind type-registry
+  version. The attention-boundary reproduction did not justify that packaging
+  cost; do not add it unless a future isolated operator first proves a stable
+  gain that cannot be achieved through `mx.fast`.
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. The next bounded experiment is vllm-metal-inspired fused KV scatter plus an MLX C++ Primitive around Aster's already faster block-indexed kernel; first prove the lazy boundary in a standalone benchmark, then require at least a 3% real-model win before an opt-in serving bridge. Do not import the reference split-KV gate on M5. Maintain `FRONTIER_RADAR.md`, reproduce one candidate at a time, and require deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. The next bounded experiment is vllm-metal-inspired fused K/V scatter by itself: baseline Aster's current pool writes, preserve the existing physical layout/COW ownership, and try an `mx.fast` Metal boundary before considering any private C++ ABI. A repeatable >=3% isolated write-path win only qualifies it for a real-model matrix; final adoption still requires >=3% end-to-end improvement or material memory savings, with exact block parity, bounded memory, and zero swap. Do not import the reference split-KV gate on M5 or the rejected attention Primitive. Maintain `FRONTIER_RADAR.md`, reproduce one candidate at a time, and require deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

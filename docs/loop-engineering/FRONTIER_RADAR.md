@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-07-15
+Updated: 2026-07-16
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -27,7 +27,7 @@ coverage, and a rollback path.
 
 | Priority | Work | What is useful | Local status | Decision / next gate |
 | --- | --- | --- | --- | --- |
-| P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Pinned under `examples/`; split-KV correctness `19/19`; M5 performance A/B complete | Reject current split gate. Reproduce fused scatter + Primitive around Aster's kernel. |
+| P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Pinned under `examples/`; split-KV and same-math Primitive reproductions complete | Reject the split gate and attention Primitive on this M5. Isolate fused scatter without private-ABI coupling. |
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
@@ -63,11 +63,34 @@ kernel across batch 1/2/4/5/8. Different block layouts prevent an overall
 engine claim. The remaining opportunity is graph/cache integration, not a
 replacement attention algorithm.
 
+## Reproduced result: attention Primitive boundary
+
+A guarded FP16 `D=V=128` MLX C++ Primitive retained zero cross-path error and
+at most `6.10e-05` error against independent native MLX over 18 block/causal
+corners. A second random-data check covered every timed 2K/8K batch shape at
+`7.63e-06` maximum error. Five fresh processes used randomized cell order, 30
+warmups, and 200 measurements for 2K/8K x batch 1/2/4/8. The primary control
+used direct cached `mx.fast` with the same physical-block guard and invalid
+reduction as the Primitive. Five intervals excluded zero in favor of the
+Primitive, but no interval established a >=3% gain. Two cells had nominal
+>=3% medians; in a five-process confirmation 2K/batch-1 fell to a 2.13% gain
+and 8K/batch-2 reversed to a 3.51% regression.
+
+Five-process 32K and 64K stress intervals all crossed zero. The guarded control
+showed that the earlier unguarded 64K regression mixed boundary and guard work,
+so it is not retained as a Primitive claim. Peak probe memory was at most
+`268,813,526 B`, post-clear active memory was `16 B`, and swap delta was zero
+across 22 archived process records. Matching MLX 0.32.0 also required nanobind
+2.13.0; 2.10.2 linked but could not share MLX array casters. Source and raw
+results are preserved under the Iteration 047 artifact directory. The private
+ABI and packaging cost is therefore not admitted.
+
 ## Next reproduction
 
-Build a standalone optional extension that keeps Aster's block-indexed kernel
-but exposes it as an MLX Primitive and fuses K/V pool updates. First compare
-the boundary against the current `mx.fast.metal_kernel` path with pre-resident
-inputs. Only after a repeatable boundary win should it enter an opt-in Qwen3.5
-bridge and a real 0.8B/9B mixed, staggered, long-context, cancellation, and
-memory-pressure matrix.
+Measure Aster's current physical K/V pool writes and reproduce vllm-metal's
+fused scatter as a separate operator. Start with `mx.fast.metal_kernel` so the
+experiment tests scatter/layout work rather than a private C++ binding. Only
+after exact block/COW parity and a repeatable >=3% isolated write-path win may
+it enter an opt-in Qwen3.5 mixed, staggered, long-context, cancellation, and
+memory-pressure matrix. Final adoption still requires >=3% end-to-end speed or
+material memory savings with no correctness/resource regression.

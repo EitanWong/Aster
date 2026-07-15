@@ -1,6 +1,6 @@
 # Core Inference Engine Reference Matrix
 
-Updated: 2026-07-15
+Updated: 2026-07-16
 
 This matrix is the implementation boundary for the core-first loop.  The
 repositories under `examples/` are treated as executable reference material,
@@ -20,7 +20,7 @@ measurement.
 | Prefix cache index | SGLang uses a radix tree with page alignment, explicit reference protection, hit/recency metadata, and eviction; Rapid-MLX uses a trie plus LRU/pinned entries and deep-copy-on-fetch; LM Studio selects the nearest snapshot and clones it before trimming. | Aster uses bounded full snapshots, pins, LCP/exact stats, recent/sparse retention, and a sorted distinct-length index for direct longest-prefix probes. | No structural sharing or page-level ownership yet; a full trie/radix would add memory and ownership complexity at Aster's default 256-entry bound. | Keep the length index after its high-cardinality branch-miss win. Reconsider radix/page sharing only if sustained real traces exceed the bounded index or require page ownership. | Hash/token parity, clone isolation, eviction/ref protection, memory slope, and no regression for exact/append/branch reuse. |
 | Cache lifecycle | vLLM-MLX closes/replaces generators, periodically clears MLX cache, and uses incremental evaluation during cleanup to avoid peaks. | Aster has runtime-cache clear/recovery and explicit prefix-store eviction. | Cleanup behavior across all terminal/error paths needs continuous stress evidence. | Keep cleanup centralized; add tests/metrics rather than scattering `mx.clear_cache`. | Long cancellation/restart loop, zero pinned state, bounded RSS/MLX allocator, no output drift. |
 | Scheduling policy | Rapid-MLX uses waiting/running queues and one-token decode steps; OMLX separates scheduler limits for sequences and batched tokens. | Aster prioritizes decode, rotates yielding prefill continuations, and has active-request/admission limits. | Long prefill fairness and decode latency compete; changing priority without measurement can worsen staggered p95. | Profile queue wait, prefill chunk duration, and decode starvation before tuning policy. | Mixed/staggered p50+p95, prompt/decode throughput, and exact lifecycle parity. |
-| Paged/KV storage | SGLang and OMLX use explicit page/block ownership and eviction; vllm-metal fuses K/V scatter, exposes token-contiguous pages to one varlen kernel, and wraps both operations as lazy MLX C++ Primitives. | Aster's experimental block pool and Metal kernel are disabled because end-to-end speed did not clear the gate, despite strong 8K kernel results. | Storage indirection and graph boundaries can erase the kernel win; private MLX C++ ABI raises build and packaging risk. | Keep Aster's kernel math. Reproduce fused scatter plus lazy Primitive in isolation; do not import vllm-metal's M5-regressing split-KV gate. | Exact parity across layout/mask/batch corners, standalone boundary win, then at least 3% end-to-end speed or material memory gain with zero swap growth. |
+| Paged/KV storage | SGLang and OMLX use explicit page/block ownership and eviction; vllm-metal fuses K/V scatter, exposes token-contiguous pages to one varlen kernel, and wraps both operations as lazy MLX C++ Primitives. | Aster's experimental block pool and Metal kernel are disabled because end-to-end speed did not clear the gate, despite strong 8K kernel results. A same-math native attention Primitive was also rejected: two nominal >=3% main medians fell below or reversed in a five-process confirmation, and every 32K/64K interval crossed zero. | Storage writes and indirection can erase the kernel win; private MLX C++ ABI adds exact-version build and nanobind coupling without demonstrated attention benefit. | Keep Aster's kernel math and `mx.fast` boundary. Isolate fused K/V scatter against the current pool writer, without bundling the rejected attention Primitive. | Exact parity across physical blocks/COW/batch corners; >=3% isolated write-path win to enter real-model testing; final >=3% end-to-end speed or material memory gain with zero swap growth. |
 | Speculative decoding | The three local DFlash repos provide draft/verify, rollback, and MLX/Metal kernel reference designs. | Aster has not integrated DFlash and the current priority is manual runtime foundation. | Speculation can hide core cache/scheduling defects and introduces rollback correctness risk. | Use DFlash only after baseline cache ownership, prefill, and decode lifecycle are stable. | Draft/target parity, rollback tests, acceptance-rate telemetry, and end-to-end speed/resource win. |
 
 ## Decisions for the next loop
@@ -40,9 +40,12 @@ measurement.
 5. Prefix lookup now iterates distinct retained lengths and directly probes
    token keys. The 256-entry / 8,192-token divergent-branch microbenchmark
    improved `21.8x`; a full radix owner is not justified at the current bound.
-6. The vllm-metal split-KV gate is rejected on this M5 after same-binary A/B.
-   Its fused cache write and lazy MLX Primitive remain the next bounded paged
-   integration candidate; Aster's current kernel math is retained.
+6. The vllm-metal split-KV gate and a same-math native attention Primitive are
+   rejected on this M5. Five-process main testing against a guarded `mx.fast`
+   control did not establish a >=3% interval; the two nominal >=3% medians then
+   fell below or reversed in confirmation. All 32K/64K intervals crossed zero.
+   Fused cache write remains a separate bounded candidate; Aster's current
+   kernel math and `mx.fast` boundary are retained.
 
 ## Source anchors
 
