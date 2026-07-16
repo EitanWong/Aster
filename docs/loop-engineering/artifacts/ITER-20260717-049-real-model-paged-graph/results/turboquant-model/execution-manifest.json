@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-07-16T22:14:42.744715+00:00",
+  "python": "/tmp/aster-iter049-tq-env/bin/python",
+  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "corpus": "/private/tmp/aster-iter049-wikitext2-test.txt",
+  "corpus_sha256": "d790b833ef8cf03a90db7bf1271b7520b83c45ce07ba3c1a9699df81e239eca0",
+  "contexts": [
+    2048,
+    8192
+  ],
+  "runs": 5,
+  "teacher_tokens": 64,
+  "generation_tokens": 64,
+  "prefill_step": 1024,
+  "offset": 1024,
+  "offset_stride": 16384,
+  "bits": 4.0,
+  "seed": 49217,
+  "fallback_reference_tests_passed": false,
+  "benchmark_sha256": "a847ad07b3eb55db56ebdcb7557dbf1adee3c9fd8a5ec3c1487d151a8aed1aaa",
+  "runner_sha256": "9c45d48e6c13e0af8fc6d3d08e1e39af5e3384b40046c68dacdcea328344f703",
+  "cells": [
+    {
+      "context_tokens": 8192,
+      "run_id": 2,
+      "variant": "fp16",
+      "output": "8192t-run-2-fp16.json",
+      "elapsed_seconds": 9.79238387499936,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 2,
+      "variant": "turboquant",
+      "output": "8192t-run-2-turboquant.json",
+      "elapsed_seconds": 10.022179207997397,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 1,
+      "variant": "fp16",
+      "output": "2048t-run-1-fp16.json",
+      "elapsed_seconds": 4.263264792010887,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 1,
+      "variant": "turboquant",
+      "output": "2048t-run-1-turboquant.json",
+      "elapsed_seconds": 4.4328167920029955,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 5,
+      "variant": "fp16",
+      "output": "8192t-run-5-fp16.json",
+      "elapsed_seconds": 10.903655375004746,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 5,
+      "variant": "turboquant",
+      "output": "8192t-run-5-turboquant.json",
+      "elapsed_seconds": 10.068910000001779,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 2,
+      "variant": "fp16",
+      "output": "2048t-run-2-fp16.json",
+      "elapsed_seconds": 4.269321708008647,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 2,
+      "variant": "turboquant",
+      "output": "2048t-run-2-turboquant.json",
+      "elapsed_seconds": 4.429823958998895,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 1,
+      "variant": "turboquant",
+      "output": "8192t-run-1-turboquant.json",
+      "elapsed_seconds": 9.910849791995133,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 1,
+      "variant": "fp16",
+      "output": "8192t-run-1-fp16.json",
+      "elapsed_seconds": 9.745130166993476,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 3,
+      "variant": "turboquant",
+      "output": "2048t-run-3-turboquant.json",
+      "elapsed_seconds": 4.508103875006782,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 3,
+      "variant": "fp16",
+      "output": "2048t-run-3-fp16.json",
+      "elapsed_seconds": 4.365466707997257,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 5,
+      "variant": "fp16",
+      "output": "2048t-run-5-fp16.json",
+      "elapsed_seconds": 4.3766222080012085,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 5,
+      "variant": "turboquant",
+      "output": "2048t-run-5-turboquant.json",
+      "elapsed_seconds": 4.550431084004231,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 4,
+      "variant": "turboquant",
+      "output": "2048t-run-4-turboquant.json",
+      "elapsed_seconds": 4.564113584012375,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 2048,
+      "run_id": 4,
+      "variant": "fp16",
+      "output": "2048t-run-4-fp16.json",
+      "elapsed_seconds": 4.367526292000548,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 4,
+      "variant": "turboquant",
+      "output": "8192t-run-4-turboquant.json",
+      "elapsed_seconds": 10.184015459002694,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 4,
+      "variant": "fp16",
+      "output": "8192t-run-4-fp16.json",
+      "elapsed_seconds": 10.04663279200031,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 3,
+      "variant": "fp16",
+      "output": "8192t-run-3-fp16.json",
+      "elapsed_seconds": 10.14682416699361,
+      "exit_code": 0
+    },
+    {
+      "context_tokens": 8192,
+      "run_id": 3,
+      "variant": "turboquant",
+      "output": "8192t-run-3-turboquant.json",
+      "elapsed_seconds": 10.359008041996276,
+      "exit_code": 0
+    }
+  ],
+  "completed_utc": "2026-07-16T22:17:08.206560+00:00",
+  "aggregate": "aggregate.json",
+  "aggregate_sha256": "40d59d4e87d7b94aef6dffcbb022a3dbec96f28082bb6b9c89f6615a2ce26e00"
+}

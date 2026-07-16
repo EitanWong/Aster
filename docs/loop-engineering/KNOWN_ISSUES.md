@@ -13,6 +13,18 @@
 - The admission-before-prefill scheduler experiment was rolled back: randomized mixed and staggered A/B did not meet a reliable performance gate.
 - Paged KV, SSD cache, KV-cache quantization, structured-output black-box parity, and full tool parser parity remain open.
 - Experimental KV quantization is not enabled: 4-bit KV failed fixed greedy token parity and 8-bit has no demonstrated material gain.
+- The stronger OMLX/mlx-vlm 4-bit TurboQuant reproduction is also rejected.
+  It reduces complete Qwen3.5 hybrid-cache bytes by `1.72x` at 2K and `2.67x`
+  at 8K, but decode regresses `5.22%/5.72%`; only 3/5 greedy windows match at
+  each context, teacher top-1 falls to `89.06%/93.75%`, and absolute PPL
+  change reaches `7.49%/3.38%`.
+  Isolated compressed attention beats Aster paged but not native MLX across
+  the measured 2K/8K/32K/64K curve.
+- Real-model profiling identifies `_sample_token().item()` as the dominant
+  decode synchronization boundary. Post-sample `_eval_cache()` costs about
+  `0.364 ms` at the median, but its necessity for recurrent and full-attention
+  cache provenance is not yet proven; removing it without RAW/WAW stress could
+  expose stale state.
 - `kv_cache_step_tokens` reduces native KV growth copies but does not reduce retained KV memory; a true paged attention path remains unimplemented.
 - The experimental `PagedKVCacheLayer` is lossless and COW-capable, and its block pool no longer repacks with `mx.stack` on every view. `PagedKVCacheBundle` reclaims full-attention pools after the last fork releases, but mixed recurrent/full-attention bundles are rejected and the MLX integration still materializes contiguous K/V on every update; batch merge falls back to native contiguous caches. It remains disabled in production paths.
 - The opt-in hybrid list boundary is parity-clean on the Qwen3.5-0.8B greedy smoke. Contiguous-buffer reuse brings 8.4K randomized A/B to within `0.4%` median of native, but peak memory remains about `7.6%` higher (`2.471 GB` vs `2.297 GB`); the 2.2K single-run path remains about `10.6%` slower. Prefix snapshots are disabled and decode batch size is restricted to one; it is not a default path.

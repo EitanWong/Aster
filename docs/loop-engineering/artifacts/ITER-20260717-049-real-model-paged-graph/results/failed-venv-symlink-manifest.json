@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "seed": 49017,
+  "started_utc": "2026-07-16T20:39:24.921811+00:00",
+  "python": "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+  "config": "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "max_tokens": 64,
+  "warmup_tokens": 8,
+  "benchmark_sha256": "fc6ed4894bb2db6145ba5bf052fa7b34ef613f61e61967ca181695aa1edb0491",
+  "runner_sha256": "3d0dfab329963ab4fb9c35fe3c4275f4d2778f64c53a6e1f41fc03cc5542c480",
+  "cells": [
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 5,
+      "variant": "native",
+      "output": "control-8192w-run-5-native.json",
+      "elapsed_seconds": 0.35631600000488106,
+      "exit_code": 1
+    }
+  ],
+  "completed_utc": "2026-07-16T20:39:25.278644+00:00"
+}

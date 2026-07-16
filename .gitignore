@@ -146,6 +146,7 @@ models/
 examples/dflash-z-lab/
 examples/dflash-mlx-bstnxbt/
 examples/dflash-mlx-aryagm/
+examples/gemma4metal/
 
 # Temporary files
 *.tmp

@@ -623,3 +623,30 @@
   measurement gates so any later draft/verify path can be judged honestly.
 - Next experiment: profile the manual long/concurrent path and test one
   model-native state-isolation or scheduling change without touching DFlash.
+
+## 2026-07-17: Reject 4-bit TurboQuant and Keep Native MLX Attention
+
+- Decision: retain no TurboQuant or direct-paged runtime change. Native MLX
+  remains the production attention path; direct paged attention stays opt-in.
+- Direct-path evidence: ten fresh Qwen3.5-0.8B controls per context measured
+  direct elapsed `+0.37%/+0.20%` at 2K/8K with exact tokens, only
+  `9.12/6.09 MB` lower maximum peak, and zero swap growth.
+- Kernel evidence: five fresh processes, 30 warmups, and 200 interleaved calls
+  per method showed 4-bit TurboQuant `3.94x` cache compression and
+  `18%~60%` lower latency than Aster paged. It did not beat default MLX across
+  2K/8K/32K/64K; 2K/32K/64K were `3.47%/34.13%/25.08%` slower.
+- Model evidence: twenty fresh Qwen3.5/WikiText-2 cells across five distinct
+  windows found decode `5.22%/5.72%` slower at 2K/8K. Only 3/5 greedy windows
+  matched at either context; minimum teacher top-1 was `89.06%/93.75%`, and
+  absolute PPL change reached `7.49%/3.38%`.
+  Hybrid cache bytes fell `1.72x/2.67x`, but quality and no-regression gates
+  failed; swap stayed flat, while the strict RSS interval gate was
+  inconclusive.
+- Reference handling: OMLX `e3a4fe4` and pinned mlx-vlm passed `51/51` tests.
+  Open-TQ/gemma4metal remains read-only evidence because its public test
+  boundary is weaker and the host lacks the separate Metal Toolchain needed
+  for its native build.
+- Rollback: no runtime code was introduced. Remove only Iteration 049 evidence
+  files if the experiment itself must be discarded.
+- Next experiment: prove or falsify whether post-sample `_eval_cache()` does
+  necessary work using exact hybrid-state RAW/WAW and 10,000-step stress.

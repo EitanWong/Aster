@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-07-16T21:22:57.436170+00:00",
+  "python": "/tmp/aster-iter049-tq-env/bin/python",
+  "runs": 5,
+  "tokens": [
+    2048,
+    8192,
+    32768,
+    65536
+  ],
+  "iterations": 200,
+  "warmups": 30,
+  "seed": 49117,
+  "benchmark_sha256": "0d7e6913bc4bd10c65687baf8d6d954da28fa4035337113742b7923f57065dec",
+  "runner_sha256": "4ac75896c796b40400a6a1b1e3c4c2bb38d9ff636a816628335b00f7bff41e8d",
+  "cells": [
+    {
+      "run_id": 1,
+      "output": "run-1.json",
+      "elapsed_seconds": 19.625724082994566,
+      "exit_code": 0
+    },
+    {
+      "run_id": 2,
+      "output": "run-2.json",
+      "elapsed_seconds": 19.31964662500104,
+      "exit_code": 0
+    },
+    {
+      "run_id": 3,
+      "output": "run-3.json",
+      "elapsed_seconds": 19.85924166699988,
+      "exit_code": 0
+    },
+    {
+      "run_id": 4,
+      "output": "run-4.json",
+      "elapsed_seconds": 20.786848000003374,
+      "exit_code": 0
+    },
+    {
+      "run_id": 5,
+      "output": "run-5.json",
+      "elapsed_seconds": 19.446984000001976,
+      "exit_code": 0
+    }
+  ],
+  "completed_utc": "2026-07-16T21:24:36.581811+00:00",
+  "aggregate": "aggregate.json",
+  "aggregate_sha256": "c04349bb88e6395e833cf6e260462eae556bd8b4b40226a9b7d7e889658845ed"
+}

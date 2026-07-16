@@ -1,0 +1,4957 @@
+{
+  "schema_version": 1,
+  "mode": "profile",
+  "variant": "native",
+  "run_id": 1,
+  "context_words": 2048,
+  "timestamp_utc": "2026-07-16T22:46:30.540430+00:00",
+  "pid": 61312,
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "mlx_lm": "0.31.3",
+    "numpy": "2.5.1",
+    "psutil": "7.2.2",
+    "git_commit": "626596259d0468764d3ab77505caba86d4287509",
+    "git_branch": "main",
+    "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/contracts.py": "62f1daabd55d335e46cc4a2aad5dd4c1c7a42714ca3668fcf9e9b423abf1eec4",
+    "aster/inference/engine.py": "f8f073352c50e5cb7cf0d1b5ec20c99ce7560d2548f814d005f4c27784ce49cc",
+    "aster/inference/model_runner.py": "6ede6680eee5eed106873dcf0931a19c3a1753fe86382d6948993a1ed0faf3f1",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "aster/inference/paged_attention_bridge.py": "ede2436b5e0639f47dc713cd460c63c3ce8efecc5d04f64da87f10bc8d560e05",
+    "aster/inference/metal_paged_attention.py": "b7b4bea2ead78057d4d4759d99fc1de62f674a6ba3dd603b0d7233bc8bbd8796",
+    "aster/inference/runtime_kernel.py": "7f01bd8235fa31e7cfbac4b04fdfcd3583a0cc84c060f03e51777bb2e810bad2",
+    "aster/telemetry/metrics.py": "504083f95bfa4e0f2d911c6e7079057fe06ecbc9c4443c8220f16ddceed2a014",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-049-real-model-paged-graph/benchmark.py": "f6a5cb102f85add2692845f444d1d78a42ac6fcb183e8ebcd53a37e4f6bf63b0",
+    "docs/loop-engineering/artifacts/ITER-20260717-049-real-model-paged-graph/profile_lib.py": "8e053e0422f5b1dcd7b220e7ea8ceab04558a181947e4ae8cacae2518bc14e28"
+  },
+  "settings": {
+    "model_path": "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+    "max_tokens": 64,
+    "prefill_token_budget": 1024,
+    "paged_cache_block_size": 64,
+    "paged_cache_enabled": false,
+    "paged_cache_direct_attention_enabled": false,
+    "prefix_cache_enabled": false,
+    "max_decode_batch": 1,
+    "temperature": 0.0
+  },
+  "response": {
+    "elapsed_seconds": 1.0969357909925748,
+    "prompt_tokens": 2229,
+    "completion_tokens": 64,
+    "generation_tps": 119.00517254102942,
+    "prompt_tps": 4915.373899626858,
+    "finish_reason": "length",
+    "token_ids": [
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644,
+      3644
+    ],
+    "text_sha256": "d034073f9207f39fb3e311b241ca46ccff1546b6ffa798688416295edc92620c",
+    "mlx_peak_memory_bytes": 768208540,
+    "process_rss_peak_bytes": 938344448,
+    "swap_before_bytes": 0,
+    "swap_after_bytes": 0
+  },
+  "mlx_memory_before": {
+    "active_bytes": 423938274,
+    "cache_bytes": 46006272,
+    "peak_bytes": 0
+  },
+  "mlx_memory_after": {
+    "active_bytes": 423938408,
+    "cache_bytes": 71106560,
+    "peak_bytes": 768208540
+  },
+  "timings": {
+    "cache_eval_complete:cache_sync": {
+      "count": 67,
+      "total_ms": 474.314546,
+      "median_ms": 0.3635,
+      "p95_ms": 0.59,
+      "min_ms": 0.331833,
+      "max_ms": 199.725
+    },
+    "decode_step_complete:decode": {
+      "count": 64,
+      "total_ms": 519.108126,
+      "median_ms": 8.0815835,
+      "p95_ms": 8.657833,
+      "min_ms": 7.183958,
+      "max_ms": 9.304709
+    },
+    "initialize_decode_complete:promotion": {
+      "count": 1,
+      "total_ms": 94.324125,
+      "median_ms": 94.324125,
+      "p95_ms": 94.324125,
+      "min_ms": 94.324125,
+      "max_ms": 94.324125
+    },
+    "model_forward_enqueue:decode": {
+      "count": 64,
+      "total_ms": 46.012831,
+      "median_ms": 0.6711875,
+      "p95_ms": 0.8645,
+      "min_ms": 0.6305,
+      "max_ms": 1.509875
+    },
+    "model_forward_enqueue:prefill": {
+      "count": 3,
+      "total_ms": 2.734292,
+      "median_ms": 0.874125,
+      "p95_ms": 1.026917,
+      "min_ms": 0.83325,
+      "max_ms": 1.026917
+    },
+    "native_attention_enqueue:decode": {
+      "count": 384,
+      "total_ms": 0.284968,
+      "median_ms": 0.000541,
+      "p95_ms": 0.001917,
+      "min_ms": 0.000375,
+      "max_ms": 0.00675
+    },
+    "native_attention_enqueue:prefill": {
+      "count": 18,
+      "total_ms": 0.117791,
+      "median_ms": 0.00525,
+      "p95_ms": 0.013875,
+      "min_ms": 0.003708,
+      "max_ms": 0.013875
+    },
+    "prefill_chunk_complete:prefill": {
+      "count": 3,
+      "total_ms": 453.550291,
+      "median_ms": 193.760625,
+      "p95_ms": 200.65675,
+      "min_ms": 59.132916,
+      "max_ms": 200.65675
+    },
+    "sample_token_sync:decode": {
+      "count": 64,
+      "total_ms": 444.403665,
+      "median_ms": 6.955229,
+      "p95_ms": 7.580625,
+      "min_ms": 5.615708,
+      "max_ms": 7.8605
+    }
+  },
+  "raw_timings": [
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 13875,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 5875,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 4125,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 5333,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 10000,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 4875,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 1026917,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 192621125,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "prefill_chunk_complete",
+      "elapsed_ns": 193760625,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 1024
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 11166,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 6583,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 7833,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 5167,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 4459,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 4417,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 874125,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 199725000,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "prefill_chunk_complete",
+      "elapsed_ns": 200656750,
+      "phase": "prefill",
+      "query_tokens": 1024,
+      "kv_tokens": 2048
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 10833,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 4834,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 4000,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 3708,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 5000,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 5708,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 833250,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 58246125,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "prefill_chunk_complete",
+      "elapsed_ns": 59132916,
+      "phase": "prefill",
+      "query_tokens": 180,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "initialize_decode_complete",
+      "elapsed_ns": 94324125,
+      "phase": "promotion",
+      "query_tokens": null,
+      "kv_tokens": 2228
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2229
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2229
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2229
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2229
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2229
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2229
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 758500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7860500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 590000,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 9304709,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 0
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2000,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2230
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2230
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2230
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2230
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2230
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2230
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 702625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7796084,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 383750,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8954500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 1
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2231
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2231
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2231
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2231
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2231
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2231
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 685583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7530000,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 357125,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8646792,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 2
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2232
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2232
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2232
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2232
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2232
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2232
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 651791,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7584542,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 350917,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8657833,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 3
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1334,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2233
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2233
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2233
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2233
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2233
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2233
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 667458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7580625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 370959,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8688625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 4
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2234
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2234
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2234
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2234
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2234
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2234
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 641333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7270000,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 362167,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8342958,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 5
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1917,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2235
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2235
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2235
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2235
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2235
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2235
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 687500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6960667,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 362500,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8088958,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 6
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2236
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2236
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2236
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2236
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2236
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2236
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 644834,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7172583,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 343500,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8232250,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 7
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1208,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2237
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2237
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2237
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2237
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2237
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2237
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 652125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7092875,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 352041,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8170500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 8
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1958,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2238
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2238
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2238
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 667,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2238
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2238
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2238
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 755500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6553208,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 342167,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7722750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 9
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 6750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2239
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1916,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2239
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2239
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2239
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2239
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2239
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 1335583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6608042,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 391667,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8425042,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 10
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 3500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2240
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 709,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2240
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2240
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2240
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2240
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2240
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 823333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6862833,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 504584,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8295208,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 11
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2334,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2241
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2241
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2241
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 3166,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2241
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2208,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2241
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2241
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 1509875,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 5615708,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 333583,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7555500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 12
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2242
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2242
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2242
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2242
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2242
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2242
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 864500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6486166,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 386917,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7831584,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 13
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2243
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1000,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2243
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2243
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2243
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2243
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2243
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 803167,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6672250,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 410209,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7972708,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 14
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2244
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2244
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2244
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2244
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2244
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2244
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 838125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6688625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 389708,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8010708,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 15
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2208,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2245
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2245
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2245
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2245
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2245
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2245
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 744250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6753625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 366125,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7960042,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 16
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1875,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2246
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2246
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2246
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2246
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2246
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2246
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 715417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6646125,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 369209,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7808666,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 17
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2247
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2247
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2247
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2247
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2247
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2247
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 683375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6817958,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 370000,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7947375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 18
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2248
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2248
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2248
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2248
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2248
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2248
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 664750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7072042,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 377083,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8191333,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 19
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1209,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2249
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2249
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2249
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1041,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2249
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2249
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2249
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 722292,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6896292,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 361125,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8064875,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 20
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1083,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2250
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2250
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2250
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2250
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2250
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2250
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 678667,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6889250,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 358875,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8006834,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 21
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1166,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2251
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2251
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2251
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2251
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2251
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2251
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 672125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6655708,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 359917,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7768167,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 22
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1000,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2252
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2252
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 709,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2252
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2252
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2252
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2252
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 736584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6613834,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 360125,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7807541,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 23
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2253
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2253
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2253
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2253
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2253
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2253
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 682375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7152667,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 373041,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8283792,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 24
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 3333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2254
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2254
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2254
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2254
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2254
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2254
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 791000,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6333708,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 388375,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7608541,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 25
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1959,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2255
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2255
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2255
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2255
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2255
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2255
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 872542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6426792,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 363000,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7747375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 26
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2256
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2256
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 667,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2256
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2256
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2256
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2256
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 670750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7548291,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 345333,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8627917,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 27
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2257
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2257
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2257
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2257
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2257
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2257
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 651125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7123167,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 352792,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8198333,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 28
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1334,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2258
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2258
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2258
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2258
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2258
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2258
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 646125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7138584,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 368584,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8223292,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 29
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2259
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2259
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2259
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2259
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2259
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2259
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 653792,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7131708,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 363375,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8220750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 30
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2260
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2260
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2260
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2260
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2260
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2260
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 652792,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6970167,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 359250,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8051375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 31
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2261
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2261
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2261
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2261
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2261
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2261
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 647583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6863667,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 333209,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7918750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 32
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1042,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2262
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2262
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2262
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2262
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2262
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2262
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 630500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7080292,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 361959,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8144916,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 33
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1042,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2263
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2263
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2263
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2263
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2263
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2263
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 632958,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6989459,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 357500,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8048500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 34
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2264
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2264
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2264
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2264
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2264
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2264
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 653166,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6988125,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 353333,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8074209,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 35
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1292,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2265
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2265
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2265
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2265
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2265
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2265
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 646583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7060667,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 352292,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8123875,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 36
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1042,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2266
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2266
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2266
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2266
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2266
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2266
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 643250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6921958,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 364750,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8004583,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 37
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1291,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2267
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2267
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2267
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2267
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2267
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2267
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 658042,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6929375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 363500,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8026375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 38
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1208,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2268
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 667,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2268
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2268
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2268
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2268
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2268
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 770250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6512000,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 371667,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7728459,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 39
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2269
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2269
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2269
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2269
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2269
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2958,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2269
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 682709,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6941500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 370833,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8071292,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 40
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2270
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2270
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2270
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2270
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2270
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2270
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 689583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7018375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 364375,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8150125,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 41
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2271
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2271
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2271
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2271
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2271
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2271
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 654666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6997583,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 361916,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8101333,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 42
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2272
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2272
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2272
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2272
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2272
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2272
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 647166,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7147625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 364542,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8227042,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 43
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2273
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2273
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2273
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2273
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2273
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2273
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 660042,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6945000,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 416083,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8108375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 44
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 2292,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2274
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2274
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2274
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2274
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2274
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2274
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 743708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 5969041,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 395167,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7183958,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 45
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2275
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 834,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2275
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 917,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2275
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2275
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2275
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2275
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 771292,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6676750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 395084,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7936292,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 46
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1917,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2276
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2276
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 709,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2276
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 709,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2276
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2276
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2276
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 801666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6655375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 367583,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7910083,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 47
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2277
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2277
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2277
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2277
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2277
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2277
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 664625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7565417,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 340292,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8629417,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 48
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1292,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2278
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2278
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2278
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2278
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2278
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 3125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2278
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 648417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7365667,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 331833,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8408958,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 49
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2279
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2279
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2279
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2279
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2279
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2279
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 652375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6932000,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 361792,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8025042,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 50
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2280
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2280
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2280
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2280
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2280
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2280
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 653791,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6897875,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 361083,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7985292,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 51
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1292,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2281
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2281
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2281
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2281
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2281
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2281
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 671625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7240375,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 360625,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8338709,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 52
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1167,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2282
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2282
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2282
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2282
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2282
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2282
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 740541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6702334,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 357208,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7887542,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 53
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1208,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2283
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2283
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2283
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2283
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2283
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2283
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 648250,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7014000,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 365167,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8102709,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 54
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1209,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2284
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2284
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2284
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2284
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2284
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2284
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 664541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6796125,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 350833,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7878750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 55
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2285
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2285
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2285
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2285
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 708,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2285
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2285
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 750084,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6618166,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 380709,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7822750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 56
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1333,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2286
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 666,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2286
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2286
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2286
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 625,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2286
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2286
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 725375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6949791,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 363667,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8130542,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 57
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1208,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2287
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 542,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2287
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2287
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2287
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2287
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2287
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 664167,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7191166,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 379750,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8309500,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 58
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1917,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2288
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2288
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 667,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2288
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2288
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 416,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2288
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2288
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 747375,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6270333,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 364500,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 7454041,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 59
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1083,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2289
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2289
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2289
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2289
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2289
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2289
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 636541,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7496416,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 357875,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8554083,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 60
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1042,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2290
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2290
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 458,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2290
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2290
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2290
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2290
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 650750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 6977541,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 363083,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8057625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 61
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2291
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 583,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2291
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 584,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2291
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2291
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2291
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2291
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 660667,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7098416,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 355708,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8184416,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 62
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 1125,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2292
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2292
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2292
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 417,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2292
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 500,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2292
+    },
+    {
+      "name": "native_attention_enqueue",
+      "elapsed_ns": 459,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": 2292
+    },
+    {
+      "name": "model_forward_enqueue",
+      "elapsed_ns": 640750,
+      "phase": "decode",
+      "query_tokens": 1,
+      "kv_tokens": null
+    },
+    {
+      "name": "sample_token_sync",
+      "elapsed_ns": 7086625,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "cache_eval_complete",
+      "elapsed_ns": 366375,
+      "phase": "cache_sync",
+      "query_tokens": null,
+      "kv_tokens": null
+    },
+    {
+      "name": "decode_step_complete",
+      "elapsed_ns": 8163750,
+      "phase": "decode",
+      "query_tokens": null,
+      "kv_tokens": 63
+    }
+  ],
+  "request_timeline": [
+    {
+      "request_id": "iter049-warmup-1",
+      "status": "finished",
+      "phase": "completed",
+      "prompt_tokens": 6,
+      "completion_tokens": 8,
+      "max_tokens": 8,
+      "prefill_steps": 1,
+      "decode_steps": 8,
+      "cached_tokens": 0,
+      "cache_token_count": 5,
+      "target_cache_token_count": 5,
+      "created_to_enqueued_s": 1.4e-05,
+      "queue_wait_s": 4.9e-05,
+      "admission_prepare_s": 0.001043,
+      "admission_to_prefill_s": 3.7e-05,
+      "prefill_wall_s": 0.028552,
+      "prefill_model_s": 0.028248,
+      "prefill_to_decode_init_s": 5e-06,
+      "decode_init_s": 0.091336,
+      "decode_wait_s": 3.4e-05,
+      "ttft_s": 0.130119,
+      "decode_to_first_token_s": 0.00905,
+      "decode_duration_s": 0.067727,
+      "total_latency_s": 0.188796,
+      "terminal_to_response_ready_s": 2e-06,
+      "last_decode_step_age_s": 0.000246
+    },
+    {
+      "request_id": "iter049-profile-native-2048-1",
+      "status": "finished",
+      "phase": "completed",
+      "prompt_tokens": 2229,
+      "completion_tokens": 64,
+      "max_tokens": 64,
+      "prefill_steps": 3,
+      "decode_steps": 64,
+      "cached_tokens": 0,
+      "cache_token_count": 2228,
+      "target_cache_token_count": 2228,
+      "created_to_enqueued_s": 2.4e-05,
+      "queue_wait_s": 8.6e-05,
+      "admission_prepare_s": 0.003675,
+      "admission_to_prefill_s": 3.6e-05,
+      "prefill_wall_s": 0.454538,
+      "prefill_model_s": 0.453475,
+      "prefill_to_decode_init_s": 3e-06,
+      "decode_init_s": 0.094703,
+      "decode_wait_s": 3.2e-05,
+      "ttft_s": 0.562736,
+      "decode_to_first_token_s": 0.009639,
+      "decode_duration_s": 0.538038,
+      "total_latency_s": 1.091134,
+      "terminal_to_response_ready_s": 3e-06,
+      "last_decode_step_age_s": 0.000255
+    }
+  ],
+  "decode_diagnostics": {
+    "batch_attempts": 0,
+    "batch_successes": 0,
+    "batch_fallbacks": 0,
+    "batch_items": 0,
+    "batch_fallback_items": 0,
+    "single_steps": 72,
+    "batch_fallback_rate": 0.0,
+    "last_batch_fallback_error": null,
+    "batch_cache_reuses": 0,
+    "batch_cache_rebuilds": 0
+  }
+}

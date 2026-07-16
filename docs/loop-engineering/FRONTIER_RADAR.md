@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-07-16
+Updated: 2026-07-17
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -29,6 +29,7 @@ coverage, and a rollback path.
 | --- | --- | --- | --- | --- |
 | P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Split-KV, attention-boundary, and fused-scatter reproductions complete | Reference scatter wins in its own layout, but Aster transfer fails. Retain as evidence; stop direct operator imports. |
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
+| P0 | [OMLX](https://github.com/jundot/omlx) TurboQuant at `e3a4fe4`, pinned mlx-vlm `78b96eb`, and [Open-TQ-Metal](https://arxiv.org/abs/2604.16957) | Compressed-domain K/V attention, hybrid-cache conversion, long-context capacity, two-pass decode | `51/51` reference tests plus 5-process kernel and 20-process Qwen3.5 matrices complete | Reject measured 4-bit path: cache shrinks, but default MLX speed and model quality fail. Preserve as a capacity reference only. |
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
 | P1 | [SSSD](https://github.com/huawei-csl/sssd_speculator), ACL 2026, BSD-3-Clause-Clear | Training-free suffix-array/prompt/self-output speculation | Source/license verified remotely; not cloned | Later candidate after core: compare against prompt lookup and DFlash without a draft model. |
@@ -36,7 +37,7 @@ coverage, and a rollback path.
 | P2 | [LONGSPEC](https://aclanthology.org/2026.acl-long.83/) | Constant-size long-context drafter and hybrid tree verification | Paper evidence only; CUDA/Triton implementation assumptions | Watch. Not compatible with the current core without training and a tree verifier. |
 | P2 | [Speculative Decoding: Performance or Illusion?](https://arxiv.org/abs/2601.11580) | Production-grade evidence that verification/load can erase speculative gains | Used as a gating reference | Require load-adaptive measurements; never enable speculation from batch-1 results alone. |
 | Benchmark only | [BaseRT paper](https://arxiv.org/abs/2607.00501) / [repository](https://github.com/basecompute/baseRT) | Native Metal ceiling and dispatch/fusion hypotheses | Public CLI/format are Apache-2.0, but the inference engine is a proprietary binary | Black-box competitor only; do not borrow or call it open-core evidence. |
-| Quarantine | [Open-TQ-Metal](https://arxiv.org/abs/2604.16957) | Compressed-domain int4 KV attention claim | No implementation repository found in first pass | Do not reproduce or adopt until author code and license are available. |
+| Rejected 4-bit | [gemma4metal](https://github.com/mutable-state-inc/gemma4metal), commit `0f09466`, MIT | Public Open-TQ-Metal C++/Metal implementation and compressed-cache formulas | Source audited locally; native build reaches the Metal compiler step but the separate Apple Metal Toolchain component is absent | Public test coverage/error threshold is too weak for admission. Keep the ignored local clone as a source reference; use the stronger OMLX/model evidence. |
 | Quarantine | [mlx-inference-bench](https://github.com/AtomGradient/mlx-inference-bench) | Useful negative results for speculative decoding and bottleneck profiling | No license and no independent validation; zero-star WIP at intake | Read-only hypothesis source; do not copy code or promote claims. |
 
 ## Reproduced result: vllm-metal split-KV
@@ -111,10 +112,36 @@ batch 8 cleared the regression gate in both groups. A 1,000-iteration matrix
 had zero post-loop error/swap growth, no thermal warning, and a `52,428,824 B`
 peak. No runtime or private ABI was retained.
 
+## Reproduced result: real paged graph and TurboQuant
+
+The complete opt-in paged graph was measured in Qwen3.5-0.8B, prefix-off,
+greedy batch 1. Ten fresh native/direct controls per context retained exact
+tokens and text. Direct elapsed changed `+0.37%` at 2,229 prompt tokens and
+`+0.20%` at 8,373; generation changed `-0.58%/+1.94%`. All intervals crossed
+zero. Peak allocator memory
+fell only `9.12/6.09 MB`. Five profile processes put sampled-token sync at
+about `6.97 ms` of an `8.08 ms` median decode step; direct attention and pool
+write enqueue totals were only a few milliseconds over all 64 tokens.
+
+TurboQuant's fused kernel was then tested at `B=1,Hq=8,Hkv=2,Q=1,D=256` in
+five fresh processes, 30 warmups, and 200 interleaved calls per method at
+2K/8K/32K/64K. It reduced isolated cache bytes `3.94x` and beat Aster paged by
+`18%~60%`, but versus default MLX it was `3.47%` slower at 2K, inconclusive at
+8K, `34.13%` slower at 32K, and `25.08%` slower at 64K. Fused/dequant error
+stayed <=`1.53e-5`; swap stayed zero.
+
+The model gate used 20 fresh Qwen3.5 processes and a hash-fixed WikiText-2
+windows. At 2K, only 3/5 greedy windows matched, teacher top-1 fell to
+`89.06%`, and decode was `5.22%` slower. At 8K, 3/5 windows matched, PPL
+changed by up to `3.38%`, and decode was `5.72%` slower. Whole hybrid
+cache storage fell `1.72x/2.67x`; model-weight-dominated peak did not improve.
+The 4-bit path is rejected rather than introduced as a capacity switch.
+
 ## Next reproduction
 
-Profile Aster's complete paged `update_and_fetch` plus attention graph in a
-real Qwen3.5 run. Use Uzu's explicit command-buffer ownership and GPU timing as
-the native ceiling reference. Select the next operator only after the profile
-shows a material end-to-end boundary; do not continue scatter micro-variants or
-add a private ABI from isolated sub-millisecond medians.
+Prove whether post-sample `_eval_cache()` is required after token materialization.
+Use a 10,000-step hybrid-cache RAW/WAW stress matrix before changing runtime
+behavior, and compare exact cache arrays, tokens, trim/COW/cancellation, peak
+memory, and swap. Uzu's explicit command ownership and vllm-metal's lazy graph
+provenance remain the reference. A shape-specific split-KV probe is secondary;
+it must beat native MLX, not only Aster's slower paged kernel.

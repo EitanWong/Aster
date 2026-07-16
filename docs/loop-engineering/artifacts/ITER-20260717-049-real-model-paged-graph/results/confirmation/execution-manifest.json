@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "seed": 49018,
+  "started_utc": "2026-07-16T22:48:35.103996+00:00",
+  "python": "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+  "config": "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+  "config_sha256": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "model_file_sha256": {
+    "chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "config.json": "ba7770da23eae5ebd6827571f086e331956b33f4442a9e876fb4aa10969a6772",
+    "model.safetensors": "f5a0d9dd3efa73510542a8023d610ff26be2b4b020d181cfc4bedaa1fcc5dd9e",
+    "model.safetensors.index.json": "6e48f2fa5d6f033a6d77bf833abfa9698ca24d1715ecea4c67447bcfaee44650",
+    "preprocessor_config.json": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+    "processor_config.json": "14932921ca485d458a04dafd8069fbb0a4505622a48208d19ed247115801385b",
+    "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "video_preprocessor_config.json": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+    "vocab.json": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+  },
+  "max_tokens": 64,
+  "warmup_tokens": 8,
+  "benchmark_sha256": "f6a5cb102f85add2692845f444d1d78a42ac6fcb183e8ebcd53a37e4f6bf63b0",
+  "runner_sha256": "1c68382b6ba5c712fa8f10e1497816d0b6c98eceb689a2899f72908287ecb688",
+  "cells": [
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 12,
+      "variant": "native",
+      "output": "control-2048w-run-12-native.json",
+      "elapsed_seconds": 2.936205999998492,
+      "exit_code": 0,
+      "output_sha256": "d76e02ab64d71da1da9ee18eb0a4f4afbb3d1e212e5a8a0c2b8ead87576674fe"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 12,
+      "variant": "direct",
+      "output": "control-2048w-run-12-direct.json",
+      "elapsed_seconds": 2.8904852499981644,
+      "exit_code": 0,
+      "output_sha256": "97461d2c0e28b2422bdf326f2a62177d4c763cfb3187667a7942ad7a9a646c3b"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 11,
+      "variant": "direct",
+      "output": "control-2048w-run-11-direct.json",
+      "elapsed_seconds": 2.886133042004076,
+      "exit_code": 0,
+      "output_sha256": "1a9a17f4557c0224dc19e4e00f197240fae4d7e41ec9c9315df34570daf307cc"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 11,
+      "variant": "native",
+      "output": "control-2048w-run-11-native.json",
+      "elapsed_seconds": 2.886905665989616,
+      "exit_code": 0,
+      "output_sha256": "b967019bd9658e08f0b84bccd2a0feb70b7c399914b21355ee6ab2679bfbb501"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 11,
+      "variant": "direct",
+      "output": "control-8192w-run-11-direct.json",
+      "elapsed_seconds": 4.362907125003403,
+      "exit_code": 0,
+      "output_sha256": "c04cabb74fee28f71dfde2103d1e185b25001525ab095d9d2e1421fcdd7468c9"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 11,
+      "variant": "native",
+      "output": "control-8192w-run-11-native.json",
+      "elapsed_seconds": 4.348567916997126,
+      "exit_code": 0,
+      "output_sha256": "87ef575e24355c862fab39a545aabdd41d55a66da9a468ea7c03aa0e423479f2"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 13,
+      "variant": "direct",
+      "output": "control-2048w-run-13-direct.json",
+      "elapsed_seconds": 2.96080383300432,
+      "exit_code": 0,
+      "output_sha256": "3d1baa0c4427a65cac4850eb37950bb4bb6c8a5a63d7a8c00ab6aa9d7fe3a8b5"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 13,
+      "variant": "native",
+      "output": "control-2048w-run-13-native.json",
+      "elapsed_seconds": 2.883240208000643,
+      "exit_code": 0,
+      "output_sha256": "840258e601101d4c1d68b654696f4a425d2c510fa675b825a3e576a3e8b44dc3"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 14,
+      "variant": "native",
+      "output": "control-2048w-run-14-native.json",
+      "elapsed_seconds": 2.87535379199835,
+      "exit_code": 0,
+      "output_sha256": "e3242d6db56318b7f6d4f3821a3e3c7ac48c0481b4e25fc6f23b33e8a4dbb028"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 14,
+      "variant": "direct",
+      "output": "control-2048w-run-14-direct.json",
+      "elapsed_seconds": 2.894215416003135,
+      "exit_code": 0,
+      "output_sha256": "5da78e3b9b11cd05558c02fac07b449f144497db8de5c81c8c7e61fbbbd4d057"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 14,
+      "variant": "direct",
+      "output": "control-8192w-run-14-direct.json",
+      "elapsed_seconds": 4.413836416002596,
+      "exit_code": 0,
+      "output_sha256": "cca4ebb14448ff28b4b2869cd3f3c792b32a9521d791860b1515e8f41cad9ea5"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 14,
+      "variant": "native",
+      "output": "control-8192w-run-14-native.json",
+      "elapsed_seconds": 4.388485250005033,
+      "exit_code": 0,
+      "output_sha256": "d8158a6cec265430bb6d83984f85de3bb4a9f882897815826370979cff2cd1a2"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 13,
+      "variant": "direct",
+      "output": "control-8192w-run-13-direct.json",
+      "elapsed_seconds": 4.399677375011379,
+      "exit_code": 0,
+      "output_sha256": "8b6642c4188e608b3ebbf33a695d43205819e5bb248bdba36b3173a837dc64fb"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 13,
+      "variant": "native",
+      "output": "control-8192w-run-13-native.json",
+      "elapsed_seconds": 4.3689037499862025,
+      "exit_code": 0,
+      "output_sha256": "ab1d034adf746a73aca82cfb3866e3f5de396384b8ad4ff9beec4ff909d6df3c"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 15,
+      "variant": "direct",
+      "output": "control-8192w-run-15-direct.json",
+      "elapsed_seconds": 4.361825250001857,
+      "exit_code": 0,
+      "output_sha256": "239f97d2081f8585bb7ac9ed795009d1e8b103afec55de40c4f5e4f2ca75242f"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 15,
+      "variant": "native",
+      "output": "control-8192w-run-15-native.json",
+      "elapsed_seconds": 4.369922875004704,
+      "exit_code": 0,
+      "output_sha256": "b29443712f5b2c43c7f2d2fa90110169f5802d14263c3fb3486dd8fc4ee4f460"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 12,
+      "variant": "direct",
+      "output": "control-8192w-run-12-direct.json",
+      "elapsed_seconds": 4.6075322500109905,
+      "exit_code": 0,
+      "output_sha256": "a25c4e6309afe34d557706c24ab0a772cd181cd0cfb545ebc7e3818fff6d8629"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 12,
+      "variant": "native",
+      "output": "control-8192w-run-12-native.json",
+      "elapsed_seconds": 4.4047677499911515,
+      "exit_code": 0,
+      "output_sha256": "1efb975b1665dc81dff11bf9a6c217c746f1683c27dcc7a84a70220c1f9c9cf8"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 15,
+      "variant": "native",
+      "output": "control-2048w-run-15-native.json",
+      "elapsed_seconds": 2.9351082500070333,
+      "exit_code": 0,
+      "output_sha256": "d2188269f7d6a09a1df3c9897f51296e4e36752726b660dee4e2f26379d48330"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 15,
+      "variant": "direct",
+      "output": "control-2048w-run-15-direct.json",
+      "elapsed_seconds": 2.966533457991318,
+      "exit_code": 0,
+      "output_sha256": "2d1bd001267f2e81d2d5e7ad8458e72c782de299d44f9af93e323f8caa153dd5"
+    }
+  ],
+  "completed_utc": "2026-07-16T22:49:48.508383+00:00"
+}

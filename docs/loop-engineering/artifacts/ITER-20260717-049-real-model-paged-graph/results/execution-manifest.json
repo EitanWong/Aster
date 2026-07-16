@@ -1,0 +1,428 @@
+{
+  "schema_version": 1,
+  "seed": 49017,
+  "started_utc": "2026-07-16T22:45:52.652987+00:00",
+  "python": "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+  "config": "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+  "config_sha256": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+  "model": "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+  "model_file_sha256": {
+    "chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "config.json": "ba7770da23eae5ebd6827571f086e331956b33f4442a9e876fb4aa10969a6772",
+    "model.safetensors": "f5a0d9dd3efa73510542a8023d610ff26be2b4b020d181cfc4bedaa1fcc5dd9e",
+    "model.safetensors.index.json": "6e48f2fa5d6f033a6d77bf833abfa9698ca24d1715ecea4c67447bcfaee44650",
+    "preprocessor_config.json": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+    "processor_config.json": "14932921ca485d458a04dafd8069fbb0a4505622a48208d19ed247115801385b",
+    "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "video_preprocessor_config.json": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+    "vocab.json": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+  },
+  "max_tokens": 64,
+  "warmup_tokens": 8,
+  "benchmark_sha256": "f6a5cb102f85add2692845f444d1d78a42ac6fcb183e8ebcd53a37e4f6bf63b0",
+  "runner_sha256": "1c68382b6ba5c712fa8f10e1497816d0b6c98eceb689a2899f72908287ecb688",
+  "cells": [
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 5,
+      "variant": "native",
+      "output": "control-8192w-run-5-native.json",
+      "elapsed_seconds": 4.380144542010385,
+      "exit_code": 0,
+      "output_sha256": "4941c3f0799d70a121650735f0138512e4e32d320636035bb623dea49eb11484"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 5,
+      "variant": "direct",
+      "output": "control-8192w-run-5-direct.json",
+      "elapsed_seconds": 4.362260915993829,
+      "exit_code": 0,
+      "output_sha256": "51c85d130633914fb87151e84af165356c41fd2c419cd80a7ca45476dfd09843"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 5,
+      "variant": "direct",
+      "output": "profile-2048w-run-5-direct.json",
+      "elapsed_seconds": 2.921734874995309,
+      "exit_code": 0,
+      "output_sha256": "67e73f91800e070e2a5eb5fd54321e75e38b1b8f3e413b9923d6142f3efb4f2b"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 5,
+      "variant": "native",
+      "output": "profile-2048w-run-5-native.json",
+      "elapsed_seconds": 2.881593124999199,
+      "exit_code": 0,
+      "output_sha256": "2d893561df66d1d2f31e0e4340d4e5e243e86c6086ae469da912d3e203b98039"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 2,
+      "variant": "direct",
+      "output": "profile-8192w-run-2-direct.json",
+      "elapsed_seconds": 4.38644087499415,
+      "exit_code": 0,
+      "output_sha256": "57298183e3dbc34d52014305804059d226e41a02be59975b124d9362ae0cb208"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 2,
+      "variant": "native",
+      "output": "profile-8192w-run-2-native.json",
+      "elapsed_seconds": 4.345193917004508,
+      "exit_code": 0,
+      "output_sha256": "15e540ad2f6e768e7bbd75fa843c8b120b707ca4503463cd2940c280946b3e51"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 1,
+      "variant": "direct",
+      "output": "control-8192w-run-1-direct.json",
+      "elapsed_seconds": 4.368666208989453,
+      "exit_code": 0,
+      "output_sha256": "cd4bced89271cd3ce1213be4db0ba38cdc68aedcf6b3ed587c871e37cac29bb4"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 1,
+      "variant": "native",
+      "output": "control-8192w-run-1-native.json",
+      "elapsed_seconds": 4.343256499996642,
+      "exit_code": 0,
+      "output_sha256": "cbf0f050378845aed2784c870e480c56202cd8037071e2ea9fc603e6373dffe9"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 1,
+      "variant": "direct",
+      "output": "profile-2048w-run-1-direct.json",
+      "elapsed_seconds": 2.8809535420004977,
+      "exit_code": 0,
+      "output_sha256": "2f52dcc854d4b707e4ab59230870d5419ed41f7aa7d1ef0cef209850c2d346a8"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 1,
+      "variant": "native",
+      "output": "profile-2048w-run-1-native.json",
+      "elapsed_seconds": 2.886884249994182,
+      "exit_code": 0,
+      "output_sha256": "3b2f3461fca77e67acb2fca4e451147ac5b94121718afdc096a67fbe4b0be8e5"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 4,
+      "variant": "direct",
+      "output": "control-2048w-run-4-direct.json",
+      "elapsed_seconds": 2.8838449169998057,
+      "exit_code": 0,
+      "output_sha256": "db02093af9ea6f53e3f40b733481e468b846967d3f3ce60a0d792e681b2ebcc9"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 4,
+      "variant": "native",
+      "output": "control-2048w-run-4-native.json",
+      "elapsed_seconds": 2.862185624995618,
+      "exit_code": 0,
+      "output_sha256": "7845ba3f9e0116691bf879f4db0e1bad50f8fc86edb04f8b29257f37dd1cea61"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 3,
+      "variant": "native",
+      "output": "control-2048w-run-3-native.json",
+      "elapsed_seconds": 2.8581799590028822,
+      "exit_code": 0,
+      "output_sha256": "7a8486cda1090c26765adeaae1e2e752893e91410ff3d7838098bbf9d974bb74"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 3,
+      "variant": "direct",
+      "output": "control-2048w-run-3-direct.json",
+      "elapsed_seconds": 2.894638333003968,
+      "exit_code": 0,
+      "output_sha256": "870f922fc7a14e0de214d319822d2e4d053970872e4809ae3475b3ac626b2b4c"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 5,
+      "variant": "native",
+      "output": "profile-8192w-run-5-native.json",
+      "elapsed_seconds": 4.323613458007458,
+      "exit_code": 0,
+      "output_sha256": "6bff672d8bc80fb54241b0143060a3ec362efb27a5c148825b62263d8f07ec4f"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 5,
+      "variant": "direct",
+      "output": "profile-8192w-run-5-direct.json",
+      "elapsed_seconds": 4.384610833003535,
+      "exit_code": 0,
+      "output_sha256": "cb0996504c7be2f0512631caf24fba407f9a36c4bcc7e6f002fa24798a0f4005"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 4,
+      "variant": "direct",
+      "output": "profile-2048w-run-4-direct.json",
+      "elapsed_seconds": 2.9160473749943776,
+      "exit_code": 0,
+      "output_sha256": "756f975e063966490e7c8289e171441091b50469a17e00ce8e77c4e10ac6ddcc"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 4,
+      "variant": "native",
+      "output": "profile-2048w-run-4-native.json",
+      "elapsed_seconds": 2.9268209580041002,
+      "exit_code": 0,
+      "output_sha256": "abf6a15afb0816e84c1bef7ab4ddcc2cb181e71f26bf8eabe1bd93f5fd454ac9"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 2,
+      "variant": "direct",
+      "output": "control-2048w-run-2-direct.json",
+      "elapsed_seconds": 2.8985010829928797,
+      "exit_code": 0,
+      "output_sha256": "a32f60a8bb75c26a5dc00c1436df549492c678f5533c6e91ef4b4c9ca6bd2eb1"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 2,
+      "variant": "native",
+      "output": "control-2048w-run-2-native.json",
+      "elapsed_seconds": 2.9115320410055574,
+      "exit_code": 0,
+      "output_sha256": "ec978b9340abcf50c5be807bbcaea5cebd7f38657056962ceafe363684b76bbf"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 3,
+      "variant": "direct",
+      "output": "profile-2048w-run-3-direct.json",
+      "elapsed_seconds": 2.8963109579926822,
+      "exit_code": 0,
+      "output_sha256": "e0aa40ff69e613070d445418339a5af1f5857c7ad6bf4113edff0d1e6e83d7d0"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 3,
+      "variant": "native",
+      "output": "profile-2048w-run-3-native.json",
+      "elapsed_seconds": 2.9783796669944422,
+      "exit_code": 0,
+      "output_sha256": "b83f9a4fbec14719bfbd05de1689111f84e015d17d4d4d8d689c5e3ce316a2b0"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 4,
+      "variant": "direct",
+      "output": "control-8192w-run-4-direct.json",
+      "elapsed_seconds": 4.467157749997568,
+      "exit_code": 0,
+      "output_sha256": "f818d3db5d1fc8e6bebad2151d06e3f4bf82c56a99a52b2c8c020f3ed2730c49"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 4,
+      "variant": "native",
+      "output": "control-8192w-run-4-native.json",
+      "elapsed_seconds": 4.401212457989459,
+      "exit_code": 0,
+      "output_sha256": "ecc832f423d1cc9fdeac5e680bbd885b76a404f8f91837ed7a67dcef425bbd00"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 2,
+      "variant": "native",
+      "output": "control-8192w-run-2-native.json",
+      "elapsed_seconds": 4.384482541994657,
+      "exit_code": 0,
+      "output_sha256": "b3a115df48712e5d64f3158651781e77a504492bf10af51108366194dedb102b"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 2,
+      "variant": "direct",
+      "output": "control-8192w-run-2-direct.json",
+      "elapsed_seconds": 4.350028417000431,
+      "exit_code": 0,
+      "output_sha256": "0b161eb80c6cd400937d23fac3b89d6a1151ca6d36de30e7be21ad63155499c1"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 1,
+      "variant": "native",
+      "output": "profile-8192w-run-1-native.json",
+      "elapsed_seconds": 4.400145459003397,
+      "exit_code": 0,
+      "output_sha256": "ee4267eda82ab72f7d9394cffc2a79d1dbee6ae64761d362ec367c7fea602818"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 1,
+      "variant": "direct",
+      "output": "profile-8192w-run-1-direct.json",
+      "elapsed_seconds": 4.439691834006226,
+      "exit_code": 0,
+      "output_sha256": "63885eb6110244712a03120d6ce924f897db561211cd53dc1dfa23020b824528"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 5,
+      "variant": "direct",
+      "output": "control-2048w-run-5-direct.json",
+      "elapsed_seconds": 2.879098833000171,
+      "exit_code": 0,
+      "output_sha256": "46f2dc1770d070bae42da582059cfe698cf551cb5d4517055959fafb8702dbc8"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 5,
+      "variant": "native",
+      "output": "control-2048w-run-5-native.json",
+      "elapsed_seconds": 2.8849392080010148,
+      "exit_code": 0,
+      "output_sha256": "0406161386ea6fc51c3f466689a571b5745bed37a63015faac85497551ff16e1"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 4,
+      "variant": "native",
+      "output": "profile-8192w-run-4-native.json",
+      "elapsed_seconds": 4.3483002909924835,
+      "exit_code": 0,
+      "output_sha256": "92446489b9cd3ef706e3f92102a8d3b8447cc8581975f4ef7dd4e240afeae1ba"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 4,
+      "variant": "direct",
+      "output": "profile-8192w-run-4-direct.json",
+      "elapsed_seconds": 4.371797375002643,
+      "exit_code": 0,
+      "output_sha256": "ac10fca8dc909e8cf688155d5be2cbf25c09570631a1795d3532da8ecaa54900"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 2,
+      "variant": "direct",
+      "output": "profile-2048w-run-2-direct.json",
+      "elapsed_seconds": 2.8923769579996588,
+      "exit_code": 0,
+      "output_sha256": "6e0764712ce611c0216a4679ae93fec3df668bdc66b871b6c8a6424deb8bbe55"
+    },
+    {
+      "mode": "profile",
+      "context_words": 2048,
+      "run_id": 2,
+      "variant": "native",
+      "output": "profile-2048w-run-2-native.json",
+      "elapsed_seconds": 2.8763091250002617,
+      "exit_code": 0,
+      "output_sha256": "a72500ae29e8fb36028c49919b9ef27be9106299f76f13acc523cbf22494cf1d"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 3,
+      "variant": "direct",
+      "output": "control-8192w-run-3-direct.json",
+      "elapsed_seconds": 4.377905041998019,
+      "exit_code": 0,
+      "output_sha256": "d2b1bd86206a78fb746e738792d911b6b72f4ae52ec97a4cea88545dd03e40c8"
+    },
+    {
+      "mode": "control",
+      "context_words": 8192,
+      "run_id": 3,
+      "variant": "native",
+      "output": "control-8192w-run-3-native.json",
+      "elapsed_seconds": 4.3806190000032075,
+      "exit_code": 0,
+      "output_sha256": "5b484cf1cd5befb50628d60318f2cc4833c03c7fd92d481179040943a03f72e1"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 1,
+      "variant": "native",
+      "output": "control-2048w-run-1-native.json",
+      "elapsed_seconds": 2.8909264159883605,
+      "exit_code": 0,
+      "output_sha256": "ea0015700dd1f8ad6cb8701d9bc528ea7f908e23b4f147d58bbd9afdd355982c"
+    },
+    {
+      "mode": "control",
+      "context_words": 2048,
+      "run_id": 1,
+      "variant": "direct",
+      "output": "control-2048w-run-1-direct.json",
+      "elapsed_seconds": 2.8928498330060393,
+      "exit_code": 0,
+      "output_sha256": "8bee5611b540c1ad612d1ccc0a9a405926d84a20fcd88e4d5876fbffa263a63c"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 3,
+      "variant": "direct",
+      "output": "profile-8192w-run-3-direct.json",
+      "elapsed_seconds": 4.394670415989822,
+      "exit_code": 0,
+      "output_sha256": "71359db76dea511b13acfb2a9e5fc12bcde784e69dc75420464a218f1b116787"
+    },
+    {
+      "mode": "profile",
+      "context_words": 8192,
+      "run_id": 3,
+      "variant": "native",
+      "output": "profile-8192w-run-3-native.json",
+      "elapsed_seconds": 4.407840333995409,
+      "exit_code": 0,
+      "output_sha256": "9ab24888954be8d0ca7e5e68133125b773a25162cab1f874172b01523b73555a"
+    }
+  ],
+  "completed_utc": "2026-07-16T22:48:18.479885+00:00"
+}

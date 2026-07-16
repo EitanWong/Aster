@@ -1,6 +1,6 @@
 # Core Inference Engine Reference Matrix
 
-Updated: 2026-07-16
+Updated: 2026-07-17
 
 This matrix is the implementation boundary for the core-first loop.  The
 repositories under `examples/` are treated as executable reference material,
@@ -21,6 +21,7 @@ measurement.
 | Cache lifecycle | vLLM-MLX closes/replaces generators, periodically clears MLX cache, and uses incremental evaluation during cleanup to avoid peaks. | Aster has runtime-cache clear/recovery and explicit prefix-store eviction. | Cleanup behavior across all terminal/error paths needs continuous stress evidence. | Keep cleanup centralized; add tests/metrics rather than scattering `mx.clear_cache`. | Long cancellation/restart loop, zero pinned state, bounded RSS/MLX allocator, no output drift. |
 | Scheduling policy | Rapid-MLX uses waiting/running queues and one-token decode steps; OMLX separates scheduler limits for sequences and batched tokens. | Aster prioritizes decode, rotates yielding prefill continuations, and has active-request/admission limits. | Long prefill fairness and decode latency compete; changing priority without measurement can worsen staggered p95. | Profile queue wait, prefill chunk duration, and decode starvation before tuning policy. | Mixed/staggered p50+p95, prompt/decode throughput, and exact lifecycle parity. |
 | Paged/KV storage | SGLang and OMLX use explicit page/block ownership and eviction; vllm-metal fuses K/V scatter, exposes token-contiguous pages to one varlen kernel, and wraps both operations as lazy MLX C++ Primitives. | Aster's experimental block pool and Metal kernel are disabled because end-to-end speed did not clear the gate, despite strong 8K kernel results. Native attention and Aster-layout scatter Primitives were separately rejected after confirmation. | Storage writes and indirection can erase the kernel win; private MLX C++ ABI adds exact-version build and nanobind coupling. vllm-metal's scatter wins in its scheduler-owned layout, but Aster's transfer regressed 64-token batch 4/8. | Retain Aster's pool writes, kernel math, and public `mx.fast` boundary. Profile the complete real-model paged graph before selecting another operator or changing layout ownership. | Exact block/COW/model parity; measured whole-graph bottleneck; >=3% end-to-end speed or material memory gain with zero swap growth. |
+| Compressed-domain KV | OMLX/mlx-vlm route TurboQuant caches directly through fused decode kernels and preserve hybrid recurrent layers; Open-TQ-Metal and gemma4metal specialize int4 long-context attention. | Aster has no compressed-domain cache path. Native MLX FP16 remains default; the older generic 4-bit/8-bit prototypes and the new TurboQuant reproduction are disabled. | Isolated compression can improve capacity while losing default-path latency and model quality. Public Open-TQ tests are materially weaker than Aster's token/PPL gate. | Reject measured 4-bit TurboQuant. Preserve its artifacts as a capacity ceiling; reconsider only a model-specific 6/8-bit route with exact greedy, >=99% top-1, <=0.5% PPL change, and no decode regression. | Same-model prefill/decode, 2K/8K/32K stress, token/PPL/top-1, full hybrid-cache bytes, peak/swap, and >=3% default-path gain or an explicit no-regression capacity profile. |
 | Speculative decoding | The three local DFlash repos provide draft/verify, rollback, and MLX/Metal kernel reference designs. | Aster has not integrated DFlash and the current priority is manual runtime foundation. | Speculation can hide core cache/scheduling defects and introduces rollback correctness risk. | Use DFlash only after baseline cache ownership, prefill, and decode lifecycle are stable. | Draft/target parity, rollback tests, acceptance-rate telemetry, and end-to-end speed/resource win. |
 
 ## Decisions for the next loop
@@ -51,6 +52,11 @@ measurement.
    groups; 64-token batch-4/8 instead regressed in both and cleared the
    confirmation regression gate. Retain the current pool writes and move
    measurement to the complete real-model paged graph.
+8. Complete real-model profiling rejects direct paged attention as a speed
+   path and identifies sampled-token synchronization as the dominant decode
+   boundary. TurboQuant 4-bit reduces the hybrid cache but fails default MLX
+   speed, teacher top-1, PPL, and 8K token parity. Retain neither runtime
+   change; next prove post-sample cache-eval dependency semantics.
 
 ## Source anchors
 
@@ -68,6 +74,11 @@ measurement.
   selection, snapshot cloning, and exact/near-hit trimming.
 - `examples/omlx/omlx/memory_monitor.py` — transient SDPA estimate and
   prefill memory guard.
+- `examples/omlx/omlx/patches/turboquant_attention.py` and pinned
+  `mlx_vlm/turboquant.py` — hybrid-cache conversion and compressed-domain
+  decode/prefill dispatch.
+- local `examples/gemma4metal/lib/turboquant.metal` — Open-TQ-Metal int4
+  reproduction and its deliberately weaker public test boundary.
 - `examples/vllm-metal/vllm_metal/metal/paged_ops.cpp` and
   `attention/impls/sdpa.py` — lazy MLX Primitive, fused K/V scatter, varlen
   paged attention, and occupancy-gated split-KV reference.

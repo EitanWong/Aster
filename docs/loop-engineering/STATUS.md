@@ -1,10 +1,11 @@
 # Loop Engineering Status
 
-Updated: 2026-07-16
+Updated: 2026-07-17
 
 ## Current State
 
-- Current measured baseline commit: `5a92477` (bound high-cardinality prefix lookup).
+- Current measured baseline commit: `6265962` (latest archived core experiment;
+  production attention remains native MLX).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -44,6 +45,14 @@ Updated: 2026-07-16
   Aster-layout cell repeated a >=3% gain across both five-process groups;
   confirmation instead found >=3% regressions at 64-token batch 4/8. No runtime
   or private ABI was retained.
+- Iteration 049 profiles the complete real-model paged graph and rejects both
+  the direct path and 4-bit TurboQuant for production. Ten fresh controls per
+  variant measured direct paged elapsed `+0.37%/+0.20%` at 2K/8K. A
+  five-process compressed-domain kernel matrix beat Aster paged by
+  `18%~60%`, but did not beat default MLX across 2K/8K/32K/64K. The 20-process
+  Qwen3.5 model matrix then found `5.22%/5.72%` decode regressions; only 3/5
+  greedy windows matched at either context. No runtime code
+  was retained.
 
 ## Evidence
 
@@ -187,10 +196,37 @@ Updated: 2026-07-16
   `7.10%/8.22%` regressions. A 1,000-iteration matrix peaked at `52,428,824 B`,
   archived zero post-loop error and swap growth, and recorded no thermal
   warning. No scatter change was admitted.
+- Real-model paged profiling captured 40 primary records plus 20 confirmation
+  controls for Qwen3.5-0.8B. Native/direct token IDs and text hashes matched,
+  and swap stayed flat. At 2,229 tokens, elapsed changed `1.1005 -> 1.1044s`
+  and generation `118.83 -> 118.64 tok/s`; at 8,373 tokens, elapsed changed
+  `2.5783 -> 2.5838s` and generation `109.25 -> 111.00 tok/s`. All intervals
+  crossed zero. Decode profile medians put sampled-token synchronization at
+  about `6.97 ms` per token, model enqueue at `0.67 ms`, and post-step cache
+  evaluation at `0.364 ms`.
+- The pinned OMLX/mlx-vlm TurboQuant path passed `51/51` reference tests and
+  compressed isolated FP16 K/V by `3.94x`. Five-process 2K/8K/32K/64K
+  testing retained fused/dequant error <=`1.53e-5` and zero swap, but only
+  beat Aster's slower experimental paged kernel. Against default MLX it was
+  `3.47%` slower at 2K, inconclusive at 8K, `34.13%` slower at 32K, and
+  `25.08%` slower at 64K.
+- Full-model 4-bit TurboQuant reduced total hybrid cache by `1.72x` at 2K and
+  `2.67x` at 8K. It failed admission across five distinct corpus windows:
+  only 3/5 greedy windows matched at each context, minimum teacher top-1 was
+  `89.06%/93.75%`, absolute PPL change reached `7.49%/3.38%`, and decode
+  regressed `5.22%/5.72%`. Model-weight-dominated allocator peak did not
+  improve materially; all swap deltas were zero, while the strict RSS interval
+  no-regression gate did not pass.
 
 ## Active Risks
 
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
+- The sampled-token CPU synchronization remains the largest measured decode
+  boundary. Whether `_eval_cache()` after sampling performs necessary work or
+  only traverses already-materialized hybrid state has not yet been proven.
+- 4-bit TurboQuant is rejected for the measured Qwen3.5-0.8B workload. A
+  future 6/8-bit or capacity-only proposal must start from the archived
+  token/PPL curve and independently clear default-path speed and quality gates.
 - The 9B/32K mixed-agent matrix and sustained-run matrix are not yet complete; long-context prefill still incurs substantial transient memory and swap costs.
 - The bounded chat snapshot policy has been measured at 40 and 80 turns, but
   sustained longer runs and more branch-diverse traces may need a different
@@ -210,4 +246,14 @@ Updated: 2026-07-16
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Stop the isolated scatter track: pure MLX and Aster-layout transfers failed their gates even though the pinned vllm-metal mechanism is valid in its own layout. Profile the complete paged `update_and_fetch` plus attention graph inside a real model and compare command submission/timing with Uzu before selecting another operator. Do not import the reference split-KV gate, attention Primitive, or fused-scatter ABI. Maintain `FRONTIER_RADAR.md`, reproduce one candidate at a time, and require deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: prove whether post-sample `_eval_cache()` is necessary.
+Start with hybrid `ArraysCache + KVCache` RAW/WAW provenance tests and a
+10,000-step stress loop; cover trim, COW, cancellation, recurrent state, exact
+tokens/cache arrays, allocator growth, and swap before any implementation
+change. Use Uzu command ownership and vllm-metal lazy dependency propagation as
+references. Keep native MLX attention as the production default, reject the
+measured 4-bit TurboQuant path, and do not integrate DFlash until matching
+checkpoints plus rollback/acceptance gates exist. A shape-specific split-KV
+experiment is secondary and must beat the MLX default, not only Aster paged.
+Maintain `FRONTIER_RADAR.md`, test one candidate at a time, and keep the
+dependency lock aligned with project declarations.
