@@ -37,7 +37,13 @@ Updated: 2026-07-16
   control, two main cells had nominal >=3% medians but neither established a
   >=3% interval. In a five-process confirmation one fell to 2.13% and the
   other reversed to a 3.51% regression; every 32K/64K stress interval crossed
-  zero. Fused K/V scatter remains a separate candidate.
+  zero.
+- Iteration 048 validates vllm-metal's fused K/V scatter in its own
+  token-contiguous slot-mapping layout, then rejects the transfer to Aster.
+  The pinned reference cleared the 3% gate at 1/4/8/16/64/128 tokens, but no
+  Aster-layout cell repeated a >=3% gain across both five-process groups;
+  confirmation instead found >=3% regressions at 64-token batch 4/8. No runtime
+  or private ABI was retained.
 
 ## Evidence
 
@@ -169,6 +175,18 @@ Updated: 2026-07-16
   Probe peak MLX memory stayed at or below `268,813,526 B`, post-clear active
   memory was `16 B`, and swap delta was zero across 22 archived process
   records. No native extension was retained in the runtime.
+- Fused-scatter cross-validation separated three mechanisms. Pure MLX combined
+  storage established no gain and regressed directionally at 64-token batch 2.
+  The exact vllm-metal `reshape_and_cache` Primitive was byte-identical for
+  FP16/BF16/FP32 and cleared the gate at 1/4/8/16/64/128 tokens; 64/128 improved
+  by `8.35%/11.65%`. An Aster-layout Primitive preserved exact complete-pool
+  parity across repeated start/end/rotated writes, alias lifetimes, and two
+  lazy chained calls, while rejecting real/spoofed invalid Python types and
+  overlapping buffers before dispatch. Its 64-token single-request confirmation
+  was only `0.85%` faster and crossed zero; batch 4/8 instead confirmed
+  `7.10%/8.22%` regressions. A 1,000-iteration matrix peaked at `52,428,824 B`,
+  archived zero post-loop error and swap growth, and recorded no thermal
+  warning. No scatter change was admitted.
 
 ## Active Risks
 
@@ -185,10 +203,11 @@ Updated: 2026-07-16
   deltas remain about `+2.13%/+1.34%` and should be monitored.
 - Paged KV ownership, a persistent GPU block pool, and a block-indexed Metal contract are experimental boundaries. BatchGenerator exact/strict-prefix cache restore now works in `BatchedEngine`, while per-profile lanes, cohort windows, and lane priority remain opt-in because the safe multi-lane path still carries a staggered elapsed cost. Broader model/mask/batch coverage, lower-cost deterministic cohort closure, SSD tiering, KV quantization, and the separate `BatchGeneratorRuntimeKernel` serving adapter remain incomplete.
 - MLX C++ extensions bind to a private ABI and a matching nanobind type-registry
-  version. The attention-boundary reproduction did not justify that packaging
-  cost; do not add it unless a future isolated operator first proves a stable
-  gain that cannot be achieved through `mx.fast`.
+  version. The attention and Aster-layout scatter reproductions did not justify
+  that packaging cost; do not add it unless a future operator proves both a
+  stable local gain and a real-model benefit that cannot be achieved through
+  public MLX APIs.
 
 ## Next Priority
 
-Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. The next bounded experiment is vllm-metal-inspired fused K/V scatter by itself: baseline Aster's current pool writes, preserve the existing physical layout/COW ownership, and try an `mx.fast` Metal boundary before considering any private C++ ABI. A repeatable >=3% isolated write-path win only qualifies it for a real-model matrix; final adoption still requires >=3% end-to-end improvement or material memory savings, with exact block parity, bounded memory, and zero swap. Do not import the reference split-KV gate on M5 or the rejected attention Primitive. Maintain `FRONTIER_RADAR.md`, reproduce one candidate at a time, and require deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.
+Core-first priority: do not integrate DFlash or re-enable manual prefill batching until the hybrid `ArraysCache + KVCache` batched-state parity issue is resolved. Stop the isolated scatter track: pure MLX and Aster-layout transfers failed their gates even though the pinned vllm-metal mechanism is valid in its own layout. Profile the complete paged `update_and_fetch` plus attention graph inside a real model and compare command submission/timing with Uzu before selecting another operator. Do not import the reference split-KV gate, attention Primitive, or fused-scatter ABI. Maintain `FRONTIER_RADAR.md`, reproduce one candidate at a time, and require deterministic output, latency/throughput, peak-memory, swap, stress, and corner-case gates. Keep monitoring the adaptive prefill guard on other head dimensions and long-context models. Do not create repeated same-profile single-request lanes. Keep the dependency lock aligned with project declarations on each package refresh.

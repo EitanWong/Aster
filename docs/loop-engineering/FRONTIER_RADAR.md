@@ -27,7 +27,7 @@ coverage, and a rollback path.
 
 | Priority | Work | What is useful | Local status | Decision / next gate |
 | --- | --- | --- | --- | --- |
-| P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Pinned under `examples/`; split-KV and same-math Primitive reproductions complete | Reject the split gate and attention Primitive on this M5. Isolate fused scatter without private-ABI coupling. |
+| P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Split-KV, attention-boundary, and fused-scatter reproductions complete | Reference scatter wins in its own layout, but Aster transfer fails. Retain as evidence; stop direct operator imports. |
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
@@ -85,12 +85,36 @@ across 22 archived process records. Matching MLX 0.32.0 also required nanobind
 results are preserved under the Iteration 047 artifact directory. The private
 ABI and packaging cost is therefore not admitted.
 
+## Reproduced result: fused K/V scatter
+
+Three layers were cross-validated on the same M5. A pure MLX combined K/V
+storage included its real `mx.stack` cost; it established no gain and showed a
+directional 64-token batch-2 regression. Even a pre-stacked ceiling did not
+establish a stable 3% gain.
+
+The pinned vllm-metal `reshape_and_cache` Primitive was then rebuilt with its
+exact MLX 0.32.0/nanobind 2.10.2 pins. FP16/BF16/FP32, sparse slots, and
+negative padding slots were byte-identical to two MLX scatters. It improved 64
+and 128 token paired effects by `8.35%` and `11.65%`, with intervals
+`[-11.60%, -3.98%]` and `[-15.40%, -10.15%]`; 1/4/8/16 tokens also cleared the
+3% gate. The mechanism is valid for the
+reference's token-contiguous scheduler-owned layout.
+
+An Aster-layout standalone Primitive retained exact full-pool parity across
+start/end offsets, rotated writes, timed loops, alias lifetime checks, and lazy
+chaining. It supported unequal K/V dimensions and rejected invalid blocks,
+offsets, dtype, rank, real/spoofed Python objects, cache shapes, and overlapping
+storage before dispatch. It did not transfer the gate. No cell repeated a >=3%
+gain in both groups; 64-token single-request confirmation was only `0.85%`
+faster and crossed zero. Batch 4/8 instead confirmed `7.10%/8.22%` regressions;
+batch 8 cleared the regression gate in both groups. A 1,000-iteration matrix
+had zero post-loop error/swap growth, no thermal warning, and a `52,428,824 B`
+peak. No runtime or private ABI was retained.
+
 ## Next reproduction
 
-Measure Aster's current physical K/V pool writes and reproduce vllm-metal's
-fused scatter as a separate operator. Start with `mx.fast.metal_kernel` so the
-experiment tests scatter/layout work rather than a private C++ binding. Only
-after exact block/COW parity and a repeatable >=3% isolated write-path win may
-it enter an opt-in Qwen3.5 mixed, staggered, long-context, cancellation, and
-memory-pressure matrix. Final adoption still requires >=3% end-to-end speed or
-material memory savings with no correctness/resource regression.
+Profile Aster's complete paged `update_and_fetch` plus attention graph in a
+real Qwen3.5 run. Use Uzu's explicit command-buffer ownership and GPU timing as
+the native ceiling reference. Select the next operator only after the profile
+shows a material end-to-end boundary; do not continue scatter micro-variants or
+add a private ABI from isolated sub-millisecond medians.

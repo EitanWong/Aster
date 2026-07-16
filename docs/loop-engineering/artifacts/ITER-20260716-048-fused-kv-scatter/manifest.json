@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "artifact_sources": {
+    "aggregate_common.py": "cbfdf0c94f38b50aa0b02c7554d4a4605ba3dca20242d1237a93df984f0dadd1",
+    "pure-mlx/bench.py": "25175cf24703c0060c35b2ca25daec2bac7f44685bdb5bf7d7da4521eb3519b3",
+    "pure-mlx/aggregate.py": "c0419b7d02e45c1f3d7ef29ac6f8893e7ee3dbe74b89d03ab2bddd6594af7739",
+    "reference-vllm-metal/bench.py": "7239c69465eccbc442602c852f809ecbb05411e45556496a0b2f32d36456761e",
+    "reference-vllm-metal/aggregate.py": "9a3172e42a99a39cd7ebda069513b5aec902a06aa2fa2a38391ff19d9d790cc1",
+    "aster-layout/CMakeLists.txt": "875ec5f8d15434ca37bbf33f17a59ad819b4ed180b7fab76dd40902f9d325be9",
+    "aster-layout/kv_scatter.cpp": "180dbda87005d9ad919cbf4be7c34a3ff0cbd4de7edf79d87b9df89428a68e70",
+    "aster-layout/bench.py": "bd24c3e25eb0a6a34f347cd51e52b40da2818b720439a38fae27d4459392e770",
+    "aster-layout/aggregate.py": "d82cd6699c28a55264687f99683f4f0a9a7bb9b5d5811d1e5d9e05e91495681d",
+    "tests/test_aggregate_pairing.py": "a335d369f6f90908dc043ad6b19f7aafbdd6648e57e041b4f245b6d417aec223",
+    "requirements.txt": "be91d7953646d0bfc5f91524180a972b73c1439ed0939c43406d15e4223cef0d",
+    "requirements.lock": "85a1c6aee6a377ba3b92f60758fdbd1cf5adeb0a853486acaf9f7afa5d7feed6",
+    "reference-vllm-metal/requirements.txt": "c0b1d10d9f3f7e9872ebc7302a52460a9fa5dd567a7ea8aeece96c796cf091eb",
+    "reference-vllm-metal/requirements.lock": "76843465e1ab3c98dd68418610050821d0867d742912ad58c95a99baf60b58ee"
+  },
+  "repository_sources": {
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "examples/vllm-metal/vllm_metal/metal/paged_ops.cpp": "d137cd10c26db95e5c62cca378068432293ad90a85cb2d4b3c1ab10af59b6726",
+    "examples/vllm-metal/vllm_metal/metal/kernels_v2/reshape_and_cache.metal": "40f16beed06f170ff7b3643c51f753feb205ab676b0961c611ee5b747a0b90dc",
+    "examples/vllm-metal/tests/test_reshape_and_cache.py": "a6a277e710126f2dfbeb95c165db14d9229237d94c5d963776a80a5eb8a27b84"
+  },
+  "reference": {
+    "repo_path": "examples/vllm-metal",
+    "commit": "4c18ee0e6e3ce2b594ab114d0a53ca24eafb1d58",
+    "source_hashes": {
+      "paged_ops.cpp": "d137cd10c26db95e5c62cca378068432293ad90a85cb2d4b3c1ab10af59b6726",
+      "reshape_and_cache.metal": "40f16beed06f170ff7b3643c51f753feb205ab676b0961c611ee5b747a0b90dc",
+      "upstream_test": "a6a277e710126f2dfbeb95c165db14d9229237d94c5d963776a80a5eb8a27b84"
+    }
+  },
+  "toolchain": {
+    "python": "3.13.12",
+    "uv": "0.11.15",
+    "index": "https://pypi.org/simple",
+    "mlx": "0.32.0",
+    "root_nanobind": "2.13.0",
+    "reference_nanobind": "2.10.2",
+    "cmake": "4.3.0",
+    "apple_clang": "21.0.0.21000325",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  }
+}
