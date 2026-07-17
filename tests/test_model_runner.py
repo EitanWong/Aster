@@ -920,3 +920,312 @@ def test_decode_result_counts_stop_token_without_emitting_text() -> None:
     assert result.text == ""
     assert result.completion_tokens == 2
     assert result.finish_reason == "stop"
+
+
+def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval() -> None:
+    class FakeTensor:
+        def __getitem__(self, _key):
+            return self
+
+        def __sub__(self, _other):
+            return self
+
+    class FakeScalar:
+        def item(self) -> int:
+            return 65
+
+    class FakeMX:
+        uint32 = "uint32"
+
+        @staticmethod
+        def array(_value, *, dtype=None):
+            del dtype
+            return FakeTensor()
+
+        @staticmethod
+        def logsumexp(value, *, axis, keepdims):
+            del axis, keepdims
+            return value
+
+    class FakeDetokenizer:
+        last_segment = ""
+
+        def add_token(self, token: int) -> None:
+            self.last_segment = chr(token)
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._loaded = True
+    runner._mx = FakeMX()
+    runner._model = lambda _tokens, *, cache: FakeTensor()
+    runner._eval_cache = lambda _cache: (_ for _ in ()).throw(  # type: ignore[method-assign]
+        AssertionError("decode must not force cache state after sample synchronization")
+    )
+    item = DecodeWorkItem(
+        prompt_cache=[object()],
+        input_token=1,
+        sampler=lambda _logprobs: FakeScalar(),
+        detokenizer=FakeDetokenizer(),
+        stop_token_ids=frozenset(),
+        logits_processors=(),
+        logits_processor_tokens=[],
+        completion_tokens=0,
+        max_tokens=2,
+    )
+
+    result = runner._decode_single(item)
+
+    assert result.token_id == 65
+    assert result.text == "A"
+
+
+def test_decode_batch_evaluates_logits_without_forcing_cache_state() -> None:
+    class FakeTensor:
+        def __getitem__(self, _key):
+            return self
+
+        def __sub__(self, _other):
+            return self
+
+    class FakeScalar:
+        def item(self) -> int:
+            return 65
+
+    class FakeMX:
+        uint32 = "uint32"
+
+        def __init__(self) -> None:
+            self.eval_calls: list[object] = []
+
+        @staticmethod
+        def array(_value, *, dtype=None):
+            del dtype
+            return FakeTensor()
+
+        @staticmethod
+        def logsumexp(value, *, axis, keepdims):
+            del axis, keepdims
+            return value
+
+        def eval(self, value) -> None:
+            self.eval_calls.append(value)
+
+        @staticmethod
+        def clear_cache() -> None:
+            return None
+
+    class FakeLayer:
+        state = object()
+
+    class FakeDetokenizer:
+        last_segment = ""
+
+        def add_token(self, token: int) -> None:
+            self.last_segment = chr(token)
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._loaded = True
+    fake_mx = FakeMX()
+    runner._mx = fake_mx
+    runner._model = lambda _tokens, *, cache: FakeTensor()
+    runner._get_decode_batch_cache = lambda _items: ([FakeLayer()], None)  # type: ignore[method-assign]
+    runner._extract_prompt_cache = lambda _cache, _index: []  # type: ignore[method-assign]
+    items = [
+        DecodeWorkItem(
+            prompt_cache=[],
+            input_token=index,
+            sampler=lambda _logprobs: FakeScalar(),
+            detokenizer=FakeDetokenizer(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=2,
+        )
+        for index in (1, 2)
+    ]
+
+    results = runner._decode_batch(items)
+
+    assert len(results) == 2
+    assert len(fake_mx.eval_calls) == 1
+    assert isinstance(fake_mx.eval_calls[0], FakeTensor)
+
+
+def test_decode_allocator_cache_clear_is_amortized_over_512_steps() -> None:
+    class FakeMX:
+        def __init__(self) -> None:
+            self.clear_calls = 0
+
+        def clear_cache(self) -> None:
+            self.clear_calls += 1
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    fake_mx = FakeMX()
+    runner._mx = fake_mx
+
+    for _ in range(127):
+        runner._maybe_clear_decode_cache(4)
+    assert fake_mx.clear_calls == 0
+
+    runner._maybe_clear_decode_cache(4)
+    assert fake_mx.clear_calls == 1
+
+    diagnostics = runner.decode_diagnostics()
+    assert diagnostics["cache_clear_token_budget"] == 512
+    assert diagnostics["cache_clear_attempts"] == 1
+    assert diagnostics["cache_clears"] == 1
+    assert diagnostics["cache_clear_failures"] == 0
+
+
+def test_decode_allocator_cache_clear_retries_without_consuming_failed_budget() -> None:
+    class FakeMX:
+        def __init__(self) -> None:
+            self.clear_calls = 0
+
+        def clear_cache(self) -> None:
+            self.clear_calls += 1
+            if self.clear_calls == 1:
+                raise RuntimeError("transient allocator failure")
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    fake_mx = FakeMX()
+    runner._mx = fake_mx
+    runner._decode_tokens_since_cache_clear = 511
+
+    runner._maybe_clear_decode_cache(1)
+
+    assert fake_mx.clear_calls == 1
+    assert runner._decode_tokens_since_cache_clear == 512
+    assert runner.decode_diagnostics()["cache_clear_failures"] == 1
+
+    runner._maybe_clear_decode_cache(1)
+
+    assert fake_mx.clear_calls == 2
+    assert runner._decode_tokens_since_cache_clear == 1
+    diagnostics = runner.decode_diagnostics()
+    assert diagnostics["cache_clear_attempts"] == 2
+    assert diagnostics["cache_clears"] == 1
+
+
+def test_decode_step_advances_cache_clear_cadence_by_generated_tokens() -> None:
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    clear_tokens: list[int] = []
+
+    def record_clear_step(generated_tokens: int = 1) -> None:
+        clear_tokens.append(generated_tokens)
+
+    def result(item: DecodeWorkItem) -> DecodeResult:
+        return DecodeResult(
+            prompt_cache=item.prompt_cache,
+            token_id=65,
+            text="A",
+            completion_tokens=item.completion_tokens + 1,
+            peak_memory_gb=0.0,
+        )
+
+    runner._maybe_clear_decode_cache = record_clear_step  # type: ignore[method-assign]
+    runner._decode_single = result  # type: ignore[method-assign]
+    runner._decode_batch = lambda items: [result(item) for item in items]  # type: ignore[method-assign]
+    items = [
+        DecodeWorkItem(
+            prompt_cache=[],
+            input_token=index,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=2,
+        )
+        for index in (1, 2)
+    ]
+
+    runner.decode_batch_step(items[:1])
+    runner.decode_batch_step(items)
+
+    assert clear_tokens == [1, 2]
+
+
+def test_decode_batch_fallback_counts_only_successful_generated_tokens() -> None:
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    generated_counts: list[int] = []
+
+    def fail_batch(_items: list[DecodeWorkItem]) -> list[DecodeResult]:
+        raise ValueError("merge unavailable")
+
+    def decode_single(item: DecodeWorkItem) -> DecodeResult:
+        if item.input_token == 2:
+            raise RuntimeError("row failed")
+        return DecodeResult(
+            prompt_cache=item.prompt_cache,
+            token_id=65,
+            text="A",
+            completion_tokens=1,
+            peak_memory_gb=0.0,
+        )
+
+    runner._decode_batch = fail_batch  # type: ignore[method-assign]
+    runner._decode_single = decode_single  # type: ignore[method-assign]
+    runner._maybe_clear_decode_cache = generated_counts.append  # type: ignore[method-assign]
+    items = [
+        DecodeWorkItem(
+            prompt_cache=[],
+            input_token=index,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=2,
+        )
+        for index in (1, 2)
+    ]
+
+    results = runner.decode_batch_step(items)
+
+    assert isinstance(results[0], DecodeResult)
+    assert isinstance(results[1], RuntimeError)
+    assert generated_counts == [1]
+    diagnostics = runner.decode_diagnostics()
+    assert diagnostics["batch_fallbacks"] == 1
+    assert diagnostics["batch_fallback_items"] == 2
+
+
+def test_prefill_cache_eval_resets_decode_clear_budget() -> None:
+    class FakeMX:
+        @staticmethod
+        def eval(_value) -> None:
+            return None
+
+        @staticmethod
+        def clear_cache() -> None:
+            return None
+
+    class FakeCache:
+        state = (object(), object())
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._mx = FakeMX()
+    runner._decode_tokens_since_cache_clear = 500
+
+    runner._eval_cache([FakeCache()])
+
+    assert runner._decode_tokens_since_cache_clear == 0
+
+
+def test_explicit_runtime_cache_clear_resets_decode_clear_budget() -> None:
+    class FakeMX:
+        @staticmethod
+        def clear_cache() -> None:
+            return None
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._mx = FakeMX()
+    runner._decode_tokens_since_cache_clear = 500
+
+    result = runner.clear_runtime_caches()
+
+    assert result == {"mlx_cache_cleared": True}
+    assert runner._decode_tokens_since_cache_clear == 0

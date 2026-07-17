@@ -20,6 +20,8 @@ from aster.inference.mlx_cache_utils import prompt_cache_length
 from aster.inference.prompt_warmup import build_strict_prefix_string
 from aster.inference.thinking_processor import ThinkingAwareLogitsProcessor
 
+_DECODE_CACHE_CLEAR_TOKEN_BUDGET = 512
+
 
 @dataclass(slots=True)
 class PreparedPrompt:
@@ -135,6 +137,10 @@ class ModelRunner:
         self._decode_batch_cache_state: _DecodeBatchCacheState | None = None
         self._decode_batch_cache_reuses = 0
         self._decode_batch_cache_rebuilds = 0
+        self._decode_tokens_since_cache_clear = 0
+        self._decode_cache_clear_attempts = 0
+        self._decode_cache_clears = 0
+        self._decode_cache_clear_failures = 0
 
     def warmup(self) -> None:
         self._ensure_loaded()
@@ -334,13 +340,14 @@ class ModelRunner:
         if len(items) == 1:
             self._decode_batch_cache_state = None
             self._decode_single_steps += 1
-            return [self._decode_single(items[0])]
+            results = [self._decode_single(items[0])]
+            self._maybe_clear_decode_cache(1 if results[0].token_id is not None else 0)
+            return results
         self._decode_batch_attempts += 1
         self._decode_batch_items += len(items)
         try:
             results = self._decode_batch(items)
             self._decode_batch_successes += 1
-            return results
         except MemoryError:
             raise
         except Exception as exc:
@@ -348,7 +355,14 @@ class ModelRunner:
             self._decode_batch_fallbacks += 1
             self._decode_batch_fallback_items += len(items)
             self._last_decode_batch_fallback_error = f"{exc.__class__.__name__}: {exc}"
-            return self._decode_items_individually(items)
+            results = self._decode_items_individually(items)
+        self._maybe_clear_decode_cache(
+            sum(
+                isinstance(result, DecodeResult) and result.token_id is not None
+                for result in results
+            )
+        )
+        return results
 
     def _decode_items_individually(self, items: list[DecodeWorkItem]) -> list[DecodeStepResult]:
         results: list[DecodeStepResult] = []
@@ -410,6 +424,7 @@ class ModelRunner:
                 "mlx_cache_cleared": False,
                 "error": str(exc),
             }
+        self._decode_tokens_since_cache_clear = 0
         return {"mlx_cache_cleared": True}
 
     def count_text_tokens(self, texts: tuple[str, ...]) -> int:
@@ -444,6 +459,10 @@ class ModelRunner:
             "last_batch_fallback_error": self._last_decode_batch_fallback_error,
             "batch_cache_reuses": self._decode_batch_cache_reuses,
             "batch_cache_rebuilds": self._decode_batch_cache_rebuilds,
+            "cache_clear_token_budget": _DECODE_CACHE_CLEAR_TOKEN_BUDGET,
+            "cache_clear_attempts": self._decode_cache_clear_attempts,
+            "cache_clears": self._decode_cache_clears,
+            "cache_clear_failures": self._decode_cache_clear_failures,
         }
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
@@ -803,7 +822,6 @@ class ModelRunner:
         logits = logits[:, -1, :]
         try:
             mx.eval(logits)
-            mx.eval([layer.state for layer in merged_cache])
         except Exception:
             pass
 
@@ -829,10 +847,6 @@ class ModelRunner:
                     peak_memory_gb=peak_memory_gb,
                 )
             )
-        try:
-            mx.clear_cache()
-        except Exception:
-            pass
         return results
 
     def _decode_single(self, item: DecodeWorkItem) -> DecodeResult:
@@ -847,13 +861,30 @@ class ModelRunner:
         logits = self._apply_logits_processors(logits, item=item)
         logprobs = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
         token = self._sample_token(logprobs, item.sampler)
-        self._eval_cache(prompt_cache)
         return self._decode_result(
             item=item,
             token=token,
             prompt_cache=prompt_cache,
             peak_memory_gb=self.current_peak_memory_gb(),
         )
+
+    def _maybe_clear_decode_cache(self, generated_tokens: int = 1) -> None:
+        if generated_tokens <= 0:
+            return
+        self._decode_tokens_since_cache_clear += generated_tokens
+        if self._decode_tokens_since_cache_clear < _DECODE_CACHE_CLEAR_TOKEN_BUDGET:
+            return
+        mx = self._mx
+        if mx is None:
+            return
+        self._decode_cache_clear_attempts += 1
+        try:
+            mx.clear_cache()
+        except Exception:
+            self._decode_cache_clear_failures += 1
+        else:
+            self._decode_cache_clears += 1
+            self._decode_tokens_since_cache_clear %= _DECODE_CACHE_CLEAR_TOKEN_BUDGET
 
     def _thinking_budget_processor(
         self,
@@ -1026,6 +1057,8 @@ class ModelRunner:
             mx.clear_cache()
         except Exception:
             pass
+        else:
+            self._decode_tokens_since_cache_clear = 0
 
     def _trim_cache_to_token_count(self, prompt_cache: Any, cache_token_count: int) -> Any:
         if not isinstance(prompt_cache, list) or cache_token_count < 0:

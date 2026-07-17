@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "manifest_sha256": "b4421207b06a1e2500224618a9cfe40d40bf2da80a8b9400ecc501b0b9005232",
+  "records": 2,
+  "unique_pids": 2,
+  "decode_speedup_percent": 14.87357001729328,
+  "rss_peak_regression_percent": 0.12234640566100019,
+  "mlx_active_regression_percent": 0.12682254538853854,
+  "mlx_peak_regression_percent": 0.3407421793165666,
+  "first_clear_step": 128,
+  "expected_clears": 32,
+  "post_first_clear_allocator_cache_max_bytes": 3047600,
+  "gate": {
+    "exact_token_text_cache_parity": true,
+    "policy_counts": true,
+    "swap_zero": true,
+    "speedup_at_least_3_percent": true,
+    "rss_peak_regression_at_most_1_percent": true,
+    "mlx_active_regression_at_most_1_percent": true,
+    "mlx_peak_regression_at_most_1_percent": true,
+    "post_first_clear_allocator_cache_below_16_mib": true
+  },
+  "passed": true,
+  "production_integration_ready": true,
+  "integration_approved": false
+}

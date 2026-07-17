@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "manifest_sha256": "bc89e70eadd3128d565e2f276ee07e67bec9e4763767e452cb00f452ee3141b6",
+  "records": 6,
+  "unique_pids": 6,
+  "cells": {
+    "native-b1-10000t": {
+      "decode_speedup_percent": 5.5835081341433,
+      "rss_peak_regression_percent": 0.8160028198801461,
+      "mlx_active_regression_percent": 0.0,
+      "mlx_peak_regression_percent": -0.0008336377732454103,
+      "candidate_allocator_cache_max_bytes": 166166082,
+      "gate": {
+        "exact_token_text_cache_parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speedup_at_least_3_percent": true,
+        "rss_peak_regression_at_most_1_percent": true,
+        "mlx_active_regression_at_most_1_percent": true,
+        "mlx_peak_regression_at_most_1_percent": true,
+        "candidate_allocator_cache_below_256_mib": true
+      },
+      "passed": true
+    },
+    "direct-b1-10000t": {
+      "decode_speedup_percent": 5.056709970851059,
+      "rss_peak_regression_percent": 0.8454872120059242,
+      "mlx_active_regression_percent": 0.0003353416764051431,
+      "mlx_peak_regression_percent": -0.0024106363012310617,
+      "candidate_allocator_cache_max_bytes": 139796922,
+      "gate": {
+        "exact_token_text_cache_parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speedup_at_least_3_percent": true,
+        "rss_peak_regression_at_most_1_percent": true,
+        "mlx_active_regression_at_most_1_percent": true,
+        "mlx_peak_regression_at_most_1_percent": true,
+        "candidate_allocator_cache_below_256_mib": true
+      },
+      "passed": true
+    },
+    "native-b4-4096t": {
+      "decode_speedup_percent": 13.917546341162446,
+      "rss_peak_regression_percent": 0.08927980953641335,
+      "mlx_active_regression_percent": 0.12229326749795266,
+      "mlx_peak_regression_percent": 0.33722074285040815,
+      "candidate_allocator_cache_max_bytes": 481419157,
+      "gate": {
+        "exact_token_text_cache_parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speedup_at_least_3_percent": true,
+        "rss_peak_regression_at_most_1_percent": true,
+        "mlx_active_regression_at_most_1_percent": true,
+        "mlx_peak_regression_at_most_1_percent": true,
+        "candidate_allocator_cache_below_256_mib": false
+      },
+      "passed": false
+    }
+  },
+  "admission": {
+    "all_long_stress_cells_passed": false,
+    "production_integration_ready": false,
+    "integration_approved": false
+  }
+}

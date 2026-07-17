@@ -20,11 +20,17 @@
   change reaches `7.49%/3.38%`.
   Isolated compressed attention beats Aster paged but not native MLX across
   the measured 2K/8K/32K/64K curve.
-- Real-model profiling identifies `_sample_token().item()` as the dominant
-  decode synchronization boundary. Post-sample `_eval_cache()` costs about
-  `0.364 ms` at the median, but its necessity for recurrent and full-attention
-  cache provenance is not yet proven; removing it without RAW/WAW stress could
-  expose stale state.
+- Post-sample cache-tree evaluation is removed after exact native/recurrent/
+  paged RAW/WAW and real-model validation. The remaining dominant boundary is
+  sampled-token synchronization itself. Batch decode still performs one
+  explicit `mx.eval(logits)` and then materializes heterogeneous per-row
+  samples; whether that synchronization can be reduced without repeating the
+  rejected greedy-only batch argmax remains open.
+- Decode allocator cache is cleared after 512 generated tokens, not 512
+  scheduler steps. The fixed-step candidate accumulated `481.42 MB` of
+  free-cache in long batch-4 stress; token-normalized clearing held post-clear
+  cache to `3.05 MB`. Cancellation/replacement churn beyond existing lifecycle
+  tests still needs a sustained real-model memory trace.
 - `kv_cache_step_tokens` reduces native KV growth copies but does not reduce retained KV memory; a true paged attention path remains unimplemented.
 - The experimental `PagedKVCacheLayer` is lossless and COW-capable, and its block pool no longer repacks with `mx.stack` on every view. `PagedKVCacheBundle` reclaims full-attention pools after the last fork releases, but mixed recurrent/full-attention bundles are rejected and the MLX integration still materializes contiguous K/V on every update; batch merge falls back to native contiguous caches. It remains disabled in production paths.
 - The opt-in hybrid list boundary is parity-clean on the Qwen3.5-0.8B greedy smoke. Contiguous-buffer reuse brings 8.4K randomized A/B to within `0.4%` median of native, but peak memory remains about `7.6%` higher (`2.471 GB` vs `2.297 GB`); the 2.2K single-run path remains about `10.6%` slower. Prefix snapshots are disabled and decode batch size is restricted to one; it is not a default path.

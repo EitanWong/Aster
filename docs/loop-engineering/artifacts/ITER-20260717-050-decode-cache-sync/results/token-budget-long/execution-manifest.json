@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-17T00:09:38.833320+00:00",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "mlx_lm": "0.31.3",
+    "numpy": "2.5.1",
+    "psutil": "7.2.2",
+    "git_commit": "9c84e7b3bb7c1ff5e786a1b2f9b430521f506277",
+    "git_branch": "main",
+    "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+  },
+  "matrix": {
+    "cache_kind": "native",
+    "batch_size": 4,
+    "context_words": 128,
+    "max_tokens_per_lane": 4096,
+    "policies": [
+      "baseline",
+      "periodic-token-512"
+    ],
+    "decode_cache_clear_token_budget": 512
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "6ede6680eee5eed106873dcf0931a19c3a1753fe86382d6948993a1ed0faf3f1",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "aster/inference/paged_attention_bridge.py": "ede2436b5e0639f47dc713cd460c63c3ce8efecc5d04f64da87f10bc8d560e05",
+    "aster/inference/metal_paged_attention.py": "b7b4bea2ead78057d4d4759d99fc1de62f674a6ba3dd603b0d7233bc8bbd8796",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors": "f5a0d9dd3efa73510542a8023d610ff26be2b4b020d181cfc4bedaa1fcc5dd9e",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors.index.json": "6e48f2fa5d6f033a6d77bf833abfa9698ca24d1715ecea4c67447bcfaee44650",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/config.json": "ba7770da23eae5ebd6827571f086e331956b33f4442a9e876fb4aa10969a6772",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/token_budget_benchmark.py": "0abccc8b5d34f2f659cc588a7f4a404e7790a01f54785dde8a99ddac0c12f85c"
+  },
+  "records": [
+    {
+      "output": "results/long-stress/native-b4-128w-4096t-baseline.json",
+      "sha256": "41aba6f4c8d8c673c0ab93ffe3c3f163575bdf3a4ff384abc392b61c39cfbea5",
+      "pid": 32551,
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py",
+        "--config",
+        "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+        "--model",
+        "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+        "--policy",
+        "baseline",
+        "--cache-kind",
+        "native",
+        "--batch-size",
+        "4",
+        "--context-words",
+        "128",
+        "--max-tokens",
+        "4096",
+        "--warmup-tokens",
+        "16",
+        "--memory-sample-interval",
+        "128",
+        "--run-id",
+        "1",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/results/long-stress/native-b4-128w-4096t-baseline.json"
+      ],
+      "elapsed_seconds": 64.81148983300955,
+      "resumed": false,
+      "role": "baseline",
+      "source_manifest": "results/long-stress/execution-manifest.json",
+      "source_manifest_sha256": "bc89e70eadd3128d565e2f276ee07e67bec9e4763767e452cb00f452ee3141b6"
+    },
+    {
+      "output": "results/long-stress/native-b4-128w-4096t-periodic-token-512.json",
+      "sha256": "fd0009e9943ad0a063e79129a53e87490041ceea98a26dd2c7bef9e2f2eee3a2",
+      "pid": 39254,
+      "role": "candidate",
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/token_budget_benchmark.py",
+        "--policy",
+        "periodic-token-512",
+        "--cache-kind",
+        "native",
+        "--batch-size",
+        "4",
+        "--context-words",
+        "128",
+        "--max-tokens",
+        "4096",
+        "--warmup-tokens",
+        "16",
+        "--memory-sample-interval",
+        "128",
+        "--run-id",
+        "1",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/results/long-stress/native-b4-128w-4096t-periodic-token-512.json"
+      ]
+    }
+  ]
+}

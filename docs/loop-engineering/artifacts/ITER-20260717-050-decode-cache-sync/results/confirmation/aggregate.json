@@ -1,0 +1,645 @@
+{
+  "schema_version": 1,
+  "manifest_sha256": "cef6153dcacec74b6152ed9edf80ec4d381935ab606de03aab8a55033f3c7a61",
+  "records": 60,
+  "unique_pids": 60,
+  "cells": {
+    "native-b1-128w": {
+      "pairs": 5,
+      "prompt_tokens": [
+        [
+          409
+        ],
+        [
+          409
+        ],
+        [
+          409
+        ],
+        [
+          409
+        ],
+        [
+          409
+        ]
+      ],
+      "decode_speedup_percent": {
+        "values": [
+          7.283145313454931,
+          5.227531150945897,
+          5.264986306303654,
+          6.046469607579441,
+          7.3662099096450495
+        ],
+        "median": 6.046469607579441,
+        "bootstrap95": [
+          5.227531150945897,
+          7.3662099096450495
+        ]
+      },
+      "rss_peak_regression_percent": {
+        "values": [
+          0.12184354582376322,
+          0.10944781810477977,
+          0.08830489915581108,
+          0.061775244012207686,
+          0.05826991330142306
+        ],
+        "median": 0.08830489915581108,
+        "bootstrap95": [
+          0.05826991330142306,
+          0.12184354582376322
+        ]
+      },
+      "mlx_active_regression_percent": {
+        "values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "median": 0.0,
+        "bootstrap95": [
+          0.0,
+          0.0
+        ]
+      },
+      "mlx_peak_regression_percent": {
+        "values": [
+          -0.001807480764792757,
+          -0.0020011691344357097,
+          0.001361586045978136,
+          0.0011571833935297704,
+          -0.002004465887361917
+        ],
+        "median": -0.001807480764792757,
+        "bootstrap95": [
+          -0.002004465887361917,
+          0.001361586045978136
+        ]
+      },
+      "step_p95_regression_percent": {
+        "values": [
+          -6.559246782210049,
+          -3.545289859642986,
+          -1.763333935730893,
+          -4.808756552198934,
+          -3.600497432996441
+        ],
+        "median": -3.600497432996441,
+        "bootstrap95": [
+          -6.559246782210049,
+          -1.763333935730893
+        ]
+      },
+      "gate": {
+        "parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speed_median_at_least_3_percent": true,
+        "speed_bootstrap_lower_at_least_3_percent": true,
+        "rss_bootstrap_upper_at_most_1_percent": true,
+        "active_bootstrap_upper_at_most_1_percent": true,
+        "peak_bootstrap_upper_at_most_1_percent": true,
+        "step_p95_median_regression_at_most_1_percent": true
+      },
+      "passed": true
+    },
+    "native-b1-2048w": {
+      "pairs": 5,
+      "prompt_tokens": [
+        [
+          6169
+        ],
+        [
+          6169
+        ],
+        [
+          6169
+        ],
+        [
+          6169
+        ],
+        [
+          6169
+        ]
+      ],
+      "decode_speedup_percent": {
+        "values": [
+          6.839734688561805,
+          6.48675988944496,
+          7.967852977698642,
+          7.843556211742553,
+          6.949994558922268
+        ],
+        "median": 6.949994558922268,
+        "bootstrap95": [
+          6.48675988944496,
+          7.967852977698642
+        ]
+      },
+      "rss_peak_regression_percent": {
+        "values": [
+          0.049382716049373165,
+          -0.05463806686993866,
+          -0.04230043886704893,
+          -0.18822122150295995,
+          0.007054673721329507
+        ],
+        "median": -0.04230043886704893,
+        "bootstrap95": [
+          -0.18822122150295995,
+          0.049382716049373165
+        ]
+      },
+      "mlx_active_regression_percent": {
+        "values": [
+          0.0,
+          0.0,
+          0.0030097693505259926,
+          0.0030097693505259926,
+          0.0030097693505259926
+        ],
+        "median": 0.0030097693505259926,
+        "bootstrap95": [
+          0.0,
+          0.0030097693505259926
+        ]
+      },
+      "mlx_peak_regression_percent": {
+        "values": [
+          0.04756133782044536,
+          0.045743235644279956,
+          -0.00820252270564703,
+          0.028059389755541453,
+          0.022411151305989918
+        ],
+        "median": 0.028059389755541453,
+        "bootstrap95": [
+          -0.00820252270564703,
+          0.04756133782044536
+        ]
+      },
+      "step_p95_regression_percent": {
+        "values": [
+          -1.810068434161849,
+          -1.6740584471537812,
+          -2.4668032419231323,
+          -2.9344422427190153,
+          -1.9131660266029304
+        ],
+        "median": -1.9131660266029304,
+        "bootstrap95": [
+          -2.9344422427190153,
+          -1.6740584471537812
+        ]
+      },
+      "gate": {
+        "parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speed_median_at_least_3_percent": true,
+        "speed_bootstrap_lower_at_least_3_percent": true,
+        "rss_bootstrap_upper_at_most_1_percent": true,
+        "active_bootstrap_upper_at_most_1_percent": true,
+        "peak_bootstrap_upper_at_most_1_percent": true,
+        "step_p95_median_regression_at_most_1_percent": true
+      },
+      "passed": true
+    },
+    "direct-b1-128w": {
+      "pairs": 5,
+      "prompt_tokens": [
+        [
+          409
+        ],
+        [
+          409
+        ],
+        [
+          409
+        ],
+        [
+          409
+        ],
+        [
+          409
+        ]
+      ],
+      "decode_speedup_percent": {
+        "values": [
+          4.680350408999989,
+          5.6885144681983135,
+          4.174522200418429,
+          5.102495454374378,
+          6.159891916746085
+        ],
+        "median": 5.102495454374378,
+        "bootstrap95": [
+          4.174522200418429,
+          6.159891916746085
+        ]
+      },
+      "rss_peak_regression_percent": {
+        "values": [
+          0.04585052728105499,
+          0.09348431932831858,
+          0.0934909155053898,
+          0.12702893436837837,
+          -0.14077071969030852
+        ],
+        "median": 0.09348431932831858,
+        "bootstrap95": [
+          -0.14077071969030852,
+          0.12702893436837837
+        ]
+      },
+      "mlx_active_regression_percent": {
+        "values": [
+          4.903708705761289e-06,
+          4.903708705761289e-06,
+          4.903708705761289e-06,
+          4.903708705761289e-06,
+          4.903708705761289e-06
+        ],
+        "median": 4.903708705761289e-06,
+        "bootstrap95": [
+          4.903708705761289e-06,
+          4.903708705761289e-06
+        ]
+      },
+      "mlx_peak_regression_percent": {
+        "values": [
+          -0.0007853889533171454,
+          0.0009806001677103993,
+          -0.0005901854853052058,
+          -0.0025422400155683533,
+          -0.0013710100623787191
+        ],
+        "median": -0.0007853889533171454,
+        "bootstrap95": [
+          -0.0025422400155683533,
+          0.0009806001677103993
+        ]
+      },
+      "step_p95_regression_percent": {
+        "values": [
+          -5.887469245179666,
+          -11.01691325613061,
+          -2.9404936390911907,
+          -4.922086344178611,
+          -7.8817772846000995
+        ],
+        "median": -5.887469245179666,
+        "bootstrap95": [
+          -11.01691325613061,
+          -2.9404936390911907
+        ]
+      },
+      "gate": {
+        "parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speed_median_at_least_3_percent": true,
+        "speed_bootstrap_lower_at_least_3_percent": true,
+        "rss_bootstrap_upper_at_most_1_percent": true,
+        "active_bootstrap_upper_at_most_1_percent": true,
+        "peak_bootstrap_upper_at_most_1_percent": true,
+        "step_p95_median_regression_at_most_1_percent": true
+      },
+      "passed": true
+    },
+    "direct-b1-2048w": {
+      "pairs": 5,
+      "prompt_tokens": [
+        [
+          6169
+        ],
+        [
+          6169
+        ],
+        [
+          6169
+        ],
+        [
+          6169
+        ],
+        [
+          6169
+        ]
+      ],
+      "decode_speedup_percent": {
+        "values": [
+          6.199398261678435,
+          5.216184470775298,
+          7.0313739541361775,
+          7.520069036315258,
+          8.753857340963012
+        ],
+        "median": 7.0313739541361775,
+        "bootstrap95": [
+          5.216184470775298,
+          8.753857340963012
+        ]
+      },
+      "rss_peak_regression_percent": {
+        "values": [
+          0.007036183574027355,
+          -0.03868608004501395,
+          -0.005277044854878898,
+          -0.10017750751331045,
+          0.052769520325068875
+        ],
+        "median": -0.005277044854878898,
+        "bootstrap95": [
+          -0.10017750751331045,
+          0.052769520325068875
+        ]
+      },
+      "mlx_active_regression_percent": {
+        "values": [
+          0.0029979194729135017,
+          9.771206594955117e-05,
+          0.0029979194729135017,
+          9.771206594955117e-05,
+          9.771206594955117e-05
+        ],
+        "median": 9.771206594955117e-05,
+        "bootstrap95": [
+          9.771206594955117e-05,
+          0.0029979194729135017
+        ]
+      },
+      "mlx_peak_regression_percent": {
+        "values": [
+          -0.004035124047263583,
+          0.0005043820257233378,
+          -0.0015131231814069501,
+          0.0035306919882405197,
+          0.005044057709557848
+        ],
+        "median": 0.0005043820257233378,
+        "bootstrap95": [
+          -0.004035124047263583,
+          0.005044057709557848
+        ]
+      },
+      "step_p95_regression_percent": {
+        "values": [
+          -1.5468219401122973,
+          -2.4326863164779278,
+          -1.8691681741255128,
+          -2.7099080349588855,
+          -5.640041823130959
+        ],
+        "median": -2.4326863164779278,
+        "bootstrap95": [
+          -5.640041823130959,
+          -1.5468219401122973
+        ]
+      },
+      "gate": {
+        "parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speed_median_at_least_3_percent": true,
+        "speed_bootstrap_lower_at_least_3_percent": true,
+        "rss_bootstrap_upper_at_most_1_percent": true,
+        "active_bootstrap_upper_at_most_1_percent": true,
+        "peak_bootstrap_upper_at_most_1_percent": true,
+        "step_p95_median_regression_at_most_1_percent": true
+      },
+      "passed": true
+    },
+    "native-b2-128w": {
+      "pairs": 5,
+      "prompt_tokens": [
+        [
+          409,
+          409
+        ],
+        [
+          409,
+          409
+        ],
+        [
+          409,
+          409
+        ],
+        [
+          409,
+          409
+        ],
+        [
+          409,
+          409
+        ]
+      ],
+      "decode_speedup_percent": {
+        "values": [
+          11.269671756935251,
+          11.910933174214854,
+          11.825962571587478,
+          12.846238833142776,
+          12.868364509082909
+        ],
+        "median": 11.910933174214854,
+        "bootstrap95": [
+          11.269671756935251,
+          12.868364509082909
+        ]
+      },
+      "rss_peak_regression_percent": {
+        "values": [
+          0.28033016664070765,
+          0.025947516822633077,
+          0.06403267396986045,
+          0.04844374470147628,
+          0.0674507090971943
+        ],
+        "median": 0.06403267396986045,
+        "bootstrap95": [
+          0.025947516822633077,
+          0.28033016664070765
+        ]
+      },
+      "mlx_active_regression_percent": {
+        "values": [
+          0.06071495803205984,
+          0.06071495803205984,
+          0.06071495803205984,
+          0.06071495803205984,
+          0.06071495803205984
+        ],
+        "median": 0.06071495803205984,
+        "bootstrap95": [
+          0.06071495803205984,
+          0.06071495803205984
+        ]
+      },
+      "mlx_peak_regression_percent": {
+        "values": [
+          -0.0011537660540628103,
+          0.0016349738886090037,
+          0.002788741360637559,
+          -0.3137731915990649,
+          -6.646009164112954e-05
+        ],
+        "median": -6.646009164112954e-05,
+        "bootstrap95": [
+          -0.3137731915990649,
+          0.002788741360637559
+        ]
+      },
+      "step_p95_regression_percent": {
+        "values": [
+          -8.36969624811763,
+          -8.301985487793416,
+          -8.784300147694857,
+          -9.576112223207778,
+          -9.095620940587501
+        ],
+        "median": -8.784300147694857,
+        "bootstrap95": [
+          -9.576112223207778,
+          -8.301985487793416
+        ]
+      },
+      "gate": {
+        "parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speed_median_at_least_3_percent": true,
+        "speed_bootstrap_lower_at_least_3_percent": true,
+        "rss_bootstrap_upper_at_most_1_percent": true,
+        "active_bootstrap_upper_at_most_1_percent": true,
+        "peak_bootstrap_upper_at_most_1_percent": true,
+        "step_p95_median_regression_at_most_1_percent": true
+      },
+      "passed": true
+    },
+    "native-b4-128w": {
+      "pairs": 5,
+      "prompt_tokens": [
+        [
+          409,
+          409,
+          409,
+          409
+        ],
+        [
+          409,
+          409,
+          409,
+          409
+        ],
+        [
+          409,
+          409,
+          409,
+          409
+        ],
+        [
+          409,
+          409,
+          409,
+          409
+        ],
+        [
+          409,
+          409,
+          409,
+          409
+        ]
+      ],
+      "decode_speedup_percent": {
+        "values": [
+          11.93753848294319,
+          15.126632719012957,
+          14.566892546931598,
+          15.667035125657458,
+          15.262430273133587
+        ],
+        "median": 15.126632719012957,
+        "bootstrap95": [
+          11.93753848294319,
+          15.667035125657458
+        ]
+      },
+      "rss_peak_regression_percent": {
+        "values": [
+          -0.004973145016906599,
+          0.07629536256883451,
+          -0.07948072592396382,
+          0.0630412422442772,
+          -0.00497512437811487
+        ],
+        "median": -0.004973145016906599,
+        "bootstrap95": [
+          -0.07948072592396382,
+          0.07629536256883451
+        ]
+      },
+      "mlx_active_regression_percent": {
+        "values": [
+          0.16165611105758426,
+          0.16165611105758426,
+          0.16165611105758426,
+          0.16165611105758426,
+          0.16165611105758426
+        ],
+        "median": 0.16165611105758426,
+        "bootstrap95": [
+          0.16165611105758426,
+          0.16165611105758426
+        ]
+      },
+      "mlx_peak_regression_percent": {
+        "values": [
+          -0.002551471655787285,
+          0.0010818891616803938,
+          -0.004675524353170424,
+          -0.008496066642393885,
+          0.003821065547326974
+        ],
+        "median": -0.002551471655787285,
+        "bootstrap95": [
+          -0.008496066642393885,
+          0.003821065547326974
+        ]
+      },
+      "step_p95_regression_percent": {
+        "values": [
+          -3.8242334211565643,
+          -11.407077081236505,
+          -10.051786969378929,
+          -11.40035044085752,
+          -10.921083619070004
+        ],
+        "median": -10.921083619070004,
+        "bootstrap95": [
+          -11.407077081236505,
+          -3.8242334211565643
+        ]
+      },
+      "gate": {
+        "parity": true,
+        "policy_counts": true,
+        "swap_zero": true,
+        "speed_median_at_least_3_percent": true,
+        "speed_bootstrap_lower_at_least_3_percent": true,
+        "rss_bootstrap_upper_at_most_1_percent": true,
+        "active_bootstrap_upper_at_most_1_percent": true,
+        "peak_bootstrap_upper_at_most_1_percent": true,
+        "step_p95_median_regression_at_most_1_percent": true
+      },
+      "passed": true
+    }
+  },
+  "admission": {
+    "all_confirmation_cells_passed": true,
+    "long_stress_required": true,
+    "integration_approved": false
+  }
+}

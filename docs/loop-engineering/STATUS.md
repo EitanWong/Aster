@@ -4,7 +4,7 @@ Updated: 2026-07-17
 
 ## Current State
 
-- Current measured baseline commit: `6265962` (latest archived core experiment;
+- Current measured baseline commit: `9c84e7b` (Iteration 049 archive;
   production attention remains native MLX).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
@@ -53,13 +53,21 @@ Updated: 2026-07-17
   Qwen3.5 model matrix then found `5.22%/5.72%` decode regressions; only 3/5
   greedy windows matched at either context. No runtime code
   was retained.
+- Iteration 050 retains token-budgeted decode allocator-cache clearing. Decode
+  now relies on sampled-token/logit synchronization instead of re-evaluating
+  every cache leaf, and clears after 512 generated tokens rather than every
+  scheduler step. Across 18 production bridge processes, native/direct batch
+  1/2/4 improved `9.51%~17.90%` over the archived baseline with exact
+  token/text/cache parity. Native/direct 10,000-token stress improved
+  `5.58%/5.06%`; adaptive batch-4 clearing kept post-clear allocator cache at
+  or below `3.05 MB` and swap stayed zero.
 
 ## Evidence
 
-- Current full worktree suite: `458 passed, 9 skipped, 1 failed, 1 warning`.
+- Current full worktree suite: `466 passed, 9 skipped, 1 failed, 1 warning`.
   The single failure belongs to pre-existing, out-of-scope worktree changes;
-  explicitly excluding it yields `458 passed, 9 skipped, 1 deselected`.
-- Runtime, cache, scheduler, and benchmark suites: `55 passed`.
+  explicitly excluding it yields `466 passed, 9 skipped, 1 deselected`.
+- Model-runner and runtime/paged boundary suites: `60 passed`.
 - `compileall` and `git diff --check`: passed.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
 - The benchmark now defaults to explicit greedy sampling (`temperature=0.0`); seven validation trials all produced 288 completion tokens and 4/4 successful requests.
@@ -217,6 +225,25 @@ Updated: 2026-07-17
   regressed `5.22%/5.72%`. Model-weight-dominated allocator peak did not
   improve materially; all swap deltas were zero, while the strict RSS interval
   no-regression gate did not pass.
+- Decode cache synchronization screening used 36 fresh processes and showed
+  that skipping cache-tree evaluation while retaining per-token
+  `mx.clear_cache()` was flat. Periodic clearing improved paired decode
+  throughput by `6.98%/8.70%` at 409/6,169 prompt tokens. A 60-process
+  confirmation then established `5.10%~15.13%` medians across native/direct
+  batch 1/2/4, with every 95% speed interval above 3% and all RSS/MLX/swap
+  gates passing.
+- A fixed 512-scheduler-step policy was rejected after batch-4 long stress
+  accumulated `481.42 MB` of allocator free-cache within one interval. The
+  retained 512-generated-token budget clears batch 1/2/4 every 512/256/128
+  steps. Twenty fresh token-budget confirmation processes measured
+  `+11.94%/+15.27%` for batch 2/4; 4,096-token-per-lane batch-4 stress improved
+  `14.87%` and held post-first-clear allocator cache to `3.05 MB`.
+- Synthetic native KV WAW, recurrent sibling-state RAW, and direct paged-pool
+  WAW probes completed 10,000 steps per policy with exact sampled and final
+  state digests. The complete Iteration 050 archive contains 142 fresh process
+  records and passes 16/16 strict artifact recomputation tests. Final
+  integration approval is hash-bound to both the production bridge and the
+  token-budget long-stress aggregate.
 
 ## Active Risks
 

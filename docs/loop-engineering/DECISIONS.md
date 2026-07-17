@@ -650,3 +650,42 @@
   files if the experiment itself must be discarded.
 - Next experiment: prove or falsify whether post-sample `_eval_cache()` does
   necessary work using exact hybrid-state RAW/WAW and 10,000-step stress.
+
+## 2026-07-17: Amortize Decode Allocator-Cache Clearing by Generated Tokens
+
+- Decision: retain lazy decode-cache provenance and clear MLX allocator cache
+  after each 512 generated tokens. Batch 1/2/4 therefore clear after
+  512/256/128 successful scheduler steps.
+- Design: single decode relies on sampled scalar materialization; batch decode
+  retains `mx.eval(logits)` but no longer evaluates every merged cache leaf.
+  Prefill still evaluates cache state explicitly. Prefill and explicit runtime
+  clears reset the decode token budget.
+- Reference: MLX-LM main `15b522f` does not evaluate cache state per decode and
+  periodically clears allocator cache. Official MLX 0.32.0 documentation
+  confirms `array.item()` evaluates its graph.
+- Evidence: 60 fixed-cadence confirmation processes measured `5.10%~15.13%`
+  median gains across native/direct batch 1/2/4, all with exact token, text,
+  and cache digests. Twenty token-budget batch confirmations measured
+  `+11.94%/+15.27%` at batch 2/4. Eighteen final-source production processes
+  retained `+9.51%~+17.90%` over the archived baseline.
+- Stress: native/direct 10,000-token runs improved `5.58%/5.06%`, with RSS
+  below the 1% regression gate and zero swap. A fixed 512-step batch-4 policy
+  was rejected at `481.42 MB` transient allocator cache; the retained
+  512-token policy reduced post-first-clear cache to at most `3.05 MB` while
+  improving long batch-4 throughput `14.87%`.
+- Correctness: native KV WAW, recurrent sibling-state RAW, and paged-pool WAW
+  each completed 10,000 synthetic steps with exact final state bytes. The
+  full archive contains 142 fresh process records and 16/16 artifact tests.
+- Review hardening: a failed allocator clear retains its due budget and retries
+  on the next generated token. Final integration approval is jointly gated by
+  the hash-bound production bridge and token-budget long-stress aggregate.
+- Tradeoff: cache leaves may remain lazy until their next RAW use; final or
+  snapshot boundaries that do not consume logits must continue to evaluate
+  state explicitly. The 512-token budget is global to one runner, matching
+  allocator ownership rather than request ownership.
+- Rollback: revert the Iteration 050 commit to restore per-step cache-tree
+  evaluation and allocator clearing.
+- Next experiment: profile the post-change general batch sampler path. Measure
+  the remaining explicit logits evaluation and per-row synchronization before
+  considering another sampling change; do not repeat the rejected greedy-only
+  batch argmax experiment.

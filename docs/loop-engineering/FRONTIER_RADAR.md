@@ -28,6 +28,7 @@ coverage, and a rollback path.
 | Priority | Work | What is useful | Local status | Decision / next gate |
 | --- | --- | --- | --- | --- |
 | P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Split-KV, attention-boundary, and fused-scatter reproductions complete | Reference scatter wins in its own layout, but Aster transfer fails. Retain as evidence; stop direct operator imports. |
+| Admitted | [MLX-LM](https://github.com/ml-explore/mlx-lm), commit `15b522f`, MIT, and [MLX lazy evaluation](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html) | Sample/logprob graph synchronization, lazy decode cache provenance, periodic allocator-cache clearing | 142-process Aster reproduction complete across native/direct batch 1/2/4 and 10,000-step stress | Retain a 512-generated-token clear budget; fixed 512 scheduler steps are rejected for batch memory. |
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
 | P0 | [OMLX](https://github.com/jundot/omlx) TurboQuant at `e3a4fe4`, pinned mlx-vlm `78b96eb`, and [Open-TQ-Metal](https://arxiv.org/abs/2604.16957) | Compressed-domain K/V attention, hybrid-cache conversion, long-context capacity, two-pass decode | `51/51` reference tests plus 5-process kernel and 20-process Qwen3.5 matrices complete | Reject measured 4-bit path: cache shrinks, but default MLX speed and model quality fail. Preserve as a capacity reference only. |
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
@@ -137,11 +138,36 @@ changed by up to `3.38%`, and decode was `5.72%` slower. Whole hybrid
 cache storage fell `1.72x/2.67x`; model-weight-dominated peak did not improve.
 The 4-bit path is rejected rather than introduced as a capacity switch.
 
+## Reproduced result: decode graph synchronization
+
+MLX-LM main and the local source pin both resolve to `15b522f`. Its serial and
+batch generators evaluate sampled tokens/logprobs during decode, do not
+traverse all cache state after every token, and clear allocator cache
+periodically. Official MLX 0.32.0 documentation confirms that scalar
+`array.item()` implicitly evaluates its graph, while warning that sibling
+outputs can remain lazy.
+
+Aster reproduced the boundary with 36 screening, 60 confirmation, 6 long,
+20 token-budget confirmation, 18 production bridge, one adaptive long, and
+one synthetic stress process: 142 archived fresh processes total. Native KV
+WAW, recurrent sibling-state RAW, and direct paged-pool WAW each completed
+10,000 steps with exact final bytes. Real Qwen3.5 token, text, and cache digests
+matched in every A/B pair.
+
+Fixed 512 scheduler steps improved speed but retained as much as `481.42 MB`
+allocator free-cache within one batch-4 interval. The retained policy clears
+after 512 generated tokens globally. Production medians improve
+`9.51%~17.90%` over the archived baseline across native/direct batch 1/2/4;
+native/direct 10,000-token generation improves `5.58%/5.06%`. Batch-4 long
+stress improves `14.87%`, with post-first-clear allocator cache at most
+`3.05 MB`, RSS/active/peak regressions below 1%, and zero swap.
+
 ## Next reproduction
 
-Prove whether post-sample `_eval_cache()` is required after token materialization.
-Use a 10,000-step hybrid-cache RAW/WAW stress matrix before changing runtime
-behavior, and compare exact cache arrays, tokens, trim/COW/cancellation, peak
-memory, and swap. Uzu's explicit command ownership and vllm-metal's lazy graph
-provenance remain the reference. A shape-specific split-KV probe is secondary;
-it must beat native MLX, not only Aster's slower paged kernel.
+Re-profile the post-change general batch sampler. Determine whether the
+remaining explicit `mx.eval(logits)` plus per-row sample materialization adds
+avoidable synchronization for heterogeneous samplers, logits processors,
+structured output, and changing batch membership. MLX-LM's batch-wide
+sample/logprob async evaluation is the reference, but Iteration 034's rejected
+greedy-only batch argmax must not be repeated. A shape-specific split-KV probe
+remains secondary and must beat native MLX, not only Aster paged.
