@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "production_source_sha256": "57a1834dd0e2a97a846adeec5b37d458ee3058b341fa6c820740443b3fb5e083",
+  "formal": {
+    "short": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_passed": true,
+      "all_exact": true,
+      "all_swap_non_growth": true,
+      "all_current_production_source": true,
+      "all_baseline_calls_forced_miss": true,
+      "dual_runner_mlx_peak_median_delta_bytes": 7979008.0,
+      "dual_runner_mlx_peak_delta_limit_bytes": 16777216,
+      "dual_runner_mlx_peak_within_limit": true,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 114.78721564357551,
+        "upper": 119.2580076366304,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      }
+    },
+    "long": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_passed": true,
+      "all_exact": true,
+      "all_swap_non_growth": true,
+      "all_current_production_source": true,
+      "all_baseline_calls_forced_miss": true,
+      "dual_runner_mlx_peak_median_delta_bytes": 3989504.0,
+      "dual_runner_mlx_peak_delta_limit_bytes": 8388608,
+      "dual_runner_mlx_peak_within_limit": true,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 64.80597861110549,
+        "upper": 68.91076486981191,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      }
+    }
+  },
+  "structured_validation": {
+    "lanes": 4,
+    "membership_start": 4,
+    "membership_end": 1
+  },
+  "screening_evidence": [
+    "screen-b4-run-1.json",
+    "screen-cap1-b4-run-2.json",
+    "screen-cap1-long-b2-run-1.json"
+  ],
+  "gates": {
+    "short_formal_admission": true,
+    "long_formal_admission": true,
+    "formal_process_count": true,
+    "formal_exactness": true,
+    "formal_swap_non_growth": true,
+    "current_production_source_bound": true,
+    "baseline_forced_miss_counts": true,
+    "mlx_peak_delta_within_limits": true,
+    "model_signature_equal": true,
+    "structured_schema_valid": true,
+    "structured_stop_valid": true,
+    "dynamic_membership_shrinks": true,
+    "screening_evidence_retained": true
+  },
+  "passed": true
+}

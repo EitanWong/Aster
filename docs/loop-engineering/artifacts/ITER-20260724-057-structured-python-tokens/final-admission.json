@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "production_source_sha256": "2c01eb200cea9c0a1f19d7aae988451434a2187b9dd31cfac945ccb234f3ec56",
+  "formal": {
+    "short": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_passed": true,
+      "all_exact": true,
+      "all_swap_non_growth": true,
+      "all_current_production_source": true,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 31.334189299676197,
+        "upper": 33.39518367371011,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      }
+    },
+    "long": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_passed": true,
+      "all_exact": true,
+      "all_swap_non_growth": true,
+      "all_current_production_source": true,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 24.963138635497508,
+        "upper": 27.631281250692076,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      }
+    }
+  },
+  "structured_validation": {
+    "lanes": 4,
+    "membership_start": 4,
+    "membership_end": 1
+  },
+  "failed_evidence": [
+    "screen-b4-run-1.json",
+    "long-b2-run-1.json",
+    "optimized-screen-b4-run-1.json",
+    "optimized-long-b2-run-1.json"
+  ],
+  "gates": {
+    "short_formal_admission": true,
+    "long_formal_admission": true,
+    "formal_process_count": true,
+    "formal_exactness": true,
+    "formal_swap_non_growth": true,
+    "current_production_source_bound": true,
+    "model_signature_equal": true,
+    "structured_schema_valid": true,
+    "structured_stop_valid": true,
+    "dynamic_membership_shrinks": true,
+    "failed_candidates_retained": true
+  },
+  "passed": true
+}

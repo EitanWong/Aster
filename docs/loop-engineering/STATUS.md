@@ -1,11 +1,29 @@
 # Loop Engineering Status
 
-Updated: 2026-07-17
+Updated: 2026-07-24
 
 ## Current State
 
-- Current measured baseline commit: `9c84e7b` (Iteration 049 archive;
-  production attention remains native MLX).
+### Iteration Control
+
+- Canonical current state: `docs/loop-engineering/CURRENT.json`.
+- Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
+- Last completed iteration: 059. Active iteration: 060, phase `profile`.
+- The active hypothesis is that bounded ownership or lifetime of LMFE prefix
+  `TokenList` objects can reduce short B4 and long B2 RSS growth by at least
+  25% while keeping the balanced throughput lower bound at or above `-1%`.
+- The current workspace audit reports 1,172 changed paths, including 1,121
+  artifact files, 715 staged paths, 32 unstaged paths, 430 untracked paths,
+  five mixed-index paths, and 13 reference-project paths. Generated caches are
+  zero. The immutable debt baseline is 1,164/1,114 at `2cb14052d4a3`; current
+  growth is 8/7, within the 25/20 allowances, so strict checking returns WARN
+  with no blocker. Existing owner-unknown content remains inventory.
+- Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
+  logical evidence files into one 237,686-byte archive. Its repeated scratch
+  output was removed after archive-only recomputation passed.
+
+- Current measured baseline commit: `2cb1405` (Iteration 050; production
+  attention remains native MLX).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -61,14 +79,89 @@ Updated: 2026-07-17
   token/text/cache parity. Native/direct 10,000-token stress improved
   `5.58%/5.06%`; adaptive batch-4 clearing kept post-clear allocator cache at
   or below `3.05 MB` and swap stayed zero.
+- Iteration 051 retains grouped asynchronous batch sampling. The manual runner
+  builds each row's existing processor/sampler graph in request order,
+  async-submits MLX sampled scalars, waits once, and then materializes ordered
+  results. Host-driven structured processors retain eager row evaluation after
+  the shared model forward. The strict v7 admission uses 18 fresh processes / 9
+  runner-balanced replicates per cell. Short core balanced intervals span
+  `[+7.46,+7.85]` through `[+16.78,+17.43]`; a 1,024-step 6,169-token greedy B2
+  confirmation spans `[+6.65,+7.44]`, and mixed B8 stress spans
+  `[+14.52,+15.41]`. Token/text/cache hashes matched and swap did not grow.
+- Iteration 052 profiled a benchmark-only raw-logit path for `temperature=0`
+  samplers. Ten fresh paired records across greedy B2/B4/B8, penalties B4,
+  and mixed B4 retained exact token/text/cache hashes and zero swap growth, but
+  observed speed changes were only `+0.50%~+1.27%`. A same-logits MLX profile
+  measured raw-vs-normalized argmax deltas of `13~53 us` at B1/B2/B4/B8;
+  this is below the 3% end-to-end gate, so no production change was admitted.
+- Iteration 053 expanded raw-logit-safe sampling to shift-invariant built-in
+  samplers, but mixed B4/B8 medians were only `+1.22%/+0.05%`; it remains
+  benchmark-only.
+- Iteration 054 isolated the neutral MLX-LM repetition processor. Greedy
+  B2/B4/B8 medians were `+1.47%/+1.57%/+1.50%`, below the standalone gate.
+- Iteration 055 retains a bounded processor-context contract. Built-in active
+  penalties receive only their required 20-token window; structured/thinking
+  processors retain full history and no-processor requests carry an empty
+  window. The 24,601-token B2 strict matrix passed with a balanced interval of
+  `[+4.75%,+6.72%]`, both order strata above `+4.09%`, 9/9 stable replicates,
+  exact output, and zero swap growth. Short B2/B4 lower bounds remained above
+  `-1%` and are recorded only as no-regression evidence.
+- Iteration 056 profiles residual grouped-decode sampling costs without a
+  production change. Host token materialization plus result construction was
+  only `0.225%~0.294%` of batch time. Tensorized active penalties measured
+  `+0.01%~+0.66%`; processor-free batched normalization measured
+  `-1.16%~+1.78%`. All nine payloads retained exact output and zero swap growth,
+  but every candidate failed the 3% early gate.
+- Iteration 057 retains LMFE allowed-token list reuse in Aster's JSON schema
+  processor. The strict 18-process/9-replicate matrices passed at short B4 and
+  24,601-token B2 with balanced intervals `[+31.33%,+33.40%]` and
+  `[+24.96%,+27.63%]`; both order strata cleared 20%, all 36 outputs matched
+  exactly, and swap did not grow. Stop-aware B4 produced 4/4 schema-valid JSON
+  results while membership shrank `4 -> 3 -> 1`.
+- Iteration 058 retains a request-local one-entry structured mask cache. The
+  strict short B4 and 24,601-token B2 matrices passed with balanced intervals
+  `[+114.79%,+119.26%]` and `[+64.81%,+68.91%]`; throughput medians improved
+  `+112.39%` and `+65.94%`. All 36 outputs matched exactly, swap stayed flat,
+  and conservative dual-runner MLX peak deltas stayed below their 16/8 MiB
+  bounds. Stop-aware B4 again produced 4/4 schema-valid results under
+  membership shrink `4 -> 3 -> 1`.
+- Iteration 059 retains exact EOS-membership reuse beside that mask snapshot.
+  Strict short B4 and 24,601-token B2 matrices passed with balanced intervals
+  `[+38.01%,+47.33%]` and `[+21.09%,+24.47%]`; both order strata cleared 10%,
+  all 36 outputs matched, and swap stayed flat. Stop-aware B4 was 4/4 valid.
+  A missing numeric memory predeclaration was recorded as a protocol deviation;
+  after explicit 4/2 GiB RSS and 16/8 MiB MLX limits were written, four fresh
+  confirmations passed.
 
 ## Evidence
 
-- Current full worktree suite: `466 passed, 9 skipped, 1 failed, 1 warning`.
-  The single failure belongs to pre-existing, out-of-scope worktree changes;
-  explicitly excluding it yields `466 passed, 9 skipped, 1 deselected`.
-- Model-runner and runtime/paged boundary suites: `60 passed`.
+- Current full worktree suite: `503 passed, 9 skipped, 1 warning`.
+- Long-context snapshot preflight: `15 passed, 39 deselected`. Requests below
+  65,536 prompt tokens preserve their available-memory budget; requests at or
+  above that threshold cap it at 2 GiB before the configured snapshot limit is
+  applied. Both checkpoint paths use the request-aware budget.
+- Iteration 055 affected runner/runtime/structured suite: `127 passed,
+  1 deselected`.
 - `compileall` and `git diff --check`: passed.
+- Iteration 052 artifact tests: `4 passed`; its operator profile and ten paired
+  payloads are hash-bound under the iteration artifact directory.
+- Iteration 053/054/055 artifact tests pass (`3/2/6`). Iteration 055 binds 54
+  formal long/short payloads, strict manifests, aggregates, and descriptive
+  summaries to current source and model hashes; its nine-gate composite
+  admission passes.
+- Iteration 056 artifact tests pass (`4 passed`). Its aggregate binds nine
+  paired real-model payloads and records all three candidates as rejected.
+- Iteration 057 affected tests pass (`66 passed`) and artifact assertions pass
+  (`3 passed`). Its 36 formal payloads, two strict aggregates, stop-aware
+  validation, descriptive summary, and 11-gate composite admission are bound
+  to current production/model hashes.
+- Iteration 058 affected tests pass (`84 passed`) and artifact assertions pass
+  (`3 passed`). Its 36 formal payloads, two 11-gate strict aggregates,
+  stop-aware validation, memory comparison, and 13-gate composite admission
+  are bound to current production/model hashes.
+- Iteration 059 affected plus artifact tests pass (`142 passed`), standalone
+  compact-evidence assertions pass (`2 passed`), and its source/model-bound
+  composite admission recomputes both strict aggregates and passes 12/12 gates.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
 - The benchmark now defaults to explicit greedy sampling (`temperature=0.0`); seven validation trials all produced 288 completion tokens and 4/4 successful requests.
 - Resource-aware validation now records platform, Python, MLX-LM, total memory, RSS peak, and swap before/after values; seven trials showed zero swap growth.
@@ -244,13 +337,50 @@ Updated: 2026-07-17
   records and passes 16/16 strict artifact recomputation tests. Final
   integration approval is hash-bound to both the production bridge and the
   token-budget long-stress aggregate.
+- Iteration 051's current composite admission binds 288 strict timing payloads
+  plus one stop-aware structured run to current measurement and model hashes.
+  The 72-record long screen retained a greedy B2 production-first lower-bound
+  miss (`+1.75%`); its stronger 18-process, 1,024-step confirmation clears all
+  three 3% intervals with lower bounds `+6.57%` or better. The earlier n=3 and
+  failed compatibility matrices remain historical/negative evidence.
+- Stop-aware structured B4 exercised active membership `4 -> 3 -> 1`; all
+  four lanes produced schema-valid JSON and stopped in 17 to 58 tokens. The
+  failed lane-0/unbounded-string prompt is retained as negative evidence.
+- Independent review added all-Python model barriers, non-replaying
+  post-sample failures, symmetric benchmark instrumentation, balanced AB/BA
+  diagnostics, public-path cache reorder coverage, and a single
+  `final-admission.json` gate.
+- The first final-source fresh-process matrix is preserved as a measurement
+  warning: all short-cell medians were positive, but unrelated desktop load
+  produced isolated `-25%` and `+65%` paired excursions. The accepted gate
+  uses independent KV states in one process with adjacent AB/BA calls and the
+  same per-step random seed; it does not delete the noisy records or weaken
+  the 3% lower-bound requirement.
 
 ## Active Risks
 
+- The worktree still combines evidence from Iterations 051-059,
+  reference-project gitlinks, mixed index paths, and unrelated existing
+  changes. Strict checking has no blocker because growth is bounded against
+  the immutable debt baseline, but the underlying 1,172-path inventory remains
+  an ownership and reviewability risk rather than a clean Git boundary.
+- The full suite is green (`503 passed, 9 skipped`). Long-context snapshot
+  budgeting is implemented and covered, but the automatic default-config
+  128K real-model reproduction remains unarchived.
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
-- The sampled-token CPU synchronization remains the largest measured decode
-  boundary. Whether `_eval_cache()` after sampling performs necessary work or
-  only traverses already-materialized hybrid state has not yet been proven.
+- Batch-size-proportional sampled-token synchronization is removed. Iteration
+  056 found host post-eval work below `0.3%`, active-penalty tensorization below
+  `0.7%`, and batched normalization unstable and below `1.8%`; none enters
+  production. Iterations 057-059 removed the dominant JSON allowed-list copy,
+  retained a one-entry exact mask cache, and reused exact EOS membership.
+  LMFE prefix states still retain large `TokenList` objects and grew RSS by
+  roughly 3.69/1.46 GB in short/long profiles. Ownership and lifetime are the
+  active Iteration 060 question. Broader schemas, structured concurrency,
+  energy, and sustained thermal behavior remain open.
+- Built-in penalty history is now bounded to 20 tokens, but structured,
+  thinking, and unknown custom processors intentionally retain full history.
+  The 24,601-token result is scenario-specific; broader custom-processor and
+  long-context B4/B8 evidence remains incomplete.
 - 4-bit TurboQuant is rejected for the measured Qwen3.5-0.8B workload. A
   future 6/8-bit or capacity-only proposal must start from the archived
   token/PPL curve and independently clear default-path speed and quality gates.
@@ -273,14 +403,14 @@ Updated: 2026-07-17
 
 ## Next Priority
 
-Core-first priority: prove whether post-sample `_eval_cache()` is necessary.
-Start with hybrid `ArraysCache + KVCache` RAW/WAW provenance tests and a
-10,000-step stress loop; cover trim, COW, cancellation, recurrent state, exact
-tokens/cache arrays, allocator growth, and swap before any implementation
-change. Use Uzu command ownership and vllm-metal lazy dependency propagation as
-references. Keep native MLX attention as the production default, reject the
-measured 4-bit TurboQuant path, and do not integrate DFlash until matching
-checkpoints plus rollback/acceptance gates exist. A shape-specific split-KV
-experiment is secondary and must beat the MLX default, not only Aster paged.
-Maintain `FRONTIER_RADAR.md`, test one candidate at a time, and keep the
-dependency lock aligned with project declarations.
+1. Complete the read-only Iteration 060 ownership profile: separate active from
+   accumulated LMFE `TokenList` state at short B4 and 24,601-token B2 before
+   selecting one bounded lifetime candidate.
+2. Reduce the immutable workspace debt only through owner-attributed review
+   boundaries. Keep generated caches at zero and prevent growth beyond the
+   recorded +25/+20 allowances.
+3. Archive a fresh automatic default-config 128K snapshot-cap reproduction.
+4. Close evidence gaps in this order: broader schemas and tool calls, 32K
+   mixed-agent and cancellation pressure, 30-minute stability, then energy and
+   thermal behavior. Keep native MLX attention as production and DFlash
+   deferred until a measured candidate clears the same gates.

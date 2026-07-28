@@ -31,6 +31,12 @@
 - 不将 CUDA、Linux、x86、独立显存或不同内存模型下的优化未经验证地移植到 macOS。
 - 所有实验必须保留基线、配置、环境、输入、输出和结果。
 - 不隐藏失败实验。失败实验同样要记录根因和结论。
+- `docs/loop-engineering/CURRENT.json` 是唯一的当前迭代状态源；每轮只允许一个
+  主假设、一个主指标和一个生产候选。
+- `docs/loop-engineering/ITERATION_PROTOCOL.md` 是短操作协议。恢复上下文时先读它，
+  不依靠回读全部历史 artifact 重建状态。
+- 工作区可审查性是正确性门禁的一部分。历史实验、参考仓库更新、当前候选和原始
+  benchmark 数据不得无限混在同一变更边界中。
 
 ====================
 二、项目与参考源码
@@ -73,7 +79,10 @@ Aster 主项目：
 
 Step 0：恢复状态
 
-- 查看当前 Git 分支、工作区、最近 commit、未完成实验和 STATUS 文档。
+- 先读 `CURRENT.json` 和短操作协议，再查看当前 Git 分支、工作区、最近 commit、
+  未完成实验和 STATUS 文档。
+- 运行 `uv run python scripts/dev/check_loop_workspace.py --strict`，记录文件数、
+  artifact 数量、跨迭代变更、mixed-index 路径和生成缓存。
 - 不覆盖、删除或回滚用户已有的未提交修改。
 - 检查上一轮是否留下失败测试、未完成 benchmark、未提交文件或临时进程。
 - 用 CodeGraph 了解目标符号、调用关系和修改影响面；CodeGraph 可用时优先使用它理解代码。
@@ -195,6 +204,15 @@ docs/loop-engineering/
 - 本轮结论：保留、回滚或继续调查
 - 下一轮最优先问题
 
+原始证据分两级保存：
+
+- 探索性、重复性和中间 benchmark 输出写入已忽略的
+  `run/loop-engineering/<iteration>/`。
+- 只有 benchmark 源码、manifest、aggregate/admission 结果以及重算正式结论所需的
+  最小原始记录进入 `docs/loop-engineering/artifacts/`。
+- 默认单轮变更预算为 150 个 tracked artifact 文件和 100 MiB；超过预算必须先压缩
+  表示并在迭代记录中说明保留理由，不得直接把重复矩阵全部加入变更边界。
+
 Step 10：专业 Git 提交
 
 - 提交前检查 `git status`、`git diff`、测试结果和 benchmark 结果。
@@ -212,7 +230,8 @@ Step 10：专业 Git 提交
   - `perf: reuse prefix cache blocks across agent turns`
   - `fix: preserve cancellation during prefill yielding`
 - commit body 应说明：问题、方案、验证命令、性能变化和已知限制。
-- 允许自动创建本地 commit，便于追踪和回滚。
+- 是否创建本地 commit 服从当前用户和仓库指令；没有明确提交请求时，准备并报告一个
+  已验证、文件所有权清晰的变更边界。
 - 禁止自动 push、force push、merge 远程分支、修改远程资源或执行破坏性 Git 操作。
 - 不得使用 `git reset --hard`、`git clean -fd` 或等价命令删除用户未提交内容。
 - 若工作区存在用户修改，只提交本轮明确拥有的文件。
@@ -220,6 +239,8 @@ Step 10：专业 Git 提交
 Step 11：进入下一轮
 
 - 更新 STATUS.md，写明当前瓶颈、最近收益、未解决风险和下一步。
+- 更新 `CURRENT.json` 的 phase、结论和唯一下一目标，并再次运行严格工作区检查。
+- 删除本轮生成缓存，去除 scratch 重复数据；未通过工作区门禁时不得开启第二个生产候选。
 - 如果本轮成功，保留 commit 并继续寻找下一个主要瓶颈。
 - 如果本轮失败，保留实验记录；代码改动无价值时回滚到本轮起点，然后继续分析。
 - 不要因为一轮成功就结束任务。
@@ -345,7 +366,9 @@ NEXT PRIORITY: <下一轮最高优先级>
 
 ## 使用约定
 
-- 这个 Goal Prompt 允许 Agent 自动创建本地 commit，但不允许自动 push。
+- 本地 commit 和暂存行为服从当前用户与仓库指令；任何情况下都不允许自动 push。
 - 每一轮的结果应落在 `docs/loop-engineering/iterations/`，便于跨上下文恢复。
+- 当前状态只写入 `docs/loop-engineering/CURRENT.json`；历史结论写入 STATUS、DECISIONS
+  和 iteration 记录，避免多份“当前状态”漂移。
 - “达到一线梯队”必须由固定 workload 矩阵和可复现实验定义，不能作为无证据的主观结论。
 - 当前阶段明确排除 PrismML、Bonsai 等额外量化项目，先完成核心推理运行时和评测闭环。

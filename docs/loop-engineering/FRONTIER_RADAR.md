@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-07-17
+Updated: 2026-07-18
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -28,13 +28,16 @@ coverage, and a rollback path.
 | Priority | Work | What is useful | Local status | Decision / next gate |
 | --- | --- | --- | --- | --- |
 | P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Split-KV, attention-boundary, and fused-scatter reproductions complete | Reference scatter wins in its own layout, but Aster transfer fails. Retain as evidence; stop direct operator imports. |
-| Admitted | [MLX-LM](https://github.com/ml-explore/mlx-lm), commit `15b522f`, MIT, and [MLX lazy evaluation](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html) | Sample/logprob graph synchronization, lazy decode cache provenance, periodic allocator-cache clearing | 142-process Aster reproduction complete across native/direct batch 1/2/4 and 10,000-step stress | Retain a 512-generated-token clear budget; fixed 512 scheduler steps are rejected for batch memory. |
+| Admitted | [MLX-LM](https://github.com/ml-explore/mlx-lm), commit `15b522f`, MIT, [MLX PR 998](https://github.com/ml-explore/mlx/pull/998), and [MLX lazy evaluation](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html) | Grouped sample/logprob async evaluation, lazy decode cache provenance, periodic allocator-cache clearing | Iterations 050-051 reproduce cache and sampler graph boundaries across batch 1/2/4/8, structured output, 6K prompts, and sustained stress | Retain the 512-generated-token clear budget and one grouped sampled-token barrier. |
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
 | P0 | [OMLX](https://github.com/jundot/omlx) TurboQuant at `e3a4fe4`, pinned mlx-vlm `78b96eb`, and [Open-TQ-Metal](https://arxiv.org/abs/2604.16957) | Compressed-domain K/V attention, hybrid-cache conversion, long-context capacity, two-pass decode | `51/51` reference tests plus 5-process kernel and 20-process Qwen3.5 matrices complete | Reject measured 4-bit path: cache shrinks, but default MLX speed and model quality fail. Preserve as a capacity reference only. |
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
 | P1 | [SSSD](https://github.com/huawei-csl/sssd_speculator), ACL 2026, BSD-3-Clause-Clear | Training-free suffix-array/prompt/self-output speculation | Source/license verified remotely; not cloned | Later candidate after core: compare against prompt lookup and DFlash without a draft model. |
 | P1 | [CONCUR](https://arxiv.org/abs/2601.22705) | Agent-level cache-pressure feedback and proactive admission | Paper found; no author code located in first pass | Reproduce only after a sustained Agent KV-thrashing workload exists. |
+| P1 | [llama.cpp backend sampler graph](https://github.com/ggml-org/llama.cpp/pull/17004) and [vLLM sampling sync removal](https://github.com/vllm-project/vllm/pull/16436) | Move sampler/penalty work into backend graphs and remove host synchronization | Primary implementations reviewed; no Aster transfer yet | Profile Aster's post-group penalty/logsumexp graph first. Require exact Metal probabilities and arbitrary-processor behavior. |
+| P1 | [SIMPLE](https://arxiv.org/abs/2512.00719) | CPU decision-plane sequence parallelism, truncation-first sampling, speculative hot vocabulary | Paper reviewed; distributed NVIDIA service assumptions do not match the current host | Keep as an architecture watch item. Revisit only if Aster adds distributed or CPU/GPU split serving. |
+| P2 | [FlashSampling](https://arxiv.org/abs/2603.15854) | Fused LM head and Gumbel-max sampling | Paper reviewed; CUDA/Triton path does not preserve arbitrary full-logit processors | Watch for a public Metal/MLX implementation with exact processor compatibility. |
 | P2 | [LONGSPEC](https://aclanthology.org/2026.acl-long.83/) | Constant-size long-context drafter and hybrid tree verification | Paper evidence only; CUDA/Triton implementation assumptions | Watch. Not compatible with the current core without training and a tree verifier. |
 | P2 | [Speculative Decoding: Performance or Illusion?](https://arxiv.org/abs/2601.11580) | Production-grade evidence that verification/load can erase speculative gains | Used as a gating reference | Require load-adaptive measurements; never enable speculation from batch-1 results alone. |
 | Benchmark only | [BaseRT paper](https://arxiv.org/abs/2607.00501) / [repository](https://github.com/basecompute/baseRT) | Native Metal ceiling and dispatch/fusion hypotheses | Public CLI/format are Apache-2.0, but the inference engine is a proprietary binary | Black-box competitor only; do not borrow or call it open-core evidence. |
@@ -162,12 +165,44 @@ native/direct 10,000-token generation improves `5.58%/5.06%`. Batch-4 long
 stress improves `14.87%`, with post-first-clear allocator cache at most
 `3.05 MB`, RSS/active/peak regressions below 1%, and zero swap.
 
+## Reproduced result: grouped heterogeneous batch sampling
+
+MLX-LM `GenerationBatch._step` keeps row-specific processors and samplers but
+async-evaluates sampled tokens/logprobs as a group. Aster's previous path
+instead evaluated logits, then materialized every row separately. Iteration
+051 reproduced three grouped variants and retained lazy graph construction,
+one async submission, and one group wait.
+
+The 100-process candidate confirmation measured `+6.47%~+15.70%` across
+greedy/mixed/penalty B2/B4/B8 and positive structured medians, with exact
+token/text/cache hashes. A final-source adjacent-pair matrix isolated desktop
+process noise by giving baseline and production independent KV states in one
+loaded-model process and balanced alternating AB/BA every step. The final
+admission measured `+9.89%~+18.06%` across eight adopted short core cells; all
+exact independent-process intervals cleared 3%. Intra-process block resampling
+is reported only as a stability diagnostic.
+
+At 6,169 prompt tokens, final medians were `+5.37%~+12.51%`. The weakest
+1,024-pair greedy B2 runs established process interval `[+4.51,+6.05]`.
+Three mixed B8 sustained runs generated 8,192 timed tokens per policy and
+improved `+14.26%` with process interval `[+13.87,+14.58]`, with all
+96 blocks positive, exact outputs/cache, expected allocator clears, and zero
+swap growth. Stop-aware structured B4 produced valid JSON for all four lanes
+while membership shrank `4 -> 3 -> 1`.
+
+Eager grouped evaluation and scalar concatenation were rejected. SIMPLE,
+FlashSampling, llama.cpp backend sampler graphs, vLLM penalty-sync removal,
+and SGLang's large-batch fused softmax were screened but not imported. Their
+distributed/CUDA, large-batch, or probability/processor contracts do not yet
+match Aster's Apple Silicon B1-B8 path.
+
 ## Next reproduction
 
-Re-profile the post-change general batch sampler. Determine whether the
-remaining explicit `mx.eval(logits)` plus per-row sample materialization adds
-avoidable synchronization for heterogeneous samplers, logits processors,
-structured output, and changing batch membership. MLX-LM's batch-wide
-sample/logprob async evaluation is the reference, but Iteration 034's rejected
-greedy-only batch argmax must not be repeated. A shape-specific split-KV probe
-remains secondary and must beat native MLX, not only Aster paged.
+Profile the post-group sampler graph by processor class. Measure logsumexp,
+greedy/random sampler graph construction, repetition/presence/frequency
+penalties, structured constraints, and required host output materialization.
+Test tensorized homogeneous groups or a backend sampler graph only if they
+preserve dynamic membership, random order, arbitrary processors, and exact
+Metal results. The same adjacent-pair, 6K-context, B8 sustained, memory, and
+structured gates remain mandatory. A shape-specific split-KV probe remains
+secondary and must beat native MLX, not only Aster paged.

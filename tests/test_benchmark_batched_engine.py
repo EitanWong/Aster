@@ -63,6 +63,7 @@ def test_benchmark_overrides_lane_limit_without_mutating_settings() -> None:
         lane_admission_window_ms=200.0,
         cohort_target_size=3,
         longest_lane_step_quanta=2,
+        lane_streams=True,
     )
 
     assert settings.engine.batch_generator_max_lanes == 1
@@ -70,6 +71,7 @@ def test_benchmark_overrides_lane_limit_without_mutating_settings() -> None:
     assert overridden.engine.batch_generator_lane_admission_window_ms == 200.0
     assert overridden.engine.batch_generator_lane_target_size == 3
     assert overridden.engine.batch_generator_longest_lane_step_quanta == 2
+    assert overridden.engine.batch_generator_lane_streams is True
     assert overridden.engine.prefix_cache_enabled is False
     assert overridden.engine.max_active_requests >= 4
 

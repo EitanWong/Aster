@@ -45,6 +45,7 @@ class RequestState:
     decode_detokenizer: Any | None = None
     decode_stop_token_ids: frozenset[int] = field(default_factory=frozenset)
     decode_logits_processors: tuple[Any, ...] = ()
+    decode_logits_processor_context_size: int | None = None
     next_input_token: int | None = None
     response_future: asyncio.Future[InferenceResponse] | None = None
     stream_collector: StreamCollector | None = None

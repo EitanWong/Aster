@@ -128,6 +128,7 @@ class BatchedEngine:
         self._batch_generator_longest_lane_step_quanta = (
             settings.engine.batch_generator_longest_lane_step_quanta
         )
+        self._batch_generator_lane_streams = settings.engine.batch_generator_lane_streams
         self._mx: Any | None = None
         self._model: Any | None = None
         self._tokenizer: Any | None = None
@@ -571,12 +572,25 @@ class BatchedEngine:
         from mlx_lm.generate import BatchGenerator
 
         engine = self.settings.engine
+        kwargs: dict[str, Any] = {
+            "max_tokens": engine.max_active_requests * 512,
+            "completion_batch_size": engine.max_active_requests,
+            "prefill_batch_size": engine.max_active_requests,
+            "prefill_step_size": engine.prefill_token_budget,
+        }
+        if (
+            getattr(self, "_batch_generator_lane_streams", False)
+            and getattr(self, "_batch_generator_max_lanes", 1) > 1
+        ):
+            try:
+                import mlx.core as mx
+
+                kwargs["stream"] = mx.new_stream(mx.default_device())
+            except Exception:
+                self.logger.warning("batch_generator_lane_stream_unavailable", exc_info=True)
         return BatchGenerator(
             self._model,
-            max_tokens=engine.max_active_requests * 512,
-            completion_batch_size=engine.max_active_requests,
-            prefill_batch_size=engine.max_active_requests,
-            prefill_step_size=engine.prefill_token_budget,
+            **kwargs,
         )
 
     def _get_or_create_lane(

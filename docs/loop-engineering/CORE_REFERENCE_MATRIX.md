@@ -1,6 +1,6 @@
 # Core Inference Engine Reference Matrix
 
-Updated: 2026-07-17
+Updated: 2026-07-18
 
 This matrix is the implementation boundary for the core-first loop.  The
 repositories under `examples/` are treated as executable reference material,
@@ -14,7 +14,7 @@ measurement.
 | --- | --- | --- | --- | --- | --- |
 | MLX execution ownership | `mlx-lm` uses a thread-local generation stream; vLLM-MLX explicitly tests scheduler/model ownership; Uzu encodes one native Metal command buffer and exposes explicit submit/wait timing. | Production manual runtime serializes MLX work through one runner executor. Experimental lane streams are user-owned and uncommitted. | Moving work across threads can fail with missing thread-local streams or create nondeterministic cache state. | Keep the single owner as the default. Treat extra streams as an experiment, never as an implicit optimization. | Same-thread assertions, exact hashes, cancellation cleanup, and no stream errors under concurrent load. |
 | Decode batching | `mlx-lm`/vLLM-MLX run one decode step over active requests, retain a stable merged cache, and filter finished rows. | Manual runtime already merges stable decode caches and rebuilds only after membership changes. | Membership changes and hybrid cache shapes can invalidate naive mid-batch prefill or cache merges. | Preserve the stable-batch boundary; optimize merge/rebuild cost before expanding admission. | Batch 1 vs batch N exact parity, mixed/staggered lifecycle tests, speed and peak-memory gates. |
-| Decode graph synchronization | MLX-LM evaluates sampled tokens/logprobs, leaves decode cache state lazy until its next use, and periodically clears allocator cache; prefill evaluates cache state explicitly. | Aster now follows the same graph boundary and clears after 512 generated tokens globally, so larger batches clear more frequently by scheduler step. | Scalar materialization can be only a partial evaluation; recurrent sibling state and paged-pool writes must remain valid through the next RAW/WAW chain. Fixed step cadence can over-retain free-cache at larger batch sizes. | Keep explicit prefill evaluation and the generated-token budget. Profile the remaining batch logits/per-row sample synchronization before another change. | Exact token/text/final-cache bytes, 10,000-step RAW/WAW, batch 1/2/4, long generation, allocator/RSS/swap, and >=3% paired speed gate. |
+| Decode graph synchronization | MLX-LM groups sampled tokens/logprobs under async evaluation, leaves decode cache state lazy until its next use, and periodically clears allocator cache; prefill evaluates cache explicitly. LM Studio also separates sampling from grouped materialization. | Aster keeps the same lazy cache boundary, clears after 512 generated tokens globally, and now async-submits MLX samples from heterogeneous rows before one group wait. Python-valued custom samplers retain conversion semantics while logits provide a model/KV barrier; post-sample failures do not replay rows. | Host token IDs are still required for stop/stream processing. Tensorizing processor work can misalign random state, structured constraints, or cache lanes when membership changes. | Retain grouped sample synchronization and explicit prefill evaluation. Profile logsumexp and each processor class before considering homogeneous tensorization or backend sampler graphs. | Exact token/text/final-cache bytes; processor/sampler order; Python sampler compatibility; non-replaying failures; membership replace/reorder; stop-aware structured/random/penalty B2/B4/B8; 6K prompts; balanced AB/BA independent processes; sustained allocator/RSS/swap; >=3% core floor. |
 | Continuous request lifecycle | Rapid-MLX and vLLM-MLX separate waiting, prompt processing, generation, finished, and cancellation paths; generator close/release is tested. | Aster has explicit request phases, cancellation, admission retry, prefix pinning, and runtime cache recovery. | Every terminal path must release snapshots, cache references, and runtime objects; leaks can be silent until long runs. | Expand lifecycle probes and metrics before changing scheduling semantics. | Repeated cancel/finish/recovery runs leave zero pinned entries and bounded memory. |
 | Chunked prefill | `mlx-lm.BatchGenerator` admits pending prompts, processes them in chunks, then moves completed prompts into decode; OMLX exposes `prefill_step_size` and chunked-prefill controls. | Aster has an explicit prefill queue and configurable token budget, with pressure fallback. | The budget is mostly a total-memory heuristic; activation memory for the actual attention route is not priced explicitly. | Add configuration-aware transient prefill accounting/admission as a narrow core improvement. | Unit tests for estimator and admission decisions; long-context no-OOM/swap regression; A/B must not regress short or mixed workloads. |
 | Prefill memory safety | OMLX combines static SDPA pricing with recent measured chunk growth and a safety multiplier before admitting the next chunk. | Aster now records each chunk's MLX peak over the previous active baseline, keeps the highest per-token growth, and combines it with static full-attention pricing. | A long prompt can exceed memory through transient SDPA activations even when persistent admission passes. | Keep the per-request tracker conservative; add kernel-route detection only with measured evidence. | Exact config coverage for full/hybrid attention, typed diagnostics, deterministic rejection tests, and resource benchmark. |
@@ -64,11 +64,23 @@ measurement.
    clear budget. Production improves `9.51%~17.90%` across native/direct batch
    1/2/4. A fixed 512-scheduler-step policy is explicitly rejected because
    long batch 4 accumulated `481.42 MB` free-cache within one interval.
+10. Batch sampling now preserves per-row policy while crossing one grouped MLX
+    completion barrier. Twenty-four final-source short processes improved
+    `+9.89%~+18.06%`; long cells improved `+5.37%~+12.51%`; sustained mixed
+    B8 improved `+14.26%`. Exact dynamic-row/cache semantics and zero swap
+    growth hold. Eager grouping, scalar concatenation, and greedy-only argmax
+    remain rejected.
 
 ## Source anchors
 
 - `examples/mlx-lm/mlx_lm/generate.py` — generation stream, wired-memory
-  limit, and `BatchGenerator` prompt/decode lifecycle.
+  limit, grouped token/logprob evaluation, and `BatchGenerator` lifecycle.
+- `examples/vllm-metal/vllm_metal/v1/sampling_batch.py` — tensorized
+  heterogeneous sampling policy reference.
+- `examples/omlx/omlx/patches/mlx_lm_mtp/batch_generator.py` — request-UID
+  row ownership and membership realignment.
+- `examples/lmstudio-mlx-engine/mlx_engine/model_kit/batched_vision/batch_generator.py`
+  — sample construction and grouped materialization boundary.
 - `examples/vllm-mlx/vllm_mlx/mllm_batch_generator.py` — active-batch
   filtering, prompt admission, cache extraction, and terminal cleanup.
 - `examples/vllm-mlx/tests/test_engine_core_stream_safety.py` and

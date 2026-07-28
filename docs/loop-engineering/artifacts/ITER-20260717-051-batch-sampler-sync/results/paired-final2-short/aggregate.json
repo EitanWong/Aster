@@ -1,0 +1,1570 @@
+{
+  "schema_version": 1,
+  "manifest_sha256": "1df221989c6d23eba2370d81c444908c04e027464fcefab7b136ab94ca104ec1",
+  "records": 30,
+  "unique_pids": 30,
+  "cells": {
+    "greedy-b2": {
+      "end_to_end_speedup_percent_median": 7.132676006606431,
+      "independent_process_speedups_percent": [
+        6.893512591471396,
+        7.946101327854693,
+        7.132676006606431
+      ],
+      "independent_process_median_resample_95_percent": [
+        6.893512591471396,
+        7.946101327854693
+      ],
+      "minimum_independent_process_speedup_percent": 6.893512591471396,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 6.893512591471396,
+          "block_speedup_percent_median": 6.611428263811902,
+          "block_resample_stability_95_percent": [
+            3.4817001241036927,
+            9.707991735425958
+          ],
+          "positive_block_fraction": 0.9375,
+          "baseline_first_speedup_percent": 6.206323650207102,
+          "production_first_speedup_percent": 7.563848975771448,
+          "order_interaction_percentage_points": 1.357525325564346,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            6.437722434514392,
+            -0.5678617512500872,
+            9.707991735425958,
+            7.360019803025963,
+            3.1500121397860292,
+            10.169986420209653,
+            0.8781363737681014,
+            16.629496474093287,
+            3.7887799326870697,
+            6.061058186789858,
+            2.018485706573725,
+            11.248341239001558,
+            6.785134093109413,
+            3.4817001241036927,
+            8.998945502701194,
+            15.19954013092326
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 7.946101327854693,
+          "block_speedup_percent_median": 9.20389885054933,
+          "block_resample_stability_95_percent": [
+            3.9508874585943543,
+            13.011452558494607
+          ],
+          "positive_block_fraction": 0.875,
+          "baseline_first_speedup_percent": 9.426736787988666,
+          "production_first_speedup_percent": 6.5072804476558055,
+          "order_interaction_percentage_points": 2.919456340332861,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            9.884833964545003,
+            10.296024055123931,
+            18.57918013329303,
+            -0.938526035972409,
+            9.380546158290759,
+            4.219745909705641,
+            15.649068290961644,
+            14.292883146508162,
+            9.027251542807901,
+            0.7238456482281164,
+            4.186837438464308,
+            3.9508874585943543,
+            22.453314226995325,
+            13.011452558494607,
+            -3.330908947669331,
+            1.2016394286042953
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 7.132676006606431,
+          "block_speedup_percent_median": 5.648021785534729,
+          "block_resample_stability_95_percent": [
+            3.599873556251798,
+            11.137650951753608
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 5.3675509568472,
+          "production_first_speedup_percent": 8.890094992427212,
+          "order_interaction_percentage_points": 3.5225440355800117,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            3.970018741484571,
+            11.137650951753608,
+            2.6540430084286415,
+            8.093107127276312,
+            4.837959669034286,
+            16.846688660863318,
+            4.157310504205602,
+            8.431603352335081,
+            12.455957366356362,
+            1.4830707023876233,
+            3.778240813454281,
+            6.458083902035172,
+            3.0424366082979937,
+            3.018165717625232,
+            12.988927045568822,
+            12.700621524033684
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "greedy-b4": {
+      "end_to_end_speedup_percent_median": 16.276543842792137,
+      "independent_process_speedups_percent": [
+        13.052293728161857,
+        16.276543842792137,
+        17.03798430137391
+      ],
+      "independent_process_median_resample_95_percent": [
+        13.052293728161857,
+        17.03798430137391
+      ],
+      "minimum_independent_process_speedup_percent": 13.052293728161857,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 13.052293728161857,
+          "block_speedup_percent_median": 12.955432919344812,
+          "block_resample_stability_95_percent": [
+            11.038048499741082,
+            15.364265815861444
+          ],
+          "positive_block_fraction": 0.9375,
+          "baseline_first_speedup_percent": 13.407912529941225,
+          "production_first_speedup_percent": 12.701323490617632,
+          "order_interaction_percentage_points": 0.7065890393235925,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            11.26280864129856,
+            18.928000528931555,
+            10.914758693242742,
+            11.038048499741082,
+            24.012931786292025,
+            11.342829743537685,
+            13.234084606321161,
+            10.777605506612131,
+            13.839006293052858,
+            12.676781232368462,
+            20.271952000297254,
+            14.738376142519183,
+            -0.17549433222252553,
+            13.911807983792613,
+            16.88952533867003,
+            8.177963571832203
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 16.276543842792137,
+          "block_speedup_percent_median": 16.339093681295246,
+          "block_resample_stability_95_percent": [
+            15.112823029116996,
+            16.95601943614935
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 16.3414644049247,
+          "production_first_speedup_percent": 16.211770845661967,
+          "order_interaction_percentage_points": 0.12969355926273352,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            14.137903197980073,
+            17.105852741561222,
+            16.86042386209965,
+            16.380441686631908,
+            16.3210003362408,
+            14.157248579622506,
+            16.95601943614935,
+            12.477923245425671,
+            16.068397478611484,
+            21.475932639931926,
+            22.286618582957484,
+            15.859220751424319,
+            16.357187026349695,
+            19.688985291892447,
+            10.111138561051792,
+            15.38970823093393
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 17.03798430137391,
+          "block_speedup_percent_median": 18.40821428327766,
+          "block_resample_stability_95_percent": [
+            14.71774028726147,
+            20.061800909826765
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 17.442157162875695,
+          "production_first_speedup_percent": 16.63786697684666,
+          "order_interaction_percentage_points": 0.8042901860290357,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            23.72925890966635,
+            19.25368719991749,
+            20.061800909826765,
+            18.841984662846656,
+            17.806926292660208,
+            14.71774028726147,
+            21.15826212786722,
+            17.97444390370866,
+            13.946860448281328,
+            4.624024635347523,
+            22.25175456344999,
+            18.976579446317345,
+            20.69270567820851,
+            14.518531981884909,
+            8.426899297971202,
+            17.756729644681556
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "greedy-b8": {
+      "end_to_end_speedup_percent_median": 16.267985767646476,
+      "independent_process_speedups_percent": [
+        16.021118851715155,
+        16.267985767646476,
+        19.59781633266402
+      ],
+      "independent_process_median_resample_95_percent": [
+        16.021118851715155,
+        19.59781633266402
+      ],
+      "minimum_independent_process_speedup_percent": 16.021118851715155,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 16.021118851715155,
+          "block_speedup_percent_median": 15.905345567459129,
+          "block_resample_stability_95_percent": [
+            14.095569752436955,
+            17.75480365833799
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 15.298630879293462,
+          "production_first_speedup_percent": 16.739636873524553,
+          "order_interaction_percentage_points": 1.4410059942310909,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            11.077425210219815,
+            15.48821221599308,
+            13.969349216399497,
+            15.067502565963009,
+            16.898162681472595,
+            17.110194676614164,
+            11.50883006611143,
+            14.095569752436955,
+            18.28334470155777,
+            21.747827594493607,
+            20.710777417988126,
+            17.75480365833799,
+            11.881987680112772,
+            16.322478918925178,
+            14.226247482184418,
+            22.796922596658842
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 16.267985767646476,
+          "block_speedup_percent_median": 15.9765220322171,
+          "block_resample_stability_95_percent": [
+            14.096351444802968,
+            17.832059614315746
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 16.747353429744827,
+          "production_first_speedup_percent": 15.795707807192239,
+          "order_interaction_percentage_points": 0.9516456225525882,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            13.437536848953279,
+            17.004153409067023,
+            15.555816026574654,
+            18.868306671873892,
+            14.096351444802968,
+            16.296567130519968,
+            12.456250454453865,
+            15.798718600397521,
+            16.795812556757596,
+            11.356876258427896,
+            16.154325464036678,
+            11.872794086611528,
+            21.340290698184017,
+            23.06541301385694,
+            22.563962069030417,
+            15.23652653436014
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 19.59781633266402,
+          "block_speedup_percent_median": 20.306982783607896,
+          "block_resample_stability_95_percent": [
+            16.647961822468638,
+            22.899285184808214
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 20.952739745803804,
+          "production_first_speedup_percent": 18.279316408072297,
+          "order_interaction_percentage_points": 2.6734233377315064,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            11.067348807746825,
+            19.361007860732094,
+            16.293229617990423,
+            23.307342986981627,
+            24.798661151359845,
+            20.804629840629516,
+            23.32915400367437,
+            20.66849322797111,
+            19.945472339244684,
+            21.98474191663802,
+            16.647961822468638,
+            19.867884967950022,
+            12.043668632024463,
+            15.12202622607919,
+            26.33808444027914,
+            22.899285184808214
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "mixed-b2": {
+      "end_to_end_speedup_percent_median": 11.56242533006977,
+      "independent_process_speedups_percent": [
+        11.535020140297059,
+        11.638158408504996,
+        11.56242533006977
+      ],
+      "independent_process_median_resample_95_percent": [
+        11.535020140297059,
+        11.638158408504996
+      ],
+      "minimum_independent_process_speedup_percent": 11.535020140297059,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 11.535020140297059,
+          "block_speedup_percent_median": 11.870442304813599,
+          "block_resample_stability_95_percent": [
+            8.93961928323035,
+            13.883409996580443
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 11.26341706833629,
+          "production_first_speedup_percent": 11.802379061419742,
+          "order_interaction_percentage_points": 0.5389619930834524,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            6.73943208701957,
+            15.58455965405614,
+            14.551744748183681,
+            12.430193248709752,
+            14.847092954380203,
+            13.215075244977204,
+            6.358552093488634,
+            13.297078912662963,
+            10.967833922951442,
+            9.158161537564546,
+            8.69528408041278,
+            8.93961928323035,
+            5.353681800217758,
+            11.310691360917446,
+            21.204336281867732,
+            13.443794391203735
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 11.638158408504996,
+          "block_speedup_percent_median": 10.96491509234836,
+          "block_resample_stability_95_percent": [
+            8.153642753752855,
+            14.069630018806478
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 18.142436194426324,
+          "production_first_speedup_percent": 5.608776469532795,
+          "order_interaction_percentage_points": 12.533659724893528,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            9.78027414628826,
+            6.012022734161904,
+            8.563914686959428,
+            13.91230936889485,
+            12.65224619750953,
+            18.61581580662648,
+            7.493396675255526,
+            5.293935418913098,
+            12.149556038408459,
+            9.548038802925142,
+            16.62259346362507,
+            8.153642753752855,
+            22.50158313720374,
+            15.075007336856716,
+            14.069630018806478,
+            7.646253577791096
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 11.56242533006977,
+          "block_speedup_percent_median": 12.228391377261127,
+          "block_resample_stability_95_percent": [
+            7.390371049761524,
+            15.780288352119488
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 9.666455901530169,
+          "production_first_speedup_percent": 13.463871279458584,
+          "order_interaction_percentage_points": 3.7974153779284148,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            10.156223139859044,
+            12.691466560055309,
+            15.221004793686443,
+            6.132372288205423,
+            15.780288352119488,
+            19.465750037356422,
+            9.075693158658304,
+            7.390371049761524,
+            16.228335122217906,
+            11.765316194466946,
+            19.13312659133799,
+            3.639314318237563,
+            17.402644401991772,
+            3.3700752842139803,
+            13.462955775938145,
+            6.152613263780582
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "mixed-b4": {
+      "end_to_end_speedup_percent_median": 18.055728452983487,
+      "independent_process_speedups_percent": [
+        18.055728452983487,
+        18.76977702193532,
+        10.477310646592453
+      ],
+      "independent_process_median_resample_95_percent": [
+        10.477310646592453,
+        18.76977702193532
+      ],
+      "minimum_independent_process_speedup_percent": 10.477310646592453,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 18.055728452983487,
+          "block_speedup_percent_median": 17.24116076788237,
+          "block_resample_stability_95_percent": [
+            16.21642337634137,
+            18.80532602779912
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 23.10561284278352,
+          "production_first_speedup_percent": 13.226291901140886,
+          "order_interaction_percentage_points": 9.879320941642632,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            17.92006148633829,
+            13.721901000249659,
+            16.21642337634137,
+            17.117980143050595,
+            24.563642672285656,
+            18.80532602779912,
+            19.090846681762883,
+            25.036067617936375,
+            17.364341392714145,
+            16.72540289671982,
+            22.556797075474666,
+            18.627804041148966,
+            16.111088773917913,
+            16.23216879455891,
+            14.734882677927107,
+            14.957522803414047
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 18.76977702193532,
+          "block_speedup_percent_median": 20.98683079704322,
+          "block_resample_stability_95_percent": [
+            14.091829508654552,
+            22.301236704499395
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 20.97037824069412,
+          "production_first_speedup_percent": 16.63316766479417,
+          "order_interaction_percentage_points": 4.337210575899952,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            26.571487138022288,
+            22.301236704499395,
+            21.600052420819637,
+            20.373609173266804,
+            27.6110384472948,
+            16.35498405217366,
+            22.214827205854128,
+            10.880829299662054,
+            22.754277396607712,
+            13.336333262385835,
+            14.091829508654552,
+            22.701498978828603,
+            22.25303197089179,
+            13.107132487240957,
+            8.64387032458156,
+            16.153198559513715
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 10.477310646592453,
+          "block_speedup_percent_median": 9.562293117638154,
+          "block_resample_stability_95_percent": [
+            8.061857134589733,
+            12.006100889986925
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 12.150075239170599,
+          "production_first_speedup_percent": 8.844287066714962,
+          "order_interaction_percentage_points": 3.305788172455637,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            14.981399515964577,
+            7.828586788455016,
+            7.326969730562793,
+            7.619289150546393,
+            7.571681320852108,
+            9.71828408834805,
+            16.016704851899057,
+            11.514580331451985,
+            9.72088584790518,
+            13.85034741589013,
+            12.006100889986925,
+            15.86738078721719,
+            8.213914736262652,
+            9.406302146928258,
+            8.533840325637488,
+            8.061857134589733
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "mixed-b8": {
+      "end_to_end_speedup_percent_median": 16.470834371151355,
+      "independent_process_speedups_percent": [
+        16.060051060807478,
+        16.470834371151355,
+        17.300856000717445
+      ],
+      "independent_process_median_resample_95_percent": [
+        16.060051060807478,
+        17.300856000717445
+      ],
+      "minimum_independent_process_speedup_percent": 16.060051060807478,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 16.060051060807478,
+          "block_speedup_percent_median": 15.551793720339823,
+          "block_resample_stability_95_percent": [
+            14.25484149680154,
+            18.64236810615012
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 15.169392582957041,
+          "production_first_speedup_percent": 16.95337088739093,
+          "order_interaction_percentage_points": 1.7839783044338873,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            18.64236810615012,
+            20.175153789371116,
+            17.57188072563134,
+            19.76012530759126,
+            20.19889842334768,
+            19.681956916286914,
+            14.25484149680154,
+            11.030913475004311,
+            10.293588936708398,
+            15.541930679169935,
+            14.363378718078689,
+            15.561656761509713,
+            15.766633609449098,
+            14.285565233193665,
+            14.080082910071102,
+            13.904993243137898
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 16.470834371151355,
+          "block_speedup_percent_median": 14.366075954598777,
+          "block_resample_stability_95_percent": [
+            12.265083676508093,
+            19.878375883209863
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 16.36308730752305,
+          "production_first_speedup_percent": 16.57848023755031,
+          "order_interaction_percentage_points": 0.21539293002726012,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            19.878375883209863,
+            23.8960199866558,
+            27.802283223115644,
+            19.076477426744766,
+            20.12708111480064,
+            20.057906951782112,
+            15.448423628745767,
+            12.265083676508093,
+            12.569135210870353,
+            14.166161719691072,
+            10.326802812782908,
+            11.861956309743693,
+            14.13732778110466,
+            11.304720522045208,
+            11.959493581905779,
+            14.565990189506483
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 17.300856000717445,
+          "block_speedup_percent_median": 16.903554597446014,
+          "block_resample_stability_95_percent": [
+            14.812893068339816,
+            19.31827413332652
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 17.847503909676732,
+          "production_first_speedup_percent": 16.752604895587385,
+          "order_interaction_percentage_points": 1.0948990140893464,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            19.889399143643516,
+            24.611792062920056,
+            23.248015931870427,
+            16.458884562157184,
+            19.31827413332652,
+            19.86127984076118,
+            17.348224632734844,
+            13.50178410195677,
+            17.997481059525768,
+            12.389526925274374,
+            16.084252641947728,
+            16.155682229137746,
+            12.110760338872462,
+            14.812893068339816,
+            13.965438238257889,
+            17.91000452781024
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "penalties-b2": {
+      "end_to_end_speedup_percent_median": 8.596553497997395,
+      "independent_process_speedups_percent": [
+        9.786564622708905,
+        8.596553497997395,
+        7.061457913027147
+      ],
+      "independent_process_median_resample_95_percent": [
+        7.061457913027147,
+        9.786564622708905
+      ],
+      "minimum_independent_process_speedup_percent": 7.061457913027147,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 9.786564622708905,
+          "block_speedup_percent_median": 11.598563180971066,
+          "block_resample_stability_95_percent": [
+            6.405459776892064,
+            13.329206315228292
+          ],
+          "positive_block_fraction": 0.9375,
+          "baseline_first_speedup_percent": 11.749071671482758,
+          "production_first_speedup_percent": 7.912735458174458,
+          "order_interaction_percentage_points": 3.8363362133083,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            12.621036223620873,
+            12.49828096070571,
+            23.55144543793095,
+            3.2773092472434096,
+            6.447327023599692,
+            3.503236028258816,
+            12.465642030575474,
+            9.307683525525313,
+            -2.9144117315695217,
+            16.03664795342872,
+            8.647668432450262,
+            13.434621434456862,
+            13.626057984079809,
+            2.362920738945351,
+            13.329206315228292,
+            10.731484331366659
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 8.596553497997395,
+          "block_speedup_percent_median": 10.11578313357635,
+          "block_resample_stability_95_percent": [
+            6.491976241874886,
+            11.57475035389285
+          ],
+          "positive_block_fraction": 0.9375,
+          "baseline_first_speedup_percent": 7.614206519196465,
+          "production_first_speedup_percent": 9.554294654227235,
+          "order_interaction_percentage_points": 1.94008813503077,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            12.536106140806268,
+            9.716373755980134,
+            13.286957867301874,
+            3.8351519374408616,
+            7.16524137728769,
+            -2.130788196274558,
+            8.957040481365208,
+            14.288000104018517,
+            10.952302033975547,
+            7.724261824967749,
+            10.613394566979428,
+            4.026912002384564,
+            14.919427260619255,
+            1.5400738106117862,
+            10.515192511172566,
+            10.954742656138826
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 7.061457913027147,
+          "block_speedup_percent_median": 7.643898275061812,
+          "block_resample_stability_95_percent": [
+            6.189792750865564,
+            8.489288580190646
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 7.072718222847518,
+          "production_first_speedup_percent": 7.050484092111864,
+          "order_interaction_percentage_points": 0.02223413073565439,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            7.838819511069084,
+            7.598167337425665,
+            6.330828283605205,
+            9.282624688871511,
+            6.971478558714694,
+            0.9127622085663978,
+            8.489288580190646,
+            7.689629212697957,
+            10.72459961715091,
+            4.781418164305462,
+            3.8847840130138422,
+            2.1282069057078967,
+            12.538823078364247,
+            7.5791665493572635,
+            8.06169645355672,
+            8.657551249882346
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "penalties-b4": {
+      "end_to_end_speedup_percent_median": 17.822498336011083,
+      "independent_process_speedups_percent": [
+        18.130297983543354,
+        17.822498336011083,
+        13.158758447114227
+      ],
+      "independent_process_median_resample_95_percent": [
+        13.158758447114227,
+        18.130297983543354
+      ],
+      "minimum_independent_process_speedup_percent": 13.158758447114227,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 18.130297983543354,
+          "block_speedup_percent_median": 17.962895898249577,
+          "block_resample_stability_95_percent": [
+            15.461768186137759,
+            21.92022298091527
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 16.901950416862043,
+          "production_first_speedup_percent": 19.356539126471574,
+          "order_interaction_percentage_points": 2.4545887096095313,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            23.92155552297721,
+            19.800683298555512,
+            15.037883247305173,
+            11.650237922741823,
+            16.570387147954758,
+            21.92022298091527,
+            17.00117957015337,
+            21.990514911076843,
+            23.115543467254174,
+            17.89694732921503,
+            19.636240388416027,
+            21.995116618577804,
+            18.028844467284124,
+            15.257511954412028,
+            15.461768186137759,
+            11.671110229240945
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 17.822498336011083,
+          "block_speedup_percent_median": 18.973094703846257,
+          "block_resample_stability_95_percent": [
+            16.74841205320351,
+            20.43553826596831
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 19.53263078239207,
+          "production_first_speedup_percent": 16.17365179605985,
+          "order_interaction_percentage_points": 3.358978986332218,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            17.97380292125772,
+            20.73338489107346,
+            23.141391517543617,
+            22.005275411802018,
+            14.036214733759822,
+            18.702554394453806,
+            17.138897723357616,
+            19.130457066912896,
+            19.349650232142036,
+            21.58666021306226,
+            14.794269711953213,
+            14.419292652765115,
+            4.048167790814716,
+            18.815732340779622,
+            20.39255198285861,
+            20.43553826596831
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 13.158758447114227,
+          "block_speedup_percent_median": 13.050719439463288,
+          "block_resample_stability_95_percent": [
+            12.01282073237464,
+            14.359308795828897
+          ],
+          "positive_block_fraction": 1.0,
+          "baseline_first_speedup_percent": 11.36416052123861,
+          "production_first_speedup_percent": 14.948631216300745,
+          "order_interaction_percentage_points": 3.5844706950621354,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": null,
+          "block_speedups_percent": [
+            14.294020155651088,
+            18.560665509529528,
+            11.662019770390742,
+            11.011069452020994,
+            13.854472292862297,
+            12.823250905802919,
+            16.592886967241505,
+            13.278187973123657,
+            12.363621694358539,
+            7.68859971529483,
+            14.864145298795496,
+            15.136649210151475,
+            12.11826647786629,
+            12.265077374150056,
+            14.04751196373686,
+            10.982885989933244
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "structured-b2": {
+      "end_to_end_speedup_percent_median": 5.280900638020691,
+      "independent_process_speedups_percent": [
+        5.737198766609097,
+        4.532020528879466,
+        5.280900638020691
+      ],
+      "independent_process_median_resample_95_percent": [
+        4.532020528879466,
+        5.737198766609097
+      ],
+      "minimum_independent_process_speedup_percent": 4.532020528879466,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 5.737198766609097,
+          "block_speedup_percent_median": 5.980700741079003,
+          "block_resample_stability_95_percent": [
+            3.1464601420600813,
+            7.904621925802402
+          ],
+          "positive_block_fraction": 0.875,
+          "baseline_first_speedup_percent": 10.82115411510356,
+          "production_first_speedup_percent": 0.913792439412453,
+          "order_interaction_percentage_points": 9.907361675691106,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": false,
+          "block_speedups_percent": [
+            9.517065461691443,
+            1.3825747032870872,
+            6.292178389913361,
+            10.452423332786553,
+            -8.909917982693361,
+            5.8081386882834485,
+            4.101488133850717,
+            23.481424827323828,
+            6.6495436717316725,
+            2.869218033377141,
+            -8.717044566581489,
+            5.674637255880688,
+            6.153262793874559,
+            3.1464601420600813,
+            22.99760228791008,
+            6.301958792885665
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 4.532020528879466,
+          "block_speedup_percent_median": 6.11435990439495,
+          "block_resample_stability_95_percent": [
+            4.511493281115508,
+            8.158599661570031
+          ],
+          "positive_block_fraction": 0.8125,
+          "baseline_first_speedup_percent": 9.02289134377192,
+          "production_first_speedup_percent": 0.2872210604050185,
+          "order_interaction_percentage_points": 8.735670283366902,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": false,
+          "block_speedups_percent": [
+            -10.597254581626213,
+            5.275088788223226,
+            3.7478977740077912,
+            6.848414203521647,
+            23.834036374493415,
+            4.831065092101849,
+            7.94137722419852,
+            -9.50930371883012,
+            9.468785119618417,
+            5.7669910455518725,
+            24.221247161366932,
+            6.461728763238028,
+            10.613900970310809,
+            7.00090301805254,
+            -10.168552794199092,
+            4.798799283983568
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 5.280900638020691,
+          "block_speedup_percent_median": 5.635825667735417,
+          "block_resample_stability_95_percent": [
+            4.0681892108992646,
+            7.430935454580445
+          ],
+          "positive_block_fraction": 0.8125,
+          "baseline_first_speedup_percent": 11.494884760137714,
+          "production_first_speedup_percent": -0.5654227522642885,
+          "order_interaction_percentage_points": 12.060307512402002,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": false,
+          "block_speedups_percent": [
+            11.04879279179598,
+            4.083123421216062,
+            -2.6501394958830193,
+            6.017035287954298,
+            -10.203413826952302,
+            7.430935454580445,
+            3.8188390104631598,
+            23.161887327751685,
+            7.10267747632054,
+            4.0968812070307115,
+            -8.943775372949592,
+            5.527507927148667,
+            4.317539411335369,
+            7.945884039928952,
+            24.04286167784855,
+            5.7441434083221665
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    },
+    "structured-b4": {
+      "end_to_end_speedup_percent_median": 3.291182939728987,
+      "independent_process_speedups_percent": [
+        3.291182939728987,
+        9.215695617991916,
+        2.8644387011561134
+      ],
+      "independent_process_median_resample_95_percent": [
+        2.8644387011561134,
+        9.215695617991916
+      ],
+      "minimum_independent_process_speedup_percent": 2.8644387011561134,
+      "all_independent_processes_meet_workload_floor": true,
+      "independent_process_resample_lower_meets_workload_floor": true,
+      "all_runs_passed": true,
+      "runs": [
+        {
+          "run_id": 1,
+          "end_to_end_speedup_percent": 3.291182939728987,
+          "block_speedup_percent_median": 8.303062937405937,
+          "block_resample_stability_95_percent": [
+            -0.3994360986782297,
+            14.033860591585201
+          ],
+          "positive_block_fraction": 0.6875,
+          "baseline_first_speedup_percent": 0.13894660385818103,
+          "production_first_speedup_percent": 6.7289385992642226,
+          "order_interaction_percentage_points": 6.5899919954060415,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": false,
+          "block_speedups_percent": [
+            -0.3994360986782297,
+            12.429269029583988,
+            17.712044118325608,
+            6.484622602215606,
+            -2.164649469600266,
+            10.065615720665555,
+            -1.7321676317438084,
+            14.435183226840387,
+            6.811280436015887,
+            18.44829663548435,
+            14.033860591585201,
+            -2.662633608830123,
+            8.71170491152049,
+            -38.31624610861568,
+            15.569796315815832,
+            7.894420963291382
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 2,
+          "end_to_end_speedup_percent": 9.215695617991916,
+          "block_speedup_percent_median": 6.364307293322691,
+          "block_resample_stability_95_percent": [
+            -2.064180004426408,
+            10.828990639514913
+          ],
+          "positive_block_fraction": 0.625,
+          "baseline_first_speedup_percent": 5.434050923294631,
+          "production_first_speedup_percent": 13.021195508436968,
+          "order_interaction_percentage_points": 7.587144585142337,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": false,
+          "block_speedups_percent": [
+            -0.30204793351115145,
+            -3.0876880769236115,
+            -3.2800970355723047,
+            6.732407315469446,
+            14.925573963560378,
+            6.09869669401728,
+            16.422380226348277,
+            -2.064180004426408,
+            5.985024233543168,
+            -2.4691705056736124,
+            6.629917892628101,
+            14.990183537560364,
+            7.675288851876405,
+            84.40711271547899,
+            -2.5019058758801505,
+            9.0416150945263
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        },
+        {
+          "run_id": 3,
+          "end_to_end_speedup_percent": 2.8644387011561134,
+          "block_speedup_percent_median": 7.745354001811544,
+          "block_resample_stability_95_percent": [
+            3.0402722196706478,
+            15.00270082410129
+          ],
+          "positive_block_fraction": 0.8125,
+          "baseline_first_speedup_percent": -0.645694822145626,
+          "production_first_speedup_percent": 6.718508896116315,
+          "order_interaction_percentage_points": 7.364203718261941,
+          "first_policy_counts": {
+            "baseline": 128,
+            "production": 128
+          },
+          "structured_document_observed_during_fixed_steps": false,
+          "block_speedups_percent": [
+            3.571402136583557,
+            16.056570787418025,
+            15.452902579154504,
+            8.42963375033241,
+            -4.831260780553648,
+            7.344734747385995,
+            -4.859828592779836,
+            15.00270082410129,
+            8.145973256237093,
+            16.664739742331314,
+            5.924302741745113,
+            0.15624169759618223,
+            9.61636829927388,
+            -39.87033108067111,
+            17.724478162337732,
+            5.799136895439094
+          ],
+          "gate": {
+            "exact_token_text_cache_parity": true,
+            "swap_zero": true,
+            "end_to_end_speedup_meets_workload_floor": true,
+            "block_median_speedup_meets_workload_floor": true,
+            "block_resample_lower_meets_core_floor": true,
+            "positive_block_fraction_meets_workload_floor": true,
+            "balanced_ab_ba_order": true
+          },
+          "passed": true
+        }
+      ]
+    }
+  },
+  "speedup_percent_median_across_cells": 13.915205548858122,
+  "all_runs_passed": true
+}

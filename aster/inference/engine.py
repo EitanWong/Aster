@@ -38,6 +38,8 @@ _PREPARE_ADMITTED: PrepareResult = "admitted"
 _PREPARE_DEFERRED: PrepareResult = "deferred"
 _PREPARE_TERMINAL: PrepareResult = "terminal"
 _PREFILL_TRANSIENT_SAFETY = 1.3
+_LONG_CONTEXT_SNAPSHOT_MIN_TOKENS = 65_536
+_LONG_CONTEXT_SNAPSHOT_BUDGET_BYTES = 2 * 1024**3
 
 _WAITING_PHASES = {
     RequestPhase.SUBMITTED,
@@ -77,6 +79,7 @@ class EngineStatus:
     runtime_cache_clear_attempts: int
     runtime_cache_clear_failures: int
     cancelled_prefill_checkpoints: int
+    snapshot_preflight_skips: int
     prefill_yield_rotations: int
 
 
@@ -127,6 +130,7 @@ class InferenceEngine:
         self._runtime_cache_clear_attempts = 0
         self._runtime_cache_clear_failures = 0
         self._cancelled_prefill_checkpoints = 0
+        self._snapshot_preflight_skips = 0
         self._prefill_yield_rotations = 0
         self._prefill_model_seconds = 0.0
         self._prefill_model_tokens = 0
@@ -188,6 +192,7 @@ class InferenceEngine:
             runtime_cache_clear_attempts=self._runtime_cache_clear_attempts,
             runtime_cache_clear_failures=self._runtime_cache_clear_failures,
             cancelled_prefill_checkpoints=self._cancelled_prefill_checkpoints,
+            snapshot_preflight_skips=self._snapshot_preflight_skips,
             prefill_yield_rotations=self._prefill_yield_rotations,
         )
         return {
@@ -222,6 +227,7 @@ class InferenceEngine:
             "runtime_cache_clear_attempts": status.runtime_cache_clear_attempts,
             "runtime_cache_clear_failures": status.runtime_cache_clear_failures,
             "cancelled_prefill_checkpoints": status.cancelled_prefill_checkpoints,
+            "snapshot_preflight_skips": status.snapshot_preflight_skips,
             "prefill_yield_rotations": status.prefill_yield_rotations,
             "active_estimated_bytes": self._active_estimated_bytes,
             "runtime_kernel": self.runtime_kernel.capabilities.name,
@@ -901,9 +907,7 @@ class InferenceEngine:
     def _decode_work_item(self, state: RequestState) -> DecodeWorkItem:
         if state.next_input_token is None or state.decode_sampler is None or state.decode_detokenizer is None:
             raise RuntimeError(f"Request {state.request_id} is not decode-initialized")
-        logits_processor_tokens = state.prompt_tokens + state.output_token_ids
-        if logits_processor_tokens and logits_processor_tokens[-1] == state.next_input_token:
-            logits_processor_tokens = logits_processor_tokens[:-1]
+        logits_processor_tokens = self._logits_processor_tokens(state)
         return DecodeWorkItem(
             prompt_cache=state.prompt_cache,
             input_token=state.next_input_token,
@@ -915,7 +919,39 @@ class InferenceEngine:
             completion_tokens=state.completion_tokens,
             max_tokens=state.request.max_tokens,
             request_id=state.request_id,
+            logits_processor_context_size=state.decode_logits_processor_context_size,
         )
+
+    @staticmethod
+    def _logits_processor_tokens(state: RequestState) -> list[int]:
+        context_size = state.decode_logits_processor_context_size
+        if context_size == 0:
+            return []
+        if context_size is None:
+            tokens = state.prompt_tokens + state.output_token_ids
+            if tokens and tokens[-1] == state.next_input_token:
+                tokens = tokens[:-1]
+            return tokens
+
+        prompt_end = len(state.prompt_tokens)
+        output_end = len(state.output_token_ids)
+        if output_end and state.output_token_ids[-1] == state.next_input_token:
+            output_end -= 1
+        elif (
+            not output_end
+            and prompt_end
+            and state.prompt_tokens[-1] == state.next_input_token
+        ):
+            prompt_end -= 1
+        preceding = max(context_size - 1, 0)
+        output_start = max(output_end - preceding, 0)
+        recent_output = state.output_token_ids[output_start:output_end]
+        remaining = preceding - len(recent_output)
+        prompt_start = max(prompt_end - remaining, 0)
+        recent_prompt = (
+            state.prompt_tokens[prompt_start:prompt_end] if remaining else []
+        )
+        return [*recent_prompt, *recent_output]
 
     def _validate_context_budget(self, state: RequestState) -> None:
         context_length = self.settings.model.context_length
@@ -1059,6 +1095,9 @@ class InferenceEngine:
         state.decode_detokenizer = decode_init.detokenizer
         state.decode_stop_token_ids = decode_init.stop_token_ids
         state.decode_logits_processors = decode_init.logits_processors
+        state.decode_logits_processor_context_size = (
+            decode_init.logits_processor_context_size
+        )
         state.next_input_token = decode_init.next_input_token
         state.mark_decode_ready()
         state.phase = RequestPhase.DECODE_READY
@@ -1112,6 +1151,8 @@ class InferenceEngine:
             return
         if state.prompt_cache is None:
             return
+        if not await self._reserve_snapshot_capacity(state, state.prompt_cache):
+            return
         snapshot_cache = await self._runner_call(
             self.runtime_kernel.clone_cache,
             state.prompt_cache,
@@ -1148,6 +1189,8 @@ class InferenceEngine:
         if logical_prefix_tokens in state.checkpoints_created:
             return
         try:
+            if not await self._reserve_snapshot_capacity(state, result.prompt_cache):
+                return
             snapshot_cache = await self._runner_call(
                 self.runtime_kernel.clone_cache,
                 result.prompt_cache,
@@ -1183,6 +1226,43 @@ class InferenceEngine:
                     "cache_token_count": result.cache_token_count,
                 },
             )
+
+    async def _reserve_snapshot_capacity(
+        self,
+        state: RequestState,
+        prompt_cache: object,
+    ) -> bool:
+        approx_bytes = await self._runner_call(
+            self.runtime_kernel.estimate_cache_bytes,
+            prompt_cache,
+        )
+        if approx_bytes <= 0:
+            return True
+        available = await self._runner_call(self.runtime_kernel.available_memory_bytes)
+        memory_budget = int(
+            available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1)
+        )
+        snapshot_budget = min(
+            self.settings.engine.snapshot_budget_bytes,
+            self._snapshot_budget_for_state(state, memory_budget=memory_budget),
+        )
+        # Keep one cache-sized slot free while the runner materializes the clone.
+        reserved_bytes = approx_bytes * 2
+        if reserved_bytes > snapshot_budget:
+            self._snapshot_preflight_skips += 1
+            return False
+        self.prefix_store.evict_until_below(max(snapshot_budget - reserved_bytes, 0))
+        return True
+
+    @staticmethod
+    def _snapshot_budget_for_state(
+        state: RequestState,
+        *,
+        memory_budget: int,
+    ) -> int:
+        if len(state.prompt_tokens) < _LONG_CONTEXT_SNAPSHOT_MIN_TOKENS:
+            return memory_budget
+        return min(memory_budget, _LONG_CONTEXT_SNAPSHOT_BUDGET_BYTES)
 
     async def _complete_request(self, state: RequestState, *, finish_reason: str = "stop") -> None:
         tail_text = await self._runner_call(self.runtime_kernel.finalize_detokenizer, state.decode_detokenizer)

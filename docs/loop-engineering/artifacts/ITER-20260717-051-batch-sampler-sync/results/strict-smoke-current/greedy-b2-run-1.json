@@ -1,0 +1,302 @@
+{
+  "schema_version": 1,
+  "pid": 83279,
+  "run_id": 1,
+  "workload": "greedy",
+  "batch_size": 2,
+  "context_words": 128,
+  "settings": {
+    "steps": 16,
+    "pair_warmup_steps": 4,
+    "model_warmup_tokens": 8,
+    "prefill_step": 1024,
+    "seed": 20260719,
+    "block_size": 4,
+    "actual_prompt_tokens": 409
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "429c8247f0faf615141a0a36808257762d7c89e4f8ad35568c7619932ac1ae6a",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "ee30de576e7c6bab809ef2e7bfd6dc31f7ad91d07fe40a82676986e22a0416fd",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69"
+  },
+  "model_input_sha256": {
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors": "f5a0d9dd3efa73510542a8023d610ff26be2b4b020d181cfc4bedaa1fcc5dd9e",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors.index.json": "6e48f2fa5d6f033a6d77bf833abfa9698ca24d1715ecea4c67447bcfaee44650",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/config.json": "ba7770da23eae5ebd6827571f086e331956b33f4442a9e876fb4aa10969a6772",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+  },
+  "timings": {
+    "baseline_step_seconds": [
+      0.0068851669784635305,
+      0.006198375020176172,
+      0.006133542017778382,
+      0.006201000011060387,
+      0.006150500004878268,
+      0.006159292010124773,
+      0.00620425000670366,
+      0.006077583006117493,
+      0.006320249987766147,
+      0.006319290987448767,
+      0.006140666984720156,
+      0.006231958017451689,
+      0.006346000009216368,
+      0.006356625002808869,
+      0.006243166979402304,
+      0.006161750003229827
+    ],
+    "production_step_seconds": [
+      0.005984541989164427,
+      0.005913250002777204,
+      0.005929208011366427,
+      0.005906542006414384,
+      0.005694833002053201,
+      0.005944874981651083,
+      0.005885999999009073,
+      0.005752416996983811,
+      0.00592870800755918,
+      0.0057707090163603425,
+      0.00591620898921974,
+      0.005681499984348193,
+      0.0057254169951193035,
+      0.005779540981166065,
+      0.00599995898664929,
+      0.005903750017751008
+    ],
+    "first_policy_by_step": [
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production"
+    ],
+    "baseline_tokens_per_second": 319.58640078030555,
+    "production_tokens_per_second": 341.4518491118466
+  },
+  "parity": {
+    "exact_token_text_cache": true,
+    "baseline_token_ids": [
+      [
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267
+      ],
+      [
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267
+      ]
+    ],
+    "production_token_ids": [
+      [
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267
+      ],
+      [
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267
+      ]
+    ],
+    "baseline_text_sha256": [
+      "615b9afdec5478aed2e3ac1d67c1b6455d605f8eb6431ed838b2ba925c9dbeff",
+      "615b9afdec5478aed2e3ac1d67c1b6455d605f8eb6431ed838b2ba925c9dbeff"
+    ],
+    "production_text_sha256": [
+      "615b9afdec5478aed2e3ac1d67c1b6455d605f8eb6431ed838b2ba925c9dbeff",
+      "615b9afdec5478aed2e3ac1d67c1b6455d605f8eb6431ed838b2ba925c9dbeff"
+    ],
+    "baseline_cache_digest": "841c47814b27a148ce6edbed3e1bd0d715197baea38bacae9cc3d23f832b4f8f",
+    "production_cache_digest": "841c47814b27a148ce6edbed3e1bd0d715197baea38bacae9cc3d23f832b4f8f",
+    "structured_schema_valid": null
+  },
+  "policy_metrics": {
+    "baseline": {
+      "policy": "baseline",
+      "explicit_eval_seconds": {
+        "count": 20,
+        "min": 0.005103707982925698,
+        "median": 0.005162896486581303,
+        "p95": 0.005858224679832348,
+        "max": 0.00763979199109599
+      },
+      "async_eval_submit_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_sync_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_enqueue_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_group_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "materialize_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "clear_requests": 0,
+      "clear_failures": 0
+    },
+    "production": {
+      "policy": "production",
+      "explicit_eval_seconds": {
+        "count": 20,
+        "min": 0.0031730839982628822,
+        "median": 0.003305708509287797,
+        "p95": 0.0035023065938730724,
+        "max": 0.003823209000984207
+      },
+      "async_eval_submit_seconds": {
+        "count": 20,
+        "min": 0.0019392499816603959,
+        "median": 0.001984791990253143,
+        "p95": 0.0023018041742034266,
+        "max": 0.0031839589937590063
+      },
+      "sample_sync_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_enqueue_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_group_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "materialize_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "clear_requests": 0,
+      "clear_failures": 0
+    }
+  },
+  "memory": {
+    "rss_before_bytes": 985989120,
+    "rss_after_bytes": 1070432256,
+    "mlx_peak_bytes": 565177610,
+    "swap_before_bytes": 8585216,
+    "swap_after_bytes": 8585216
+  }
+}

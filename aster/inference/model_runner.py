@@ -46,6 +46,7 @@ class DecodeInit:
     detokenizer: Any
     stop_token_ids: frozenset[int]
     logits_processors: tuple[Any, ...] = ()
+    logits_processor_context_size: int | None = None
 
 
 @dataclass(slots=True)
@@ -60,6 +61,7 @@ class DecodeWorkItem:
     completion_tokens: int
     max_tokens: int
     request_id: str | None = None
+    logits_processor_context_size: int | None = None
 
 
 @dataclass(slots=True)
@@ -87,6 +89,12 @@ class DecodeResult:
 DecodeStepResult = DecodeResult | BaseException
 
 
+class _BatchPostSampleError(RuntimeError):
+    def __init__(self, cause: Exception) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
+
+
 @dataclass(frozen=True, slots=True)
 class PrefillTransientProfile:
     n_q_heads: int
@@ -111,6 +119,8 @@ def _array_memory(arr: Any) -> int:
 
 
 class ModelRunner:
+    _BUILTIN_PENALTY_CONTEXT_SIZE = 20
+
     def __init__(self, settings: RuntimeSettings) -> None:
         self.settings = settings
         self._loaded = False
@@ -132,6 +142,7 @@ class ModelRunner:
         self._decode_batch_fallbacks = 0
         self._decode_batch_items = 0
         self._decode_batch_fallback_items = 0
+        self._decode_batch_post_sample_failures = 0
         self._decode_single_steps = 0
         self._last_decode_batch_fallback_error: str | None = None
         self._decode_batch_cache_state: _DecodeBatchCacheState | None = None
@@ -306,13 +317,27 @@ class ModelRunner:
                     prompt_has_think_tag=True,
                 )
             logits_processors.append(json_processor)
-        logits_processors.extend(
+        penalty_processors = list(
             make_logits_processors(
-                repetition_penalty=request.repetition_penalty,
+                repetition_penalty=(
+                    None
+                    if request.repetition_penalty == 1.0
+                    else request.repetition_penalty
+                ),
+                repetition_context_size=self._BUILTIN_PENALTY_CONTEXT_SIZE,
                 presence_penalty=request.presence_penalty,
+                presence_context_size=self._BUILTIN_PENALTY_CONTEXT_SIZE,
                 frequency_penalty=request.frequency_penalty,
+                frequency_context_size=self._BUILTIN_PENALTY_CONTEXT_SIZE,
             )
         )
+        logits_processors.extend(penalty_processors)
+        if thinking_processor is not None or json_processor is not None:
+            logits_processor_context_size = None
+        elif penalty_processors:
+            logits_processor_context_size = self._BUILTIN_PENALTY_CONTEXT_SIZE
+        else:
+            logits_processor_context_size = 0
         detokenizer = tokenizer.detokenizer
         eos_ids = set(getattr(tokenizer, "eos_token_ids", []) or [])
         eos_id = getattr(tokenizer, "eos_token_id", None)
@@ -332,6 +357,7 @@ class ModelRunner:
             detokenizer=detokenizer,
             stop_token_ids=frozenset(int(token_id) for token_id in eos_ids),
             logits_processors=tuple(logits_processors),
+            logits_processor_context_size=logits_processor_context_size,
         )
 
     def decode_batch_step(self, items: list[DecodeWorkItem]) -> list[DecodeStepResult]:
@@ -350,6 +376,13 @@ class ModelRunner:
             self._decode_batch_successes += 1
         except MemoryError:
             raise
+        except _BatchPostSampleError as exc:
+            self._decode_batch_cache_state = None
+            self._decode_batch_post_sample_failures += 1
+            self._last_decode_batch_fallback_error = (
+                f"{exc.cause.__class__.__name__}: {exc.cause}"
+            )
+            results = [exc.cause for _ in items]
         except Exception as exc:
             self._decode_batch_cache_state = None
             self._decode_batch_fallbacks += 1
@@ -454,6 +487,7 @@ class ModelRunner:
             "batch_fallbacks": self._decode_batch_fallbacks,
             "batch_items": self._decode_batch_items,
             "batch_fallback_items": self._decode_batch_fallback_items,
+            "batch_post_sample_failures": self._decode_batch_post_sample_failures,
             "single_steps": self._decode_single_steps,
             "batch_fallback_rate": round(fallback_rate, 6),
             "last_batch_fallback_error": self._last_decode_batch_fallback_error,
@@ -820,33 +854,107 @@ class ModelRunner:
         input_tokens = mx.array([[item.input_token] for item in items], dtype=mx.uint32)
         logits = model(input_tokens, cache=merged_cache)
         logits = logits[:, -1, :]
-        try:
-            mx.eval(logits)
-        except Exception:
-            pass
+        if self._uses_eager_row_sampling(items):
+            return self._decode_batch_eager_rows(
+                items,
+                logits=logits,
+                merged_cache=merged_cache,
+                batch_cache_state=batch_cache_state,
+            )
 
-        results: list[DecodeResult] = []
-        peak_memory_gb = self.current_peak_memory_gb()
+        sampled_tokens: list[Any] = []
         for index, item in enumerate(items):
             row = self._apply_logits_processors(
                 logits[index : index + 1],
                 item=item,
             )
             logprobs = row - mx.logsumexp(row, axis=-1, keepdims=True)
-            token = self._sample_token(logprobs, item.sampler)
-            prompt_cache = (
-                self._decode_cache_ref(batch_cache_state, index)
-                if batch_cache_state is not None
-                else self._extract_prompt_cache(merged_cache, index)
-            )
-            results.append(
-                self._decode_result(
-                    item=item,
-                    token=token,
-                    prompt_cache=prompt_cache,
-                    peak_memory_gb=peak_memory_gb,
+            sampled_tokens.append(item.sampler(logprobs))
+
+        lazy_samples, trusted_array_type = self._mlx_sample_arrays(mx, sampled_tokens)
+        if not lazy_samples:
+            evaluation_targets: Any = logits
+        elif trusted_array_type and len(lazy_samples) == len(sampled_tokens):
+            evaluation_targets = lazy_samples
+        else:
+            evaluation_targets = [logits, *lazy_samples]
+        try:
+            mx.async_eval(evaluation_targets)
+            peak_memory_gb = self.current_peak_memory_gb()
+            prompt_caches = [
+                (
+                    self._decode_cache_ref(batch_cache_state, index)
+                    if batch_cache_state is not None
+                    else self._extract_prompt_cache(merged_cache, index)
                 )
-            )
+                for index in range(len(items))
+            ]
+            mx.eval(evaluation_targets)
+        except MemoryError:
+            raise
+        except Exception as exc:
+            raise _BatchPostSampleError(exc) from exc
+
+        try:
+            results: list[DecodeResult] = []
+            for item, sampled, prompt_cache in zip(
+                items, sampled_tokens, prompt_caches, strict=True
+            ):
+                results.append(
+                    self._decode_result(
+                        item=item,
+                        token=self._materialize_sampled_token(sampled),
+                        prompt_cache=prompt_cache,
+                        peak_memory_gb=peak_memory_gb,
+                    )
+                )
+        except MemoryError:
+            raise
+        except Exception as exc:
+            raise _BatchPostSampleError(exc) from exc
+        return results
+
+    def _decode_batch_eager_rows(
+        self,
+        items: list[DecodeWorkItem],
+        *,
+        logits: Any,
+        merged_cache: list[Any],
+        batch_cache_state: _DecodeBatchCacheState | None,
+    ) -> list[DecodeResult]:
+        mx = self._mx
+        assert mx is not None
+        mx.eval(logits)
+        peak_memory_gb = self.current_peak_memory_gb()
+        results: list[DecodeResult] = []
+        row_phase_started = False
+        try:
+            for index, item in enumerate(items):
+                row_phase_started = True
+                row = self._apply_logits_processors(
+                    logits[index : index + 1],
+                    item=item,
+                )
+                logprobs = row - mx.logsumexp(row, axis=-1, keepdims=True)
+                prompt_cache = (
+                    self._decode_cache_ref(batch_cache_state, index)
+                    if batch_cache_state is not None
+                    else self._extract_prompt_cache(merged_cache, index)
+                )
+                results.append(
+                    self._decode_result(
+                        item=item,
+                        token=self._sample_token(logprobs, item.sampler),
+                        prompt_cache=prompt_cache,
+                        peak_memory_gb=peak_memory_gb,
+                    )
+                )
+        except MemoryError:
+            raise
+        except Exception as exc:
+            if row_phase_started:
+                raise _BatchPostSampleError(exc) from exc
+            raise
         return results
 
     def _decode_single(self, item: DecodeWorkItem) -> DecodeResult:
@@ -953,7 +1061,39 @@ class ModelRunner:
         )
 
     def _sample_token(self, logprobs: Any, sampler: Any) -> int:
-        sampled = sampler(logprobs)
+        return self._materialize_sampled_token(sampler(logprobs))
+
+    @staticmethod
+    def _uses_eager_row_sampling(items: list[DecodeWorkItem]) -> bool:
+        for item in items:
+            for processor in item.logits_processors:
+                visited: set[int] = set()
+                current = processor
+                while current is not None and id(current) not in visited:
+                    visited.add(id(current))
+                    if getattr(current, "batch_sampling_mode", None) == "eager_rows":
+                        return True
+                    current = getattr(current, "_inner", None)
+        return False
+
+    @staticmethod
+    def _mlx_sample_arrays(
+        mx: Any,
+        sampled_tokens: list[Any],
+    ) -> tuple[list[Any], bool]:
+        array_type = getattr(mx, "array", None)
+        if isinstance(array_type, type):
+            return [
+                sampled for sampled in sampled_tokens if isinstance(sampled, array_type)
+            ], True
+        return [
+            sampled
+            for sampled in sampled_tokens
+            if hasattr(sampled, "shape") and hasattr(sampled, "dtype")
+        ], False
+
+    @staticmethod
+    def _materialize_sampled_token(sampled: Any) -> int:
         if hasattr(sampled, "item"):
             return int(sampled.item())
         if hasattr(sampled, "tolist"):
@@ -970,7 +1110,20 @@ class ModelRunner:
             return logits
         mx = self._mx
         assert mx is not None
-        tokens = mx.array(item.logits_processor_tokens + [item.input_token], dtype=mx.uint32)
+        context_size = item.logits_processor_context_size
+        if context_size is None:
+            processor_tokens = item.logits_processor_tokens + [item.input_token]
+        else:
+            preceding = max(context_size - 1, 0)
+            processor_tokens = [
+                *(
+                    item.logits_processor_tokens[-preceding:]
+                    if preceding
+                    else ()
+                ),
+                item.input_token,
+            ]
+        tokens = mx.array(processor_tokens, dtype=mx.uint32)
         for processor in item.logits_processors:
             logits = processor(tokens, logits)
         return logits

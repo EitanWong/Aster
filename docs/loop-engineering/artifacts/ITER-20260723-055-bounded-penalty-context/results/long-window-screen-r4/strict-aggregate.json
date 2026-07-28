@@ -1,0 +1,181 @@
+{
+  "schema_version": 2,
+  "manifest_sha256": "7597c8097c723cb3f0039d9b6db66b09ec10c7289b07e041d3f30328dc7e5284",
+  "records": 4,
+  "unique_pids": 4,
+  "minimum_processes_per_cell": 18,
+  "minimum_replicates_per_cell": 9,
+  "cells": {
+    "penalties-b2": {
+      "workload": "penalties",
+      "batch_size": 2,
+      "speed_floor_percent": 3.0,
+      "independent_processes": 4,
+      "independent_replicates": 2,
+      "stable_replicates": 2,
+      "all_swap_zero": true,
+      "order_strata_inference_required": true,
+      "within_replicate_stability_required": true,
+      "intervals": {
+        "balanced": {
+          "confidence_target": 0.95,
+          "coverage": 0.5,
+          "lower": 4.687856138712121,
+          "upper": 4.995121027160332,
+          "order_statistic_rank": 1,
+          "observations": 2,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        },
+        "baseline_first": {
+          "confidence_target": 0.95,
+          "coverage": 0.5,
+          "lower": 4.713171920183901,
+          "upper": 5.024765707800016,
+          "order_statistic_rank": 1,
+          "observations": 2,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        },
+        "production_first": {
+          "confidence_target": 0.95,
+          "coverage": 0.5,
+          "lower": 4.351060675741447,
+          "upper": 5.27753879563071,
+          "order_statistic_rank": 1,
+          "observations": 2,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        }
+      },
+      "gates": {
+        "minimum_independent_processes": false,
+        "minimum_assignment_balanced_replicates": false,
+        "all_exact_token_text_cache_parity": true,
+        "all_swap_non_growth": true,
+        "all_balanced_ab_ba_order": true,
+        "all_runner_assignment_pairs_balanced": true,
+        "balanced_median_interval_clears_floor": false,
+        "baseline_first_median_interval_clears_floor": false,
+        "production_first_median_interval_clears_floor": false,
+        "order_strata_speed_floor_required": false,
+        "within_replicate_stability": true
+      },
+      "passed": false,
+      "replicates": [
+        {
+          "replicate_id": 1,
+          "run_ids": [
+            1,
+            2
+          ],
+          "end_to_end_speedup_percent": 4.995121027160332,
+          "baseline_first_speedup_percent": 4.713171920183901,
+          "production_first_speedup_percent": 5.27753879563071,
+          "block_speedup_percent_median": 4.962796679193726,
+          "block_floor_fraction": 1.0,
+          "within_replicate_stable": true,
+          "runner_assignment_balanced": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": [
+            0,
+            0
+          ],
+          "swap_zero": true,
+          "swap_non_growth": true
+        },
+        {
+          "replicate_id": 2,
+          "run_ids": [
+            3,
+            4
+          ],
+          "end_to_end_speedup_percent": 4.687856138712121,
+          "baseline_first_speedup_percent": 5.024765707800016,
+          "production_first_speedup_percent": 4.351060675741447,
+          "block_speedup_percent_median": 4.317859310500694,
+          "block_floor_fraction": 1.0,
+          "within_replicate_stable": true,
+          "runner_assignment_balanced": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": [
+            0,
+            0
+          ],
+          "swap_zero": true,
+          "swap_non_growth": true
+        }
+      ],
+      "runs": [
+        {
+          "run_id": 1,
+          "pid": 69178,
+          "end_to_end_speedup_percent": 4.8367860996418655,
+          "baseline_first_speedup_percent": 4.598680717352033,
+          "production_first_speedup_percent": 5.078622635947627,
+          "block_speedup_percent_median": 4.323998029926246,
+          "positive_block_fraction": 1.0,
+          "block_floor_fraction": 0.8125,
+          "within_process_stable": true,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": 0,
+          "swap_zero": true,
+          "swap_non_growth": true
+        },
+        {
+          "run_id": 2,
+          "pid": 74797,
+          "end_to_end_speedup_percent": 5.1536950878132926,
+          "baseline_first_speedup_percent": 4.827788442335623,
+          "production_first_speedup_percent": 5.4768315080091945,
+          "block_speedup_percent_median": 5.106060893709364,
+          "positive_block_fraction": 1.0,
+          "block_floor_fraction": 0.875,
+          "within_process_stable": true,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": 0,
+          "swap_zero": true,
+          "swap_non_growth": true
+        },
+        {
+          "run_id": 3,
+          "pid": 80699,
+          "end_to_end_speedup_percent": 5.16014844648276,
+          "baseline_first_speedup_percent": 5.7908726732917915,
+          "production_first_speedup_percent": 4.5308809754469825,
+          "block_speedup_percent_median": 4.72026125786763,
+          "positive_block_fraction": 1.0,
+          "block_floor_fraction": 1.0,
+          "within_process_stable": true,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": 0,
+          "swap_zero": true,
+          "swap_non_growth": true
+        },
+        {
+          "run_id": 4,
+          "pid": 86417,
+          "end_to_end_speedup_percent": 4.217684976901004,
+          "baseline_first_speedup_percent": 4.264206667830961,
+          "production_first_speedup_percent": 4.171549713715672,
+          "block_speedup_percent_median": 3.8493922362620836,
+          "positive_block_fraction": 1.0,
+          "block_floor_fraction": 0.8125,
+          "within_process_stable": true,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": 0,
+          "swap_zero": true,
+          "swap_non_growth": true
+        }
+      ]
+    }
+  },
+  "all_cells_passed": false
+}

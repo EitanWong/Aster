@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-23T18:49:23.036723+00:00",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "git_commit": "2cb14052d4a3edbcbd420e8bf8d28cfce4a6bba2",
+    "git_branch": "main"
+  },
+  "matrix": {
+    "profile": "short",
+    "cells": [
+      {
+        "workload": "structured",
+        "batch_size": 4
+      }
+    ],
+    "runs": 2,
+    "independent_replicates": 1,
+    "context_words": 128,
+    "steps": 64,
+    "pair_warmup_steps": 8,
+    "block_size": 8,
+    "base_seed": 20260724,
+    "fresh_processes": true,
+    "within_process_adjacent_pairing": true,
+    "alternating_ab_ba_order": true,
+    "round_robin_cell_execution": true,
+    "alternating_policy_runner_assignment": true,
+    "paired_runner_assignment_replicates": true
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "5ca9bc44f4c181ebc933b5f19aaaa8fb9e4f22f821b1b54882eef2acfda07226",
+    "aster/inference/constrained/json_schema_processor.py": "2c01eb200cea9c0a1f19d7aae988451434a2187b9dd31cfac945ccb234f3ec56",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "74e923f5196d6fe24e3c662d8f4f55062e951b4d0a34c96f2f6fd38288897b0d",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "docs/loop-engineering/artifacts/ITER-20260723-055-bounded-penalty-context/candidate_benchmark.py": "1834dd431ea0627d9330692ed0012121911bf66dc053e4f0ec2254e705535f9d",
+    "docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/allowed_tokens_benchmark.py": "49325abe78711a87f3275d5b43aa59331c914c941e97c5dbde63d6eca07276aa",
+    "docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/strict_aggregate.py": "3bf7144b22f1875899ae573ed02015d837451bf538e9a2bfd43d51c43889e664",
+    "docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/strict_matrix.py": "c8d2e6b1d7f12436f506bf6a2245f85618b54e4939ae83b34002ae41d75f467b"
+  },
+  "records": [
+    {
+      "output": "results/pilot-short-r2/structured-b4-run-1.json",
+      "sha256": "5ef08d9b62849b11be3f3b9078a66d9f36a8d75f4e519ad767696644ea97e721",
+      "pid": 2497,
+      "workload": "structured",
+      "batch_size": 4,
+      "run_id": 1,
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/allowed_tokens_benchmark.py",
+        "--config",
+        "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+        "--model",
+        "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+        "--workload",
+        "structured",
+        "--batch-size",
+        "4",
+        "--context-words",
+        "128",
+        "--steps",
+        "64",
+        "--pair-warmup-steps",
+        "8",
+        "--block-size",
+        "8",
+        "--seed",
+        "20260725",
+        "--run-id",
+        "1",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/results/pilot-short-r2/structured-b4-run-1.json"
+      ]
+    },
+    {
+      "output": "results/pilot-short-r2/structured-b4-run-2.json",
+      "sha256": "9f09b3c72b82d77e0582d7b64898d7dc599ed813c885b6291ab8fde31526f5ea",
+      "pid": 18221,
+      "workload": "structured",
+      "batch_size": 4,
+      "run_id": 2,
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/allowed_tokens_benchmark.py",
+        "--config",
+        "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+        "--model",
+        "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+        "--workload",
+        "structured",
+        "--batch-size",
+        "4",
+        "--context-words",
+        "128",
+        "--steps",
+        "64",
+        "--pair-warmup-steps",
+        "8",
+        "--block-size",
+        "8",
+        "--seed",
+        "20260725",
+        "--run-id",
+        "2",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-057-structured-python-tokens/results/pilot-short-r2/structured-b4-run-2.json"
+      ]
+    }
+  ],
+  "wall_seconds": 14.16857058298774
+}

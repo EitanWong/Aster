@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-18T06:23:34.549734+00:00",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "git_commit": "2cb14052d4a3edbcbd420e8bf8d28cfce4a6bba2",
+    "git_branch": "main"
+  },
+  "matrix": {
+    "profile": "short",
+    "cells": [
+      {
+        "workload": "greedy",
+        "batch_size": 2
+      }
+    ],
+    "runs": 1,
+    "context_words": 128,
+    "steps": 16,
+    "pair_warmup_steps": 4,
+    "block_size": 4,
+    "base_seed": 20260718,
+    "fresh_processes": true,
+    "within_process_adjacent_pairing": true,
+    "alternating_ab_ba_order": true,
+    "round_robin_cell_execution": true
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "429c8247f0faf615141a0a36808257762d7c89e4f8ad35568c7619932ac1ae6a",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "ee30de576e7c6bab809ef2e7bfd6dc31f7ad91d07fe40a82676986e22a0416fd",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/strict_aggregate.py": "7cbc8e89108e29be332186dd93a2961b5fc0b6f6376296ea7bb7fa0087e4b76b",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_matrix.py": "6efdd9589c35867a84825c04ce506affad269aaad0a2770c0c248ccd9adf271b"
+  },
+  "records": [
+    {
+      "output": "results/strict-smoke-current/greedy-b2-run-1.json",
+      "sha256": "39786b7ac4c9970bf345e18af3eaa22a4284d3fbbeb652e7366d8fba7f0bf9a5",
+      "pid": 83279,
+      "workload": "greedy",
+      "batch_size": 2,
+      "run_id": 1,
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py",
+        "--config",
+        "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+        "--model",
+        "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+        "--workload",
+        "greedy",
+        "--batch-size",
+        "2",
+        "--context-words",
+        "128",
+        "--steps",
+        "16",
+        "--pair-warmup-steps",
+        "4",
+        "--block-size",
+        "4",
+        "--seed",
+        "20260719",
+        "--run-id",
+        "1",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/results/strict-smoke-current/greedy-b2-run-1.json"
+      ]
+    }
+  ],
+  "wall_seconds": 2.6793450829864014
+}

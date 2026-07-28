@@ -45,6 +45,7 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
     assert RuntimeSettings().engine.batch_generator_lane_admission_window_ms == 0.0
     assert RuntimeSettings().engine.batch_generator_lane_target_size == 0
     assert RuntimeSettings().engine.batch_generator_longest_lane_step_quanta == 1
+    assert RuntimeSettings().engine.batch_generator_lane_streams is False
     assert RuntimeSettings().engine.chat_prompt_cache_max_entries == 32
     assert RuntimeSettings().engine.snapshot_max_chat_reuse_points == 8
     assert RuntimeSettings().engine.snapshot_chat_reuse_sparse_points == 4
@@ -58,6 +59,7 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
                     "batch_generator_lane_admission_window_ms": 200,
                     "batch_generator_lane_target_size": 3,
                     "batch_generator_longest_lane_step_quanta": 2,
+                    "batch_generator_lane_streams": True,
                     "chat_prompt_cache_max_entries": 8,
                 }
             }
@@ -81,6 +83,12 @@ def test_batch_generator_lane_limit_defaults_to_one_and_is_bounded() -> None:
             {"engine": {"batch_generator_longest_lane_step_quanta": 2}}
         ).engine.batch_generator_longest_lane_step_quanta
         == 2
+    )
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"batch_generator_lane_streams": True}}
+        ).engine.batch_generator_lane_streams
+        is True
     )
     assert (
         RuntimeSettings.model_validate(

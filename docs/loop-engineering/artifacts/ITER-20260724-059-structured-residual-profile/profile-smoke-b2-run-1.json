@@ -1,0 +1,803 @@
+{
+  "schema_version": 1,
+  "pid": 30379,
+  "run_id": 1,
+  "workload": "structured",
+  "batch_size": 2,
+  "context_words": 128,
+  "comparison_design": {
+    "policy_runner_assignment": {
+      "baseline": "runner_a",
+      "production": "runner_b"
+    },
+    "runner_assignment_alternates_by_run": true,
+    "assignment_balanced_replicate_id": 1
+  },
+  "settings": {
+    "steps": 16,
+    "pair_warmup_steps": 4,
+    "model_warmup_tokens": 8,
+    "prefill_step": 1024,
+    "seed": 20260724,
+    "block_size": 4,
+    "actual_prompt_tokens": 409
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "5ca9bc44f4c181ebc933b5f19aaaa8fb9e4f22f821b1b54882eef2acfda07226",
+    "aster/inference/constrained/json_schema_processor.py": "57a1834dd0e2a97a846adeec5b37d458ee3058b341fa6c820740443b3fb5e083",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "74e923f5196d6fe24e3c662d8f4f55062e951b4d0a34c96f2f6fd38288897b0d",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "docs/loop-engineering/artifacts/ITER-20260724-059-structured-residual-profile/profile_benchmark.py": "d69a4bca85529fb4071171c1529d876155dde3dc9b6f753f64ce92abcd784df8"
+  },
+  "model_input_sha256": {
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors": "f5a0d9dd3efa73510542a8023d610ff26be2b4b020d181cfc4bedaa1fcc5dd9e",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors.index.json": "6e48f2fa5d6f033a6d77bf833abfa9698ca24d1715ecea4c67447bcfaee44650",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/config.json": "ba7770da23eae5ebd6827571f086e331956b33f4442a9e876fb4aa10969a6772",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+  },
+  "timings": {
+    "baseline_step_seconds": [
+      0.013247416005469859,
+      0.011140000016894192,
+      0.010106125002494082,
+      0.010253167012706399,
+      0.011393042019335553,
+      0.00994433299638331,
+      0.009546125016640872,
+      0.009616708004614338,
+      0.009274458978325129,
+      0.011073334026150405,
+      0.009651875006966293,
+      0.009359666000818834,
+      0.011559791979379952,
+      0.06597387499641627,
+      0.034026125009404495,
+      0.014220999990357086
+    ],
+    "production_step_seconds": [
+      0.009830291994148865,
+      0.010749499982921407,
+      0.009823125001275912,
+      0.010174875002121553,
+      0.009665874997153878,
+      0.009988833975512534,
+      0.010920542001258582,
+      0.0089261659886688,
+      0.009623457997804508,
+      0.009800874977372587,
+      0.009638624993385747,
+      0.009596542018698528,
+      0.00973324998631142,
+      0.06642170797567815,
+      0.03230645798612386,
+      0.016574209003010765
+    ],
+    "first_policy_by_step": [
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production"
+    ],
+    "baseline_tokens_per_second": 127.80214078343013,
+    "production_tokens_per_second": 131.26894653135352
+  },
+  "parity": {
+    "exact_token_text_cache": true,
+    "baseline_token_ids": [
+      [
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        4754,
+        64,
+        4268,
+        6360,
+        763,
+        328,
+        760,
+        1156
+      ],
+      [
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        4754,
+        64,
+        4268,
+        6360,
+        763,
+        328,
+        760,
+        1156
+      ]
+    ],
+    "production_token_ids": [
+      [
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        4754,
+        64,
+        4268,
+        6360,
+        763,
+        328,
+        760,
+        1156
+      ],
+      [
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        198,
+        220,
+        220,
+        201,
+        4754,
+        64,
+        4268,
+        6360,
+        763,
+        328,
+        760,
+        1156
+      ]
+    ],
+    "baseline_text_sha256": [
+      "729a2cbda14360765b37a52dadd59dd0441b19bb3056aa184f83b6858e94f171",
+      "729a2cbda14360765b37a52dadd59dd0441b19bb3056aa184f83b6858e94f171"
+    ],
+    "production_text_sha256": [
+      "729a2cbda14360765b37a52dadd59dd0441b19bb3056aa184f83b6858e94f171",
+      "729a2cbda14360765b37a52dadd59dd0441b19bb3056aa184f83b6858e94f171"
+    ],
+    "baseline_cache_digest": "3ff7f19acf02b56cddbf0d510b0d1dc85c64e7bcf2192d71e30da7ac1a924b90",
+    "production_cache_digest": "3ff7f19acf02b56cddbf0d510b0d1dc85c64e7bcf2192d71e30da7ac1a924b90",
+    "structured_schema_valid": false
+  },
+  "policy_metrics": {
+    "baseline": {
+      "policy": "baseline",
+      "explicit_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "async_eval_submit_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_sync_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_enqueue_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_group_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "materialize_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "clear_requests": 0,
+      "clear_failures": 0,
+      "profile_measured_calls": 32,
+      "profile_seconds": {
+        "apply": {
+          "all_calls": {
+            "count": 40,
+            "min": 0.0001654170046094805,
+            "median": 0.0007335414993576705,
+            "p95": 0.013824911850679158,
+            "max": 0.028443666989915073,
+            "total": 0.11120899894740433
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.00019679201068356633,
+            "median": 0.0006462079909397289,
+            "p95": 0.01985587864619446,
+            "max": 0.028443666989915073,
+            "total": 0.10344199894461781
+          }
+        },
+        "processor": {
+          "all_calls": {
+            "count": 40,
+            "min": 0.00015541599714197218,
+            "median": 0.0007226250017993152,
+            "p95": 0.013806929207930764,
+            "max": 0.028430916980141774,
+            "total": 0.1106647539709229
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.00019012499251402915,
+            "median": 0.0006365834851749241,
+            "p95": 0.019832362806482696,
+            "max": 0.028430916980141774,
+            "total": 0.10300392095814459
+          }
+        },
+        "token_list": {
+          "all_calls": {
+            "count": 40,
+            "min": 1.0832998668774962e-05,
+            "median": 1.812499249354005e-05,
+            "p95": 2.2116990294307464e-05,
+            "max": 2.3542001144960523e-05,
+            "total": 0.0006691640010103583
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 1.0832998668774962e-05,
+            "median": 1.812499249354005e-05,
+            "p95": 2.2441448527388276e-05,
+            "max": 2.3542001144960523e-05,
+            "total": 0.0005317470349837095
+          }
+        },
+        "generated_suffix": {
+          "all_calls": {
+            "count": 40,
+            "min": 2.910092007368803e-07,
+            "median": 7.500057108700275e-07,
+            "p95": 1.1249794624745846e-06,
+            "max": 1.4999823179095984e-06,
+            "total": 2.9622839065268636e-05
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 2.910092007368803e-07,
+            "median": 7.084890967234969e-07,
+            "p95": 1.1249794624745846e-06,
+            "max": 1.4999823179095984e-06,
+            "total": 2.3455882910639048e-05
+          }
+        },
+        "allowed_tokens": {
+          "all_calls": {
+            "count": 40,
+            "min": 1.9166996935382485e-05,
+            "median": 0.0006291250028880313,
+            "p95": 0.005586483307706591,
+            "max": 0.02830437500961125,
+            "total": 0.08990966706187464
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.0001395419822074473,
+            "median": 0.0005579375138040632,
+            "p95": 0.015014349705597833,
+            "max": 0.02830437500961125,
+            "total": 0.08326458308147267
+          }
+        },
+        "enforcer": {
+          "all_calls": {
+            "count": 40,
+            "min": 1.4579854905605316e-06,
+            "median": 0.0006099790189182386,
+            "p95": 0.00423724230058717,
+            "max": 0.02825929201208055,
+            "total": 0.08215103996917605
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.0001336249988526106,
+            "median": 0.0005458955129142851,
+            "p95": 0.014214508690929488,
+            "max": 0.02825929201208055,
+            "total": 0.07566512501216494
+          }
+        },
+        "json_context": {
+          "all_calls": {
+            "count": 40,
+            "min": 4.749977961182594e-06,
+            "median": 8.749993867240846e-06,
+            "p95": 2.3524383141193533e-05,
+            "max": 2.6416004402562976e-05,
+            "total": 0.0004451239947229624
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 4.749977961182594e-06,
+            "median": 8.645991329103708e-06,
+            "p95": 2.3887804127298294e-05,
+            "max": 2.6416004402562976e-05,
+            "total": 0.0003483320469968021
+          }
+        },
+        "decode_suffix": {
+          "all_calls": {
+            "count": 48,
+            "min": 2.500019036233425e-07,
+            "median": 5.708512617275119e-06,
+            "p95": 1.7952763300854713e-05,
+            "max": 2.245799987576902e-05,
+            "total": 0.0003320420510135591
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 2.500019036233425e-07,
+            "median": 5.229012458585203e-06,
+            "p95": 1.954605395440012e-05,
+            "max": 2.245799987576902e-05,
+            "total": 0.0002134149835910648
+          }
+        },
+        "mask": {
+          "all_calls": {
+            "count": 40,
+            "min": 3.662501694634557e-05,
+            "median": 6.729201413691044e-05,
+            "p95": 0.0005649244165397022,
+            "max": 0.00861229101428762,
+            "total": 0.019772210012888536
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 3.662501694634557e-05,
+            "median": 6.529150414280593e-05,
+            "p95": 0.003745090245502064,
+            "max": 0.00861229101428762,
+            "total": 0.018949335004435852
+          }
+        }
+      },
+      "profile_sizes": {
+        "history": {
+          "all_calls": {
+            "count": 40,
+            "min": 409,
+            "median": 418.5,
+            "p95": 427.05,
+            "max": 428
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 413,
+            "median": 420.5,
+            "p95": 427.45,
+            "max": 428
+          }
+        },
+        "suffix": {
+          "all_calls": {
+            "count": 40,
+            "min": 0,
+            "median": 9.5,
+            "p95": 18.049999999999997,
+            "max": 19
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 4,
+            "median": 11.5,
+            "p95": 18.45,
+            "max": 19
+          }
+        },
+        "allowed_cardinality": {
+          "all_calls": {
+            "count": 40,
+            "min": 2,
+            "median": 121.0,
+            "p95": 246884.0,
+            "max": 246884
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 2,
+            "median": 54.0,
+            "p95": 246884.0,
+            "max": 246884
+          }
+        }
+      },
+      "mask_cache": {
+        "all_calls": 40,
+        "all_hits": 2,
+        "measured_calls": 32,
+        "measured_hits": 2,
+        "measured_misses": 30,
+        "measured_hit_rate": 0.0625
+      },
+      "profile_measured_decode_seconds": 0.25038704206235707,
+      "profile_share_of_decode_percent": {
+        "apply": 41.312840350123366,
+        "processor": 41.137880023556576,
+        "token_list": 0.21237002945674868,
+        "generated_suffix": 0.009367850156078576,
+        "allowed_tokens": 33.25434990391245,
+        "enforcer": 30.219265497501695,
+        "json_context": 0.1391174415927053,
+        "decode_suffix": 0.08523403680687092,
+        "mask": 7.568017437466536
+      },
+      "profile_exclusive_seconds": {
+        "runner_input_setup": 0.0004380779864732176,
+        "processor_control_and_addition": 0.00023479995434172451,
+        "decode_outside_apply": 0.14694504311773926
+      }
+    },
+    "production": {
+      "policy": "production",
+      "explicit_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "async_eval_submit_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_sync_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_enqueue_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_group_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "materialize_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "clear_requests": 0,
+      "clear_failures": 0,
+      "profile_measured_calls": 32,
+      "profile_seconds": {
+        "apply": {
+          "all_calls": {
+            "count": 40,
+            "min": 0.00014479199307970703,
+            "median": 0.0007587500003864989,
+            "p95": 0.012042644046596203,
+            "max": 0.0286393330025021,
+            "total": 0.10998008391470648
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.0002478749956935644,
+            "median": 0.0007315209950320423,
+            "p95": 0.018975460444926272,
+            "max": 0.0286393330025021,
+            "total": 0.10165733395842835
+          }
+        },
+        "processor": {
+          "all_calls": {
+            "count": 40,
+            "min": 0.00013712502550333738,
+            "median": 0.0007485004898626357,
+            "p95": 0.011996312215342137,
+            "max": 0.028626999992411584,
+            "total": 0.10935437402804382
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.00024108300567604601,
+            "median": 0.0007089999999152496,
+            "p95": 0.018942145802429866,
+            "max": 0.028626999992411584,
+            "total": 0.10121079202508554
+          }
+        },
+        "token_list": {
+          "all_calls": {
+            "count": 40,
+            "min": 1.1458003427833319e-05,
+            "median": 1.858349423855543e-05,
+            "p95": 2.81000058748759e-05,
+            "max": 6.512500112876296e-05,
+            "total": 0.0007681650458835065
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 1.1458003427833319e-05,
+            "median": 1.8687991541810334e-05,
+            "p95": 2.578125859145075e-05,
+            "max": 6.512500112876296e-05,
+            "total": 0.0006145830266177654
+          }
+        },
+        "generated_suffix": {
+          "all_calls": {
+            "count": 40,
+            "min": 2.9199873097240925e-07,
+            "median": 7.499911589547992e-07,
+            "p95": 1.2729098671115922e-06,
+            "max": 4.049998824484646e-05,
+            "total": 7.020912016741931e-05
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 4.159810487180948e-07,
+            "median": 7.499911589547992e-07,
+            "p95": 1.4561126590706404e-06,
+            "max": 4.049998824484646e-05,
+            "total": 6.433311500586569e-05
+          }
+        },
+        "allowed_tokens": {
+          "all_calls": {
+            "count": 40,
+            "min": 1.2417003745213151e-05,
+            "median": 0.0006763540004612878,
+            "p95": 0.0046145791609887256,
+            "max": 0.02849895801045932,
+            "total": 0.08908166797482409
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.00018216698663309216,
+            "median": 0.0006226664991118014,
+            "p95": 0.01461021235008955,
+            "max": 0.02849895801045932,
+            "total": 0.08208404199103825
+          }
+        },
+        "enforcer": {
+          "all_calls": {
+            "count": 40,
+            "min": 8.750066626816988e-07,
+            "median": 0.0006677079945802689,
+            "p95": 0.003125674702459871,
+            "max": 0.028454417013563216,
+            "total": 0.0820872909098398
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 0.00017487499280832708,
+            "median": 0.0006019370048306882,
+            "p95": 0.013634066458325815,
+            "max": 0.028454417013563216,
+            "total": 0.07523637393023819
+          }
+        },
+        "json_context": {
+          "all_calls": {
+            "count": 40,
+            "min": 4.375004209578037e-06,
+            "median": 1.006200909614563e-05,
+            "p95": 2.465181605657562e-05,
+            "max": 3.258301876485348e-05,
+            "total": 0.0004839531029574573
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 5.0000089686363935e-06,
+            "median": 1.0457995813339949e-05,
+            "p95": 2.5156563788186757e-05,
+            "max": 3.258301876485348e-05,
+            "total": 0.00038999508251436055
+          }
+        },
+        "decode_suffix": {
+          "all_calls": {
+            "count": 48,
+            "min": 2.500019036233425e-07,
+            "median": 5.687499651685357e-06,
+            "p95": 2.0339697948656975e-05,
+            "max": 2.820900408551097e-05,
+            "total": 0.0003678329521790147
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 2.500019036233425e-07,
+            "median": 5.312496796250343e-06,
+            "p95": 2.0716534345410763e-05,
+            "max": 2.820900408551097e-05,
+            "total": 0.00024212594144046307
+          }
+        },
+        "mask": {
+          "all_calls": {
+            "count": 40,
+            "min": 3.95829847548157e-05,
+            "median": 6.7146509536542e-05,
+            "p95": 0.0006354913639370142,
+            "max": 0.008457334013655782,
+            "total": 0.01916162297129631
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 3.95829847548157e-05,
+            "median": 6.412500806618482e-05,
+            "p95": 0.003521339385770256,
+            "max": 0.008457334013655782,
+            "total": 0.01822370698209852
+          }
+        }
+      },
+      "profile_sizes": {
+        "history": {
+          "all_calls": {
+            "count": 40,
+            "min": 409,
+            "median": 418.5,
+            "p95": 427.05,
+            "max": 428
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 413,
+            "median": 420.5,
+            "p95": 427.45,
+            "max": 428
+          }
+        },
+        "suffix": {
+          "all_calls": {
+            "count": 40,
+            "min": 0,
+            "median": 9.5,
+            "p95": 18.049999999999997,
+            "max": 19
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 4,
+            "median": 11.5,
+            "p95": 18.45,
+            "max": 19
+          }
+        },
+        "allowed_cardinality": {
+          "all_calls": {
+            "count": 40,
+            "min": 2,
+            "median": 121.0,
+            "p95": 246884.0,
+            "max": 246884
+          },
+          "measured_tail": {
+            "count": 32,
+            "min": 2,
+            "median": 54.0,
+            "p95": 246884.0,
+            "max": 246884
+          }
+        }
+      },
+      "mask_cache": {
+        "all_calls": 40,
+        "all_hits": 2,
+        "measured_calls": 32,
+        "measured_hits": 2,
+        "measured_misses": 30,
+        "measured_hit_rate": 0.0625
+      },
+      "profile_measured_decode_seconds": 0.2437743338814471,
+      "profile_share_of_decode_percent": {
+        "apply": 41.70140979971525,
+        "processor": 41.5182313960528,
+        "token_list": 0.25211145768801524,
+        "generated_suffix": 0.026390438230938753,
+        "allowed_tokens": 33.6721428724968,
+        "enforcer": 30.86312358331674,
+        "json_context": 0.15998201135646375,
+        "decode_suffix": 0.09932380394000558,
+        "mask": 7.4756463044879515
+      },
+      "profile_exclusive_seconds": {
+        "runner_input_setup": 0.00044654193334281445,
+        "processor_control_and_addition": 0.00022412691032513976,
+        "decode_outside_apply": 0.14211699992301874
+      }
+    }
+  },
+  "memory": {
+    "rss_before_bytes": 1140047872,
+    "rss_after_bytes": 1247789056,
+    "mlx_peak_bytes": 569183486,
+    "swap_before_bytes": 8186757120,
+    "swap_after_bytes": 8186757120
+  },
+  "dependency_sha256": {
+    "/Users/eitan/Documents/Projects/Python/Aster/.venv/lib/python3.14/site-packages/lmformatenforcer/tokenenforcer.py": "1ec82ff410cdafb89b5d9455cef15d6dc4c9741b439f35752f3f5ed289990d91"
+  },
+  "comparison": {
+    "baseline": "current production path on one physical runner",
+    "production": "identical current production path on the other physical runner",
+    "purpose": "runner-balanced residual profiling, not a candidate A/B claim",
+    "timing_clock": "time.perf_counter",
+    "measured_window": "last steps * batch_size row calls; paired warmups excluded",
+    "nested_timings": "enforcer is nested in allowed_tokens; decode_suffix and json_context are nested in allowed_tokens and must not be summed as exclusive stages"
+  }
+}

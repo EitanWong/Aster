@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "record_count": 4,
+  "cells": {
+    "mixed-b4": {
+      "workload": "mixed",
+      "batch_size": 4,
+      "records": 2,
+      "speed_percent": {
+        "median": 1.2209701964077557,
+        "min": 0.9797020212100715,
+        "max": 1.46223837160544,
+        "values": [
+          1.46223837160544,
+          0.9797020212100715
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        576,
+        576
+      ],
+      "normalized_rows": [
+        576,
+        576
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    },
+    "mixed-b8": {
+      "workload": "mixed",
+      "batch_size": 8,
+      "records": 2,
+      "speed_percent": {
+        "median": 0.04817673729567984,
+        "min": -0.2070643153389895,
+        "max": 0.3034177899303492,
+        "values": [
+          0.3034177899303492,
+          -0.2070643153389895
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        1152,
+        1152
+      ],
+      "normalized_rows": [
+        1152,
+        1152
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    }
+  },
+  "inputs": [
+    "docs/loop-engineering/artifacts/ITER-20260723-053-shift-invariant-sampler-input/mixed-b4-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-053-shift-invariant-sampler-input/mixed-b4-run-2.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-053-shift-invariant-sampler-input/mixed-b8-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-053-shift-invariant-sampler-input/mixed-b8-run-2.json"
+  ],
+  "aggregate_source_sha256": "ea71c5a5a21584257d4e917b548cda63f228465d7af2fdedea90698ec0be2dc0"
+}

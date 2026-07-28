@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "updated": "2026-07-24",
+  "workflow_status": "active",
+  "last_completed_iteration": "ITER-20260724-059-structured-residual-profile",
+  "active_iteration": "ITER-20260724-060-lmfe-tokenlist-ownership",
+  "phase": "profile",
+  "baseline_commit": "2cb1405",
+  "objective": "Attribute LMFE TokenList ownership and lifetime, then evaluate one bounded change that reduces structured-output RSS without shifting parser semantics.",
+  "hypothesis": "Avoiding retention of inactive LMFE prefix TokenList objects will reduce median RSS growth by at least 25 percent at short B4 and 24601-token B2 while preserving exact output and a balanced throughput lower bound of at least -1 percent.",
+  "success_gates": [
+    "A read-only profile separates active parser state from accumulated TokenList retention before any production candidate.",
+    "Median RSS growth falls by at least 25 percent at short B4 and 24601-token B2 against source-bound Iteration 059 controls.",
+    "The balanced throughput interval lower bound is at least -1 percent in both cells; any speed claim still requires a 3 percent lower bound.",
+    "Token, text, cache, schema, stop reason, and dynamic-membership behavior match exactly, and swap does not grow.",
+    "Ownership, capacity, invalidation, cancellation, and cleanup behavior have focused tests before production code.",
+    "The full suite, compact evidence, and incremental workspace budgets pass before closure."
+  ],
+  "next_actions": [
+    "Trace TokenEnforcer prefix-state ownership and cache lifetime in the installed LMFE source and current Aster request lifecycle.",
+    "Measure active versus accumulated TokenList counts and RSS at short B4 and 24601-token B2 without changing production behavior.",
+    "Select one capacity-bounded lifetime candidate from measured evidence or reject the hypothesis before production code."
+  ],
+  "latest_verification": {
+    "full_suite": "503 passed, 9 skipped, 1 warning",
+    "snapshot_checkpoint_tests": "15 passed, 39 deselected",
+    "snapshot_budget_status": "The 65536-token threshold and 2 GiB cap are implemented and covered; a fresh real-model automatic-cap rerun is not yet archived.",
+    "eos_membership_tests": "19 constrained-decoding tests and 80 affected tests passed.",
+    "production_short_screen": "409-token B4: 102.712 -> 163.794 tok/s (+59.470%), exact token/text/cache, zero swap growth.",
+    "production_long_screen": "24601-token B2: 70.612 -> 82.511 tok/s (+16.852%), exact token/text/cache, zero swap growth.",
+    "stop_aware_validation": "4/4 lanes schema-valid and stopped before the 256-token limit; membership shrank from 4 to 1 with zero swap growth.",
+    "formal_short_matrix": "18 processes / 9 balanced replicates passed; 96.09%-coverage lower bounds: balanced 38.007%, baseline-first 21.029%, production-first 55.080%.",
+    "formal_long_matrix": "18 processes / 9 balanced replicates passed; 96.09%-coverage lower bounds: balanced 21.089%, baseline-first 32.593%, production-first 10.800%.",
+    "protocol_deviation": "Numeric memory ceilings were missing from CURRENT.json before the formal matrix. Its memory observations are discovery evidence only; fresh confirmation passed after recording explicit ceilings.",
+    "technical_admission": "Iteration 059 admitted; all 12 composite gates pass and the 50-file formal evidence bundle recomputes exactly.",
+    "iteration_059_artifacts": "13 files, 488329 bytes; repeated scratch removed after 2 archive-only tests passed.",
+    "workspace_strict": "WARN with zero blockers and zero generated caches; inherited debt remains explicit."
+  },
+  "workspace_policy": {
+    "scratch_root": "run/loop-engineering/ITER-20260724-060-lmfe-tokenlist-ownership",
+    "max_changed_files": 250,
+    "max_tracked_artifact_files": 150,
+    "max_tracked_artifact_bytes": 104857600,
+    "debt_baseline": {
+      "head": "2cb14052d4a3",
+      "changed_files": 1164,
+      "artifact_files": 1114
+    },
+    "max_changed_file_growth": 25,
+    "max_artifact_file_growth": 20,
+    "max_active_iteration_artifact_files": 20,
+    "max_active_iteration_artifact_bytes": 5242880
+  },
+  "workspace_audit": {
+    "health": "warn",
+    "head": "2cb14052d4a3",
+    "changed_files": 1172,
+    "staged_files": 715,
+    "unstaged_files": 32,
+    "untracked_files": 430,
+    "changed_artifact_files": 1121,
+    "changed_artifact_mib": 49.24,
+    "mixed_index_paths": 5,
+    "reference_paths": 13,
+    "generated_caches": 0,
+    "active_artifact_files": 0,
+    "active_artifact_mib": 0.0,
+    "changed_growth_from_debt_baseline": 8,
+    "artifact_growth_from_debt_baseline": 7,
+    "blockers": [],
+    "warnings": [
+      "inherited-workspace-debt",
+      "foreign-iteration-artifacts",
+      "reference-updates",
+      "mixed-index-state"
+    ]
+  }
+}

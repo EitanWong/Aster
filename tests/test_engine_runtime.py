@@ -101,6 +101,7 @@ class FakeRunner:
         self.strict_prefix_calls: list[list[dict[str, str]]] = []
         self.clone_cache_token_counts: list[int | None] = []
         self.available_memory_bytes_value = 1 << 30
+        self.estimated_cache_bytes_value = 64
         self.transient_profile: PrefillTransientProfile | None = None
         self.initialize_requests: list[InferenceRequest] = []
         self.decode_diagnostics_payload: dict[str, object] = {"batch_attempts": 0}
@@ -255,7 +256,7 @@ class FakeRunner:
 
     def estimate_cache_bytes(self, prompt_cache: Any | None) -> int:
         self._record_thread()
-        return 64 if prompt_cache else 0
+        return self.estimated_cache_bytes_value if prompt_cache else 0
 
     def clear_runtime_caches(self) -> dict[str, object]:
         self._record_thread()
@@ -399,6 +400,93 @@ def test_prefill_memory_observation_tracks_peak_growth_per_token() -> None:
 
     assert state.prefill_active_memory_gb == 1.1
     assert state.prefill_transient_bytes_per_token == pytest.approx(100_000_000.0)
+
+
+def test_checkpoint_skips_clone_when_snapshot_memory_is_unavailable() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine()
+        runner.available_memory_bytes_value = 32
+        state = RequestState(
+            request_id="snapshot-preflight",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            prompt_cache={"cache_tokens": 5},
+            cache_token_count=5,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._store_checkpoint(
+                state,
+                logical_prefix_tokens=6,
+                cache_token_count=5,
+            )
+            assert runner.clone_cache_token_counts == []
+            assert engine.prefix_store.entry_count == 0
+            assert engine.status()["snapshot_preflight_skips"] == 1
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize(
+    ("prompt_token_count", "memory_budget", "expected_budget"),
+    [
+        (65_535, 8 * 1024**3, 8 * 1024**3),
+        (65_536, 8 * 1024**3, 2 * 1024**3),
+        (131_072, 1024**3, 1024**3),
+    ],
+)
+def test_snapshot_budget_preserves_short_context_and_caps_long_context(
+    prompt_token_count: int,
+    memory_budget: int,
+    expected_budget: int,
+) -> None:
+    engine, _runner = _make_engine()
+    state = RequestState(
+        request_id="long-context-snapshot-cap",
+        request=InferenceRequest(prompt="ignored"),
+        prompt_tokens=list(range(prompt_token_count)),
+    )
+
+    assert (
+        engine._snapshot_budget_for_state(state, memory_budget=memory_budget)
+        == expected_budget
+    )
+
+
+def test_long_context_snapshot_cap_is_applied_before_clone() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(
+            engine_overrides={
+                "memory_headroom_ratio": 0.0,
+                "snapshot_budget_bytes": 8 * 1024**3,
+            }
+        )
+        runner.available_memory_bytes_value = 8 * 1024**3
+        runner.estimated_cache_bytes_value = 2 * 1024**3
+        state = RequestState(
+            request_id="long-context-snapshot-preflight",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=list(range(65_536)),
+            prompt_cache={"cache_tokens": 65_535},
+            cache_token_count=65_535,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._store_checkpoint(
+                state,
+                logical_prefix_tokens=65_536,
+                cache_token_count=65_535,
+            )
+            assert runner.clone_cache_token_counts == []
+            assert engine.status()["snapshot_preflight_skips"] == 1
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
 
 
 def test_prefill_chunk_target_rejects_unaffordable_transient_activation() -> None:

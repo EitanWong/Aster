@@ -45,6 +45,7 @@ def clear_constrained_caches() -> None:
 
 class JSONSchemaLogitsProcessor:
     name = "json_schema"
+    batch_sampling_mode = "eager_rows"
 
     def __init__(self, *, schema: dict[str, Any] | None, tokenizer: Any) -> None:
         if not is_available():
@@ -66,6 +67,12 @@ class JSONSchemaLogitsProcessor:
         self._eos_token_ids = _eos_token_ids(tokenizer_data)
         self._decode_cache: dict[tuple[int, ...], str] = {}
         self._token_decode_cache: dict[int, str | None] = {}
+        self._mask_cache_key: tuple[object, ...] | None = None
+        self._mask_cache_allowed: list[int] | None = None
+        self._mask_cache_value: Any | None = None
+        self._mask_cache_contains_eos: bool | None = None
+        self._pending_mask_allowed: list[int] | None = None
+        self._pending_mask_contains_eos = False
         self._valid_key_names = _collect_property_names(parser_schema)
         self._valid_key_first_chars = {name[0] for name in self._valid_key_names if name}
 
@@ -102,18 +109,46 @@ class JSONSchemaLogitsProcessor:
         return token_ids[self._prompt_len :]
 
     def _allowed_tokens(self, suffix: list[int]) -> list[int]:
+        self._pending_mask_allowed = None
         allowed_result = self._enforcer.get_allowed_tokens(suffix)
         allowed = getattr(allowed_result, "allowed_tokens", allowed_result)
         if allowed is None:
             return []
-        allowed_tokens = [int(token_id) for token_id in allowed]
+        if isinstance(allowed, list) and (not allowed or isinstance(allowed[0], int)):
+            allowed_tokens = allowed
+        else:
+            allowed_tokens = [int(token_id) for token_id in allowed]
         context = self._json_context(suffix)
         if context in {"key_start", "in_key"}:
             allowed_tokens = self._filter_at_key_context(context, suffix, allowed_tokens)
-        if self._eos_token_ids and any(token_id in self._eos_token_ids for token_id in allowed_tokens):
-            if not self._is_complete_json(suffix):
-                allowed_tokens = [token_id for token_id in allowed_tokens if token_id not in self._eos_token_ids]
+        contains_eos = self._allowed_contains_eos(allowed_tokens)
+        if contains_eos and not self._is_complete_json(suffix):
+            allowed_tokens = [
+                token_id for token_id in allowed_tokens if token_id not in self._eos_token_ids
+            ]
+            contains_eos = False
+        self._pending_mask_allowed = allowed_tokens
+        self._pending_mask_contains_eos = contains_eos
         return allowed_tokens
+
+    def _allowed_contains_eos(self, allowed: list[int]) -> bool:
+        if not self._eos_token_ids:
+            return False
+        cached_allowed = self._mask_cache_allowed
+        cached_contains_eos = self._mask_cache_contains_eos
+        if (
+            cached_allowed is not None
+            and cached_contains_eos is not None
+            and len(cached_allowed) == len(allowed)
+        ):
+            if not allowed or (
+                cached_allowed[0] == allowed[0]
+                and cached_allowed[len(allowed) // 2] == allowed[len(allowed) // 2]
+                and cached_allowed[-1] == allowed[-1]
+            ):
+                if cached_allowed == allowed:
+                    return cached_contains_eos
+        return any(token_id in allowed for token_id in self._eos_token_ids)
 
     def _is_complete_json(self, suffix: list[int]) -> bool:
         if not suffix:
@@ -238,12 +273,29 @@ class JSONSchemaLogitsProcessor:
     def _is_valid_key_prefix(self, prefix: str) -> bool:
         return any(name.startswith(prefix) for name in self._valid_key_names)
 
-    @staticmethod
-    def _mask(allowed: list[int], logits: Any) -> Any:
+    def _mask(self, allowed: list[int], logits: Any) -> Any:
         try:
             import mlx.core as mx
         except Exception as exc:  # pragma: no cover - runtime dependency guard
             raise LMFormatEnforcerNotAvailableError("mlx is required for constrained decoding") from exc
+
+        shape = tuple(int(dimension) for dimension in logits.shape)
+        pending_contains_eos = (
+            self._pending_mask_contains_eos if allowed is self._pending_mask_allowed else None
+        )
+        self._pending_mask_allowed = None
+        key: tuple[object, ...] = (shape, len(allowed))
+        if allowed:
+            key += (allowed[0], allowed[len(allowed) // 2], allowed[-1])
+        cached_allowed = self._mask_cache_allowed
+        cached_value = self._mask_cache_value
+        if (
+            key == self._mask_cache_key
+            and cached_allowed is not None
+            and cached_value is not None
+            and cached_allowed == allowed
+        ):
+            return cached_value
 
         vocab_size = int(logits.shape[-1])
         allowed_clamped = [token_id for token_id in allowed if 0 <= token_id < vocab_size]
@@ -252,6 +304,14 @@ class JSONSchemaLogitsProcessor:
         mask_array = mx.array(mask)
         if getattr(logits, "ndim", 1) == 2 and logits.shape[0] == 1:
             mask_array = mask_array[None, :]
+        self._mask_cache_key = key
+        self._mask_cache_allowed = allowed.copy()
+        self._mask_cache_value = mask_array
+        self._mask_cache_contains_eos = (
+            pending_contains_eos
+            if pending_contains_eos is not None
+            else any(token_id in allowed for token_id in self._eos_token_ids)
+        )
         return mask_array
 
 
@@ -379,6 +439,7 @@ def _walk_property_names(node: Any, names: set[str]) -> None:
 
 class ThinkingAwareJsonLogitsProcessor:
     name = "thinking_aware_json_schema"
+    batch_sampling_mode = "eager_rows"
 
     def __init__(
         self,

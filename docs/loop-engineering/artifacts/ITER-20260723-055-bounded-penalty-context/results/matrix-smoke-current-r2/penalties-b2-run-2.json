@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "pid": 89051,
+  "run_id": 2,
+  "workload": "penalties",
+  "batch_size": 2,
+  "context_words": 128,
+  "comparison_design": {
+    "policy_runner_assignment": {
+      "baseline": "runner_b",
+      "production": "runner_a"
+    },
+    "runner_assignment_alternates_by_run": true,
+    "assignment_balanced_replicate_id": 1
+  },
+  "settings": {
+    "steps": 16,
+    "pair_warmup_steps": 4,
+    "model_warmup_tokens": 4,
+    "prefill_step": 1024,
+    "seed": 20260724,
+    "block_size": 4,
+    "actual_prompt_tokens": 409
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "5ca9bc44f4c181ebc933b5f19aaaa8fb9e4f22f821b1b54882eef2acfda07226",
+    "aster/inference/constrained/json_schema_processor.py": "ca251ccec70f3f919e7bfbd1aa3900960489dec001278cbe41a5e81e7c91f159",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "74e923f5196d6fe24e3c662d8f4f55062e951b4d0a34c96f2f6fd38288897b0d",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "docs/loop-engineering/artifacts/ITER-20260723-055-bounded-penalty-context/candidate_benchmark.py": "1834dd431ea0627d9330692ed0012121911bf66dc053e4f0ec2254e705535f9d",
+    "aster/inference/engine.py": "9a9363f5cd9d4c4b0f5c8916069189a9907b48b9000986fb90c5487398259361",
+    "aster/inference/request_state.py": "9b97a4d8c3a9b540caeb62527b44aab5066208d26e6196ad0bb810b6783738b7"
+  },
+  "model_input_sha256": {
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors": "f5a0d9dd3efa73510542a8023d610ff26be2b4b020d181cfc4bedaa1fcc5dd9e",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/model.safetensors.index.json": "6e48f2fa5d6f033a6d77bf833abfa9698ca24d1715ecea4c67447bcfaee44650",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/config.json": "ba7770da23eae5ebd6827571f086e331956b33f4442a9e876fb4aa10969a6772",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+  },
+  "timings": {
+    "baseline_step_seconds": [
+      0.00751529197441414,
+      0.007624165999004617,
+      0.00735883301240392,
+      0.007333791989367455,
+      0.007449750002706423,
+      0.007458333013346419,
+      0.007682291994569823,
+      0.00732354199863039,
+      0.008104166976409033,
+      0.0070064169995021075,
+      0.007878459000494331,
+      0.008135082985972986,
+      0.009437000000616536,
+      0.008560833986848593,
+      0.008563291019527242,
+      0.008190542022930458
+    ],
+    "production_step_seconds": [
+      0.008726917003514245,
+      0.007711750018643215,
+      0.008652374992379919,
+      0.008668124995892867,
+      0.007145250012399629,
+      0.007638500013854355,
+      0.007645000005140901,
+      0.009103125019464642,
+      0.007646250014659017,
+      0.007726375013589859,
+      0.007812541996827349,
+      0.009056167007656768,
+      0.008812625019345433,
+      0.009107582998694852,
+      0.00824370898772031,
+      0.00825083299423568
+    ],
+    "first_policy_by_step": [
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline",
+      "production",
+      "baseline"
+    ],
+    "baseline_tokens_per_second": 254.73287111834128,
+    "production_tokens_per_second": 242.52138676516813
+  },
+  "parity": {
+    "exact_token_text_cache": true,
+    "baseline_token_ids": [
+      [
+        198,
+        69267,
+        25,
+        20732,
+        25,
+        20732,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198
+      ],
+      [
+        198,
+        69267,
+        25,
+        20732,
+        25,
+        271,
+        69267,
+        25,
+        20732,
+        25,
+        271,
+        69267,
+        25,
+        271,
+        69267,
+        25,
+        271,
+        69267,
+        25,
+        271
+      ]
+    ],
+    "production_token_ids": [
+      [
+        198,
+        69267,
+        25,
+        20732,
+        25,
+        20732,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198,
+        69267,
+        25,
+        198
+      ],
+      [
+        198,
+        69267,
+        25,
+        20732,
+        25,
+        271,
+        69267,
+        25,
+        20732,
+        25,
+        271,
+        69267,
+        25,
+        271,
+        69267,
+        25,
+        271,
+        69267,
+        25,
+        271
+      ]
+    ],
+    "baseline_text_sha256": [
+      "fd3501d017ff55e2717c22468bc40c06f6146fe6f6071d8411a94fb177d3a6cc",
+      "2b76328d11df26fbc5053c39c0c25636d44eb2fdf94b8fbd70486b68c1097f6c"
+    ],
+    "production_text_sha256": [
+      "fd3501d017ff55e2717c22468bc40c06f6146fe6f6071d8411a94fb177d3a6cc",
+      "2b76328d11df26fbc5053c39c0c25636d44eb2fdf94b8fbd70486b68c1097f6c"
+    ],
+    "baseline_cache_digest": "70a36630b3a9c969306cdf8bd620bf1014e33c69ed463fdc4575b732ca4d3a4a",
+    "production_cache_digest": "70a36630b3a9c969306cdf8bd620bf1014e33c69ed463fdc4575b732ca4d3a4a",
+    "structured_schema_valid": null
+  },
+  "policy_metrics": {
+    "baseline": {
+      "policy": "baseline",
+      "explicit_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "async_eval_submit_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_sync_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_enqueue_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_group_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "materialize_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "clear_requests": 0,
+      "clear_failures": 0,
+      "bounded_rows": 0,
+      "source_tokens_total": 0,
+      "device_tokens_total": 0,
+      "max_source_tokens": 0
+    },
+    "production": {
+      "policy": "production",
+      "explicit_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "async_eval_submit_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_sync_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_enqueue_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "sample_group_eval_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "materialize_seconds": {
+        "count": 0,
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "clear_requests": 0,
+      "clear_failures": 0,
+      "bounded_rows": 40,
+      "source_tokens_total": 16740,
+      "device_tokens_total": 800,
+      "max_source_tokens": 428
+    }
+  },
+  "memory": {
+    "rss_before_bytes": 913408000,
+    "rss_after_bytes": 998031360,
+    "mlx_peak_bytes": 565185738,
+    "swap_before_bytes": 8799322112,
+    "swap_after_bytes": 8799322112
+  },
+  "comparison": {
+    "baseline": "current full-history logits processor token array",
+    "production": "20-token work item and MLX input for built-in penalty-only processors",
+    "candidate_scope": "processor graph, order, and parameters are unchanged; only the documented default context window is applied before mx.array"
+  }
+}

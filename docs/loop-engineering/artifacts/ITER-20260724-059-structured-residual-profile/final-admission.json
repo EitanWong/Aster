@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "decision": "admit",
+  "production_source_sha256": "c8b12c68a49e50d210d330c3cb0b794ea3b59746529619dc8be1768d4fc14985",
+  "evidence": {
+    "path": "docs/loop-engineering/artifacts/ITER-20260724-059-structured-residual-profile/formal-evidence.tar.gz",
+    "sha256": "783eebf302d0a95aa415b6372565f91a25737d0d6c222683bd09f95d7c9aa340",
+    "bytes": 237686,
+    "file_members": 50
+  },
+  "formal": {
+    "short": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_recomputed_exactly": true,
+      "aggregate_passed": true,
+      "all_exact_token_text_cache": true,
+      "all_swap_non_growth": true,
+      "all_source_bound": true,
+      "all_baseline_calls_forced_miss": true,
+      "stable_replicates": 9,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 38.00676557726739,
+        "upper": 47.33300845251258,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 21.029473172164547,
+        "upper": 30.266987450162897,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "production_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 55.08016369436437,
+        "upper": 68.23052081924195,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "passed": true
+    },
+    "long": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_recomputed_exactly": true,
+      "aggregate_passed": true,
+      "all_exact_token_text_cache": true,
+      "all_swap_non_growth": true,
+      "all_source_bound": true,
+      "all_baseline_calls_forced_miss": true,
+      "stable_replicates": 9,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 21.088967879262242,
+        "upper": 24.469855376746573,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 32.59261461693184,
+        "upper": 37.684239314089886,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "production_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 10.80039877910246,
+        "upper": 13.484163597267539,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "passed": true
+    }
+  },
+  "memory_confirmation": {
+    "short": {
+      "records": 2,
+      "unique_pids": 2,
+      "rss_limit_bytes": 4294967296,
+      "rss_delta_bytes": [
+        3722067968,
+        2818392064
+      ],
+      "all_rss_within_limit": true,
+      "mlx_reference_iteration": "ITER-20260724-058-structured-mask-cache",
+      "mlx_reference_median_bytes": 766684484.0,
+      "mlx_observed_median_bytes": 765619307.0,
+      "mlx_median_delta_bytes": -1065177.0,
+      "mlx_delta_limit_bytes": 16777216,
+      "mlx_median_within_limit": true,
+      "all_swap_non_growth": true,
+      "all_exact_token_text_cache": true,
+      "all_source_bound": true,
+      "all_baseline_calls_forced_miss": true,
+      "passed": true
+    },
+    "long": {
+      "records": 2,
+      "unique_pids": 2,
+      "rss_limit_bytes": 2147483648,
+      "rss_delta_bytes": [
+        1328562176,
+        1370128384
+      ],
+      "all_rss_within_limit": true,
+      "mlx_reference_iteration": "ITER-20260724-058-structured-mask-cache",
+      "mlx_reference_median_bytes": 2058045882.0,
+      "mlx_observed_median_bytes": 2058021306.0,
+      "mlx_median_delta_bytes": -24576.0,
+      "mlx_delta_limit_bytes": 8388608,
+      "mlx_median_within_limit": true,
+      "all_swap_non_growth": true,
+      "all_exact_token_text_cache": true,
+      "all_source_bound": true,
+      "all_baseline_calls_forced_miss": true,
+      "passed": true
+    }
+  },
+  "structured_validation": {
+    "lanes": 4,
+    "membership_start": 4,
+    "membership_end": 1
+  },
+  "production_screens": {
+    "short": {
+      "baseline_tokens_per_second": 102.711635242365,
+      "production_tokens_per_second": 163.79396852564764,
+      "speedup_percent": 59.46973109633473,
+      "exact_token_text_cache": true
+    },
+    "long": {
+      "baseline_tokens_per_second": 70.61157752722457,
+      "production_tokens_per_second": 82.51091122945645,
+      "speedup_percent": 16.851816825143228,
+      "exact_token_text_cache": true
+    }
+  },
+  "protocol_deviation": "The first formal matrix discovered memory behavior because numeric ceilings were absent from CURRENT.json. Admission uses the fresh confirmation executed after explicit ceilings were recorded.",
+  "gates": {
+    "short_formal_admission": true,
+    "long_formal_admission": true,
+    "short_memory_confirmation": true,
+    "long_memory_confirmation": true,
+    "model_signature_equal": true,
+    "structured_schema_valid": true,
+    "structured_stop_valid": true,
+    "dynamic_membership_shrinks": true,
+    "validation_source_bound": true,
+    "validation_swap_non_growth": true,
+    "production_screens_clear_floor": true,
+    "compact_evidence_budget": true
+  },
+  "passed": true
+}

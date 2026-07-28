@@ -894,6 +894,43 @@ def test_decode_batch_cache_reuses_stable_membership_and_remerges_after_change()
     assert merge_inputs == [("cache-a", "cache-b"), (["extracted-merged-1-0"], "cache-c")]
     assert extracted == [("merged-1", 0)]
 
+    reordered_items = [
+        DecodeWorkItem(
+            prompt_cache=runner._decode_cache_ref(changed_state, 1),
+            input_token=3,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=1,
+            max_tokens=4,
+            request_id="request-c",
+        ),
+        DecodeWorkItem(
+            prompt_cache=runner._decode_cache_ref(changed_state, 0),
+            input_token=1,
+            sampler=lambda logits: logits,
+            detokenizer=object(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=1,
+            max_tokens=4,
+            request_id="request-a",
+        ),
+    ]
+
+    reordered_merged, reordered_state = runner._get_decode_batch_cache(reordered_items)
+    assert reordered_state is not None
+    assert reordered_state.request_ids == ("request-c", "request-a")
+    assert reordered_merged == ["merged-3"]
+    assert merge_inputs[-1] == (
+        ["extracted-merged-2-1"],
+        ["extracted-merged-2-0"],
+    )
+    assert extracted[-2:] == [("merged-2", 1), ("merged-2", 0)]
+
 
 def test_decode_result_counts_stop_token_without_emitting_text() -> None:
     runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
@@ -931,6 +968,9 @@ def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval() -> Non
             return self
 
     class FakeScalar:
+        shape = ()
+        dtype = "uint32"
+
         def item(self) -> int:
             return 65
 
@@ -978,7 +1018,7 @@ def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval() -> Non
     assert result.text == "A"
 
 
-def test_decode_batch_evaluates_logits_without_forcing_cache_state() -> None:
+def test_decode_batch_groups_sample_evaluation_without_forcing_cache_state() -> None:
     class FakeTensor:
         def __getitem__(self, _key):
             return self
@@ -987,6 +1027,9 @@ def test_decode_batch_evaluates_logits_without_forcing_cache_state() -> None:
             return self
 
     class FakeScalar:
+        shape = ()
+        dtype = "uint32"
+
         def item(self) -> int:
             return 65
 
@@ -995,6 +1038,7 @@ def test_decode_batch_evaluates_logits_without_forcing_cache_state() -> None:
 
         def __init__(self) -> None:
             self.eval_calls: list[object] = []
+            self.async_eval_calls: list[object] = []
 
         @staticmethod
         def array(_value, *, dtype=None):
@@ -1008,6 +1052,9 @@ def test_decode_batch_evaluates_logits_without_forcing_cache_state() -> None:
 
         def eval(self, value) -> None:
             self.eval_calls.append(value)
+
+        def async_eval(self, value) -> None:
+            self.async_eval_calls.append(value)
 
         @staticmethod
         def clear_cache() -> None:
@@ -1047,8 +1094,12 @@ def test_decode_batch_evaluates_logits_without_forcing_cache_state() -> None:
     results = runner._decode_batch(items)
 
     assert len(results) == 2
+    assert len(fake_mx.async_eval_calls) == 1
+    assert isinstance(fake_mx.async_eval_calls[0], list)
     assert len(fake_mx.eval_calls) == 1
-    assert isinstance(fake_mx.eval_calls[0], FakeTensor)
+    assert isinstance(fake_mx.eval_calls[0], list)
+    assert isinstance(fake_mx.eval_calls[0][0], FakeTensor)
+    assert all(isinstance(value, FakeScalar) for value in fake_mx.eval_calls[0][1:])
 
 
 def test_decode_allocator_cache_clear_is_amortized_over_512_steps() -> None:

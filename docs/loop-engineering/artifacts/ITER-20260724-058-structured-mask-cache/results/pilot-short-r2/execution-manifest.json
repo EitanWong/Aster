@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-23T19:43:26.507694+00:00",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "git_commit": "2cb14052d4a3edbcbd420e8bf8d28cfce4a6bba2",
+    "git_branch": "main"
+  },
+  "matrix": {
+    "profile": "short",
+    "cells": [
+      {
+        "workload": "structured",
+        "batch_size": 4
+      }
+    ],
+    "runs": 2,
+    "independent_replicates": 1,
+    "context_words": 128,
+    "steps": 64,
+    "pair_warmup_steps": 8,
+    "block_size": 8,
+    "base_seed": 20260724,
+    "fresh_processes": true,
+    "within_process_adjacent_pairing": true,
+    "alternating_ab_ba_order": true,
+    "round_robin_cell_execution": true,
+    "alternating_policy_runner_assignment": true,
+    "paired_runner_assignment_replicates": true
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "5ca9bc44f4c181ebc933b5f19aaaa8fb9e4f22f821b1b54882eef2acfda07226",
+    "aster/inference/constrained/json_schema_processor.py": "57a1834dd0e2a97a846adeec5b37d458ee3058b341fa6c820740443b3fb5e083",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "74e923f5196d6fe24e3c662d8f4f55062e951b4d0a34c96f2f6fd38288897b0d",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/production_benchmark.py": "60f89e84c6981c8b023b01882a72adcd400671dd28ef25497c6366658b2f72e1",
+    "docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/strict_aggregate.py": "3bf7144b22f1875899ae573ed02015d837451bf538e9a2bfd43d51c43889e664",
+    "docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/strict_matrix.py": "ff6b1c079aadb68a6540902746a4833145dfc78b0c12eac2384a3fefc6c0e232"
+  },
+  "records": [
+    {
+      "output": "results/pilot-short-r2/structured-b4-run-1.json",
+      "sha256": "0f3a614556598a6e37c7218e7052edc218c091a4c0344a13976ce260ec229ae4",
+      "pid": 38480,
+      "workload": "structured",
+      "batch_size": 4,
+      "run_id": 1,
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/production_benchmark.py",
+        "--config",
+        "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+        "--model",
+        "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+        "--workload",
+        "structured",
+        "--batch-size",
+        "4",
+        "--context-words",
+        "128",
+        "--steps",
+        "64",
+        "--pair-warmup-steps",
+        "8",
+        "--block-size",
+        "8",
+        "--seed",
+        "20260725",
+        "--run-id",
+        "1",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/results/pilot-short-r2/structured-b4-run-1.json"
+      ]
+    },
+    {
+      "output": "results/pilot-short-r2/structured-b4-run-2.json",
+      "sha256": "70dd5e51d4ed77f557bb509335fb1721fca924c36b4187d89be731843a00ea2f",
+      "pid": 43797,
+      "workload": "structured",
+      "batch_size": 4,
+      "run_id": 2,
+      "command": [
+        "/Users/eitan/Documents/Projects/Python/Aster/.venv/bin/python",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/production_benchmark.py",
+        "--config",
+        "/Users/eitan/Documents/Projects/Python/Aster/configs/config.yaml",
+        "--model",
+        "/Users/eitan/Documents/Projects/Python/Aster/models/qwen3.5-0.8b-mlx/Qwen3.5-0.8B-4bit",
+        "--workload",
+        "structured",
+        "--batch-size",
+        "4",
+        "--context-words",
+        "128",
+        "--steps",
+        "64",
+        "--pair-warmup-steps",
+        "8",
+        "--block-size",
+        "8",
+        "--seed",
+        "20260725",
+        "--run-id",
+        "2",
+        "--output",
+        "/Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260724-058-structured-mask-cache/results/pilot-short-r2/structured-b4-run-2.json"
+      ]
+    }
+  ],
+  "wall_seconds": 24.96151195798302
+}

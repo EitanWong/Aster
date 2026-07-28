@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "source_sha256": {
+    "aggregate.py": "324527f6c22eeb9683fb358f08781985afb560e5800743242a5046345a70d4cf"
+  },
+  "payload_sha256": {
+    "screen-b2-run-1.json": "ef50301e75657afafca949d4391a49ec8a557952253954d41718de5aee5657f4",
+    "screen-b4-run-1.json": "c4dadb77adceba9a256369a7d9116dc1bbea9ccb7d2c5ed302a0fb3fdefa27ff",
+    "screen-b8-run-1.json": "e5be5c4cba0d8c7e070d2610de4e0ee50be17c03f21e295a7df1eb56c83320e8",
+    "penalty-screen-b2-run-1.json": "6bfe949db09bbfea6ebd0110ac4db71c06de83c78a9d2b5e7778aab016219859",
+    "penalty-screen-b4-run-1.json": "4087c5eeb38a51fb855cc66f6ddb17468412fb4eee7d05413b491c65169ca2cb",
+    "penalty-screen-b8-run-1.json": "622092f7074008174a1d0f7bd0bd5010ef54a8a6cd5efbcecdcf4becf40da2e1",
+    "normalization-screen-top-p-b2-run-1.json": "b7915348e768ac802e659eb0e6c901fb974cbc9410ff5798f666cc7de66ea5a0",
+    "normalization-screen-top-p-b4-run-1.json": "8c103947be2305b9ac7dd79d9ce0a225364dcf51523aea21f966993e4dffb8cc",
+    "normalization-screen-top-p-b8-run-1.json": "3be9269998417dd4316416cbe18e25059cf0e5bbfd0e32061de295baebd035d2"
+  },
+  "host_profile": [
+    {
+      "batch_size": 2,
+      "materialize_pct": 0.06257327401472625,
+      "host_post_eval_pct": 0.2740642074156497
+    },
+    {
+      "batch_size": 4,
+      "materialize_pct": 0.05976582475846783,
+      "host_post_eval_pct": 0.29352087243234576
+    },
+    {
+      "batch_size": 8,
+      "materialize_pct": 0.04521986109417598,
+      "host_post_eval_pct": 0.22504425256004665
+    }
+  ],
+  "batched_penalties": [
+    {
+      "batch_size": 2,
+      "median_gain_pct": 0.4518362520946426,
+      "vectorized_batches": 144,
+      "vectorized_rows": 288
+    },
+    {
+      "batch_size": 4,
+      "median_gain_pct": 0.009261573051083638,
+      "vectorized_batches": 80,
+      "vectorized_rows": 320
+    },
+    {
+      "batch_size": 8,
+      "median_gain_pct": 0.6603062499216176,
+      "vectorized_batches": 144,
+      "vectorized_rows": 1152
+    }
+  ],
+  "batched_normalization": [
+    {
+      "batch_size": 2,
+      "median_gain_pct": -1.1612216104769526,
+      "batched_normalization_batches": 144,
+      "batched_normalization_rows": 288
+    },
+    {
+      "batch_size": 4,
+      "median_gain_pct": 1.781791636399997,
+      "batched_normalization_batches": 80,
+      "batched_normalization_rows": 320
+    },
+    {
+      "batch_size": 8,
+      "median_gain_pct": 0.10975434449021844,
+      "batched_normalization_batches": 144,
+      "batched_normalization_rows": 1152
+    }
+  ],
+  "gates": {
+    "exact_all": true,
+    "zero_swap_all": true,
+    "host_materialization_below_one_pct": true,
+    "penalty_below_three_pct_gate": true,
+    "normalization_below_three_pct_gate": true
+  },
+  "decision": {
+    "admitted": false,
+    "host_materialization": "rejected: insufficient addressable share",
+    "batched_penalties": "rejected: below end-to-end gain gate",
+    "batched_normalization": "rejected: below gate and regressed B2"
+  }
+}

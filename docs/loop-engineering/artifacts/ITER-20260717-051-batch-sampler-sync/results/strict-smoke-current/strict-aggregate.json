@@ -1,0 +1,78 @@
+{
+  "schema_version": 2,
+  "manifest_sha256": "45768884483db50903e5ed3b2e8673982ad873f086c193f71b1d6104c4f3b539",
+  "records": 1,
+  "unique_pids": 1,
+  "minimum_processes_per_cell": 9,
+  "cells": {
+    "greedy-b2": {
+      "workload": "greedy",
+      "batch_size": 2,
+      "speed_floor_percent": 3.0,
+      "independent_processes": 1,
+      "stable_processes": 1,
+      "intervals": {
+        "balanced": {
+          "confidence_target": 0.95,
+          "coverage": 0.0,
+          "lower": 6.841795607746204,
+          "upper": 6.841795607746204,
+          "order_statistic_rank": 1,
+          "processes": 1,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        },
+        "baseline_first": {
+          "confidence_target": 0.95,
+          "coverage": 0.0,
+          "lower": 7.136249525453731,
+          "upper": 7.136249525453731,
+          "order_statistic_rank": 1,
+          "processes": 1,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        },
+        "production_first": {
+          "confidence_target": 0.95,
+          "coverage": 0.0,
+          "lower": 6.544739454918758,
+          "upper": 6.544739454918758,
+          "order_statistic_rank": 1,
+          "processes": 1,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        }
+      },
+      "gates": {
+        "minimum_independent_processes": false,
+        "all_exact_token_text_cache_parity": true,
+        "all_swap_zero": true,
+        "all_balanced_ab_ba_order": true,
+        "balanced_median_interval_clears_floor": false,
+        "baseline_first_median_interval_clears_floor": false,
+        "production_first_median_interval_clears_floor": false,
+        "within_process_stability": true
+      },
+      "passed": false,
+      "runs": [
+        {
+          "run_id": 1,
+          "pid": 83279,
+          "end_to_end_speedup_percent": 6.841795607746204,
+          "baseline_first_speedup_percent": 7.136249525453731,
+          "production_first_speedup_percent": 6.544739454918758,
+          "block_speedup_percent_median": 7.1775942899034,
+          "positive_block_fraction": 1.0,
+          "within_process_stable": true,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_zero": true
+        }
+      ]
+    }
+  },
+  "all_cells_passed": false
+}

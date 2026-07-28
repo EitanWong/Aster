@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "record_count": 10,
+  "cells": {
+    "greedy-b2": {
+      "workload": "greedy",
+      "batch_size": 2,
+      "records": 2,
+      "speed_percent": {
+        "median": 0.5260231882225685,
+        "min": 0.4640866641822061,
+        "max": 0.587959712262931,
+        "values": [
+          0.587959712262931,
+          0.4640866641822061
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        576,
+        576
+      ],
+      "normalized_rows": [
+        0,
+        0
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    },
+    "greedy-b4": {
+      "workload": "greedy",
+      "batch_size": 4,
+      "records": 2,
+      "speed_percent": {
+        "median": 0.5776294984807695,
+        "min": 0.19914739396071912,
+        "max": 0.9561116030008199,
+        "values": [
+          0.9561116030008199,
+          0.19914739396071912
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        1152,
+        1152
+      ],
+      "normalized_rows": [
+        0,
+        0
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    },
+    "greedy-b8": {
+      "workload": "greedy",
+      "batch_size": 8,
+      "records": 2,
+      "speed_percent": {
+        "median": 0.5028491674743063,
+        "min": 0.23582913013542317,
+        "max": 0.7698692048131894,
+        "values": [
+          0.7698692048131894,
+          0.23582913013542317
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        2304,
+        2304
+      ],
+      "normalized_rows": [
+        0,
+        0
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    },
+    "mixed-b4": {
+      "workload": "mixed",
+      "batch_size": 4,
+      "records": 2,
+      "speed_percent": {
+        "median": 1.2674144741484872,
+        "min": 1.215126563310398,
+        "max": 1.3197023849865763,
+        "values": [
+          1.3197023849865763,
+          1.215126563310398
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        288,
+        288
+      ],
+      "normalized_rows": [
+        864,
+        864
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    },
+    "penalties-b4": {
+      "workload": "penalties",
+      "batch_size": 4,
+      "records": 2,
+      "speed_percent": {
+        "median": 0.5992303039790148,
+        "min": 0.40242074849712317,
+        "max": 0.7960398594609064,
+        "values": [
+          0.7960398594609064,
+          0.40242074849712317
+        ]
+      },
+      "all_exact_token_text_cache": true,
+      "direct_logit_rows": [
+        1152,
+        1152
+      ],
+      "normalized_rows": [
+        0,
+        0
+      ],
+      "swap_deltas": [
+        0,
+        0
+      ]
+    }
+  },
+  "inputs": [
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/greedy-b2-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/greedy-b2-run-2.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/greedy-b4-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/greedy-b4-run-2.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/greedy-b8-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/greedy-b8-run-2.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/penalties-b4-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/penalties-b4-run-2.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/mixed-b4-run-1.json",
+    "docs/loop-engineering/artifacts/ITER-20260723-052-greedy-logsumexp-elision/mixed-b4-run-2.json"
+  ],
+  "aggregate_source_sha256": "ea71c5a5a21584257d4e917b548cda63f228465d7af2fdedea90698ec0be2dc0"
+}

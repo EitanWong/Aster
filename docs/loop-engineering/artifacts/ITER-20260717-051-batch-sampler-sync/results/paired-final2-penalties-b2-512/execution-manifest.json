@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-17T23:17:12.479762+00:00",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "git_commit": "2cb14052d4a3edbcbd420e8bf8d28cfce4a6bba2",
+    "git_branch": "main"
+  },
+  "matrix": {
+    "profile": "focused-penalties-b2-512",
+    "cells": [
+      {
+        "workload": "penalties",
+        "batch_size": 2
+      }
+    ],
+    "runs": 3,
+    "context_words": 128,
+    "steps": 512,
+    "pair_warmup_steps": 32,
+    "block_size": 16,
+    "fresh_processes": true,
+    "within_process_adjacent_pairing": true,
+    "alternating_ab_ba_order": true
+  },
+  "source_sha256": {
+    "aster/core/config.py": "6fbd6340bd442e8a6cb715ea7c7aec73861c821eebb0d9dd238f9ebb47d77238",
+    "aster/inference/model_runner.py": "5cdb61f1f9332f60806f8fd619ccc23e32f789ef9b6e6d9fe35caa79bcdeac15",
+    "aster/inference/paged_kv_adapter.py": "de760744bbaa6bf764cd4a9c13ff2fa26ab154138a6b59fc4ebd034af41ff666",
+    "configs/config.yaml": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_benchmark.py": "ee30de576e7c6bab809ef2e7bfd6dc31f7ad91d07fe40a82676986e22a0416fd",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/production_benchmark.py": "f1d0a478e702e3d47327b8c298d8c4190794b79d4bd9fbea5ab8d2379d183600",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/sampling_benchmark.py": "ca23fc7154e53b5e78371459e383e200cc0198afcdecb2fa42834e066c76157d",
+    "docs/loop-engineering/artifacts/ITER-20260717-050-decode-cache-sync/benchmark.py": "87cc63dd6645562634b85834759427c92e7c020e30c97b89f9c5b2595df84e69",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/focus_manifest.py": "32ae2f841e89d1da073bc08f400705ad99da2d0f223224e81955cdc126a1011c",
+    "docs/loop-engineering/artifacts/ITER-20260717-051-batch-sampler-sync/paired_aggregate.py": "dd5ab476cd774574d867f87d3cb5fe972ddac0c14bb6fa116cba0b270c799b62"
+  },
+  "records": [
+    {
+      "output": "results/paired-final2-penalties-b2-512/run-1.json",
+      "sha256": "eec13f1806da95385ce26120a260bfedf501a37a6237d8c4e005484a7caf8794",
+      "pid": 54171,
+      "workload": "penalties",
+      "batch_size": 2,
+      "run_id": 1
+    },
+    {
+      "output": "results/paired-final2-penalties-b2-512/run-2.json",
+      "sha256": "6c3069bb05023ff5df341cc745555577334316212bcf477dc94e51161c844fc1",
+      "pid": 63551,
+      "workload": "penalties",
+      "batch_size": 2,
+      "run_id": 2
+    },
+    {
+      "output": "results/paired-final2-penalties-b2-512/run-3.json",
+      "sha256": "11e56309c132a4b811b3f2686cb78a366f2ccde4bc213d529606604ffd63b8f1",
+      "pid": 76095,
+      "workload": "penalties",
+      "batch_size": 2,
+      "run_id": 3
+    }
+  ]
+}

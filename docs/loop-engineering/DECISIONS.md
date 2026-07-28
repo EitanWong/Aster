@@ -689,3 +689,281 @@
   the remaining explicit logits evaluation and per-row synchronization before
   considering another sampling change; do not repeat the rejected greedy-only
   batch argmax experiment.
+
+## 2026-07-18: Group Heterogeneous Batch Sample Synchronization
+
+- Decision: retain one grouped sampled-token barrier in the production manual
+  batch path. Preserve each row's existing logits processors and sampler
+  instead of introducing a greedy-only or policy-specific fast path.
+- Design: build row graphs in request order, submit MLX-like sampled scalars
+  with one `mx.async_eval`, prepare cache references while work is queued, wait
+  once with `mx.eval`, and materialize results in the same order. Python-valued
+  custom sampler results bypass MLX evaluation and retain the old conversion
+  contract, while logits provide the model/KV barrier. Errors after sampler
+  graph submission are returned without replaying processors or RNG.
+- Reference: MLX-LM `15b522f` uses grouped async token/logprob evaluation;
+  vllm-metal tensorizes row policies; OMLX rebuilds row ownership around stable
+  request IDs; LM Studio separates sampling from grouped materialization.
+- Evidence: the selected candidate passed a 100-process greedy/mixed/penalty/
+  structured confirmation and a 24-process 6,169-token confirmation. The
+  review-hardened final admission measured `+9.89%~+18.06%` across the eight
+  adopted short core cells and `+5.37%~+12.51%` across four long cells. Every
+  selected exact independent-process interval clears its workload floor. The
+  weakest long B2 cell's three 1,024-pair runs measured median `+5.37%` with
+  process interval `[+4.51,+6.05]`.
+- Stress: three mixed B8 runs generated 8,192 timed tokens per policy and
+  improved a median `14.26%` with process interval `[+13.87,+14.58]`; all 96
+  blocks were positive, each policy
+  performed 16 expected allocator clears, token/text/cache hashes matched,
+  and swap did not grow.
+- Measurement decision: preserve the noisier 124-process production matrix.
+  Desktop load caused isolated large positive and negative excursions, so
+  final acceptance uses two independent KV states sharing one loaded model
+  and balanced adjacent AB/BA calls. Block resampling is a within-process
+  stability diagnostic; independent-process end-to-end results are the
+  statistical admission unit. No record was deleted and the core 3% floor was
+  not relaxed.
+- Correctness hardening: stop-aware structured B4 produced valid schema output
+  for 4/4 lanes while membership shrank `4 -> 3 -> 1`. The composite
+  `final-admission.json` requires current source hashes, all selected paired
+  components, stop-aware schema validity, zero swap, and retained negative
+  evidence.
+- Rejected alternatives: eager grouped sampling, sampled-scalar concatenation,
+  and Iteration 034's whole-batch greedy argmax. Current SIMPLE,
+  FlashSampling, fused-softmax, and backend-sampler implementations remain
+  reference material because their hardware, batch, or correctness contracts
+  do not match Aster's B1-B8 arbitrary-processor path.
+- Tradeoff: the batch path creates one extra Python list of lazy sampled values
+  and still must materialize host token IDs before stop/stream processing. The
+  optimization does not claim to remove all sampling overhead.
+- Rollback: revert the Iteration 051 commit to restore eager logits evaluation
+  and per-row sample materialization.
+- Next experiment: profile post-change logsumexp and processor-specific graph
+  costs before testing tensorized homogeneous groups or backend sampler graphs.
+
+## 2026-07-23: Re-audit Iteration 051 with strict assignment-balanced evidence
+
+- The original Iteration 051 short/long claims used too few independent
+  processes and are retained only as historical screening evidence. The
+  current admission uses 18 fresh processes per cell, nine odd/even
+  runner-assignment replicates, round-robin cell execution, and a
+  96.09%-coverage distribution-free median interval.
+- Short core cells cleared the 3% lower-bound gate in balanced, baseline-first,
+  and production-first strata. Structured B2/B4 are a compatibility fallback:
+  their balanced lower bounds were `-0.25%/-0.72%`, above the explicit `-1%`
+  no-regression floor; host-driven parser order and block stability remain
+  diagnostics rather than speed gates.
+- The 6,169-token screen retained a greedy B2 production-first lower-bound miss
+  at `+1.75%`. A predeclared 1,024-step, 18-process confirmation resolved it
+  with balanced `[+6.65,+7.44]`, baseline-first `[+6.57,+7.64]`, and
+  production-first `[+6.75,+7.65]`. The screen failure is recorded in
+  `final-admission.json`, not removed.
+- Mixed B8 1,024-step stress passed with balanced `[+14.52,+15.41]`, both
+  order strata above `+14.5%`, exact parity, and no swap growth. System swap
+  reclamation is recorded separately; the memory gate rejects growth rather
+  than requiring an unrelated global counter to remain byte-identical.
+- The current admission binds measurement-source/model hashes from raw payloads
+  and recomputes every strict aggregate. Structured validation now hashes the
+  JSON processor source as well as the runner, and confirms schema-valid,
+  stop-aware membership shrink `4 -> 3 -> 1`.
+
+## 2026-07-23: Reject greedy logsumexp elision after end-to-end profiling
+
+- Hypothesis: MLX-LM's `temperature == 0` argmax does not need the per-row
+  `logsumexp` subtraction, so a semantic sampler marker could reduce decode
+  cost without changing tokens.
+- Evidence: a benchmark-only candidate retained exact token/text/cache parity
+  and zero swap growth in ten fresh paired records. Observed medians were
+  `+0.53%/+0.58%/+0.50%` for greedy B2/B4/B8, `+0.60%` for penalty B4, and
+  `+1.27%` for mixed B4. A same-logits profile measured only `13~53 us` graph
+  deltas at B1/B2/B4/B8.
+- Decision: do not modify `ModelRunner`, request state, or sampler contracts.
+  The candidate is below the 3% core gate; retain the scripts and payloads as
+  evidence for future fused processor/sampler work.
+- Constraint: structured and nonzero-temperature rows must continue receiving
+  normalized logprobs, and any future optimization must preserve RNG order,
+  parser ownership, and exact stop behavior.
+
+## 2026-07-23: Reject broader raw-logit and neutral-processor candidates alone
+
+- Iteration 053 retained exact shift-invariant sampler behavior but measured
+  only `+1.22%` at mixed B4 and `+0.05%` at mixed B8. Do not add a sampler
+  metadata contract for that isolated opportunity.
+- Iteration 054 measured neutral repetition-processor removal at
+  `+1.47%/+1.57%/+1.50%` for greedy B2/B4/B8. It is below the standalone gate.
+- These are retained negative experiments. The neutral sentinel is used only
+  as a prerequisite of Iteration 055's broader processor-context ownership;
+  it is not promoted as an independent performance claim.
+
+## 2026-07-23: Bound built-in penalty processor history to 20 tokens
+
+- Decision: retain explicit `0`, `20`, or full-history (`None`) processor
+  context metadata across decode initialization, request state, work items, and
+  runner defense. Omit MLX-LM's neutral repetition processor.
+- Ownership: Aster assigns a 20-token bound only where it constructs MLX-LM's
+  repetition/presence/frequency processors with that exact context. Structured,
+  thinking, custom, and legacy work-item processors retain full history.
+- Evidence: 18 fresh 24,601-token B2 processes formed nine runner-balanced
+  replicates. The balanced 96.09%-coverage median interval was
+  `[+4.75%,+6.72%]`; baseline-first and production-first lower bounds were
+  `+4.33%/+4.10%`. All nine replicates were stable, all output matched exactly,
+  and swap stayed flat.
+- Short boundary: 18-process 409-token B2/B4 matrices did not clear the speed
+  gate, but balanced/order lower bounds stayed above `-1%`. They are
+  no-regression controls, not positive performance claims.
+- Failed evidence: the earlier 64-step matrix failed order/stability gates and
+  remains archived. Increasing the predeclared measurement window to 256 steps
+  produced the admitted independent matrix; no records were discarded.
+- Composite gate: `final-admission.json` verifies all 54 formal processes,
+  source/model signature equality, long admission, short no-regression,
+  exactness, swap non-growth, and retention of the failed matrix. All nine
+  gates pass.
+- Tradeoff: this is an active-penalty ultra-long-context optimization. It does
+  not accelerate full-history structured/custom processors or prefill.
+- Rollback: remove the context metadata and engine slice helper, restore full
+  processor history on every work item, and pass the prior unbounded arguments
+  to MLX-LM's processor factory.
+
+## 2026-07-24: Reject residual host and homogeneous sampling candidates
+
+- Host profile: sampled-token materialization plus `DecodeResult` construction
+  occupied only `0.225%~0.294%` of grouped batch time at B2/B4/B8.
+- Homogeneous penalties: a benchmark-only `[B,20]` gather/scatter path preserved
+  duplicate-token semantics, row sampler order, and exact output, but measured
+  only `+0.01%~+0.66%`.
+- Batch normalization: one processor-free `[B,V]` reduction preserved exact
+  top-p output and RNG order, but measured `-1.16%/+1.78%/+0.11%` at B2/B4/B8.
+- Decision: retain all nine payloads as negative evidence and make no production
+  change. The candidates fail the 3% early gate, so independent-process and
+  dynamic-membership confirmation are not warranted.
+- Next experiment: avoid Python -> MLX -> Python token-history conversion only
+  for Aster-owned structured/thinking processors that declare a Python-token
+  input contract; preserve all unknown/custom processor behavior.
+
+## 2026-07-24: Reuse LMFE native allowed-token lists
+
+- Decision: retain a local fast path in `JSONSchemaLogitsProcessor` that borrows
+  LMFE's cached native `list[int]`, falls back to integer conversion for other
+  containers, and scans the small EOS set for membership.
+- Ownership: key-context and incomplete-JSON EOS filters always create new
+  lists, so Aster never mutates LMFE's cache. ModelRunner, arbitrary custom
+  processors, parser ordering, masks, samplers, and RNG behavior are unchanged.
+- Evidence: short structured B4 and 24,601-token B2 each ran 18 fresh
+  processes / nine runner-balanced replicates. Their balanced 96.09%-coverage
+  intervals were `[+31.33%,+33.40%]` and `[+24.96%,+27.63%]`; every order
+  stratum cleared 20%, all outputs matched exactly, and swap did not grow.
+- Correctness: stop-aware B4 produced 4/4 schema-valid results, stopped every
+  lane in 17-58 tokens, and shrank active membership `4 -> 3 -> 1`.
+- Rejected scope: direct Python-token delivery did not independently clear 3%,
+  and an identity mask cache hit 0/320 calls. Neither enters production.
+- Rollback: restore unconditional integer-list conversion and the prior
+  allowed-list-driven EOS scan in `_allowed_tokens`.
+- Next experiment: find and gate a cheap, capacity-bounded LMFE semantic key
+  before considering reuse of the remaining roughly 6 ms structured mask.
+
+## 2026-07-24: Reuse consecutive structured masks
+
+- Decision: retain one prior allowed-list snapshot and its immutable MLX mask
+  inside each `JSONSchemaLogitsProcessor`. A cheap length/shape/probe
+  fingerprint rejects obvious changes, and full list equality verifies every
+  hit before reuse.
+- Capacity: exactly one entry per request. Capacity-1 matched the capacity-8
+  screen's 1,076/1,152 B4 hits, improved the screen from `+83.16%` to
+  `+90.61%`, and retained less MLX memory. No global cache, configuration, or
+  cross-request ownership is introduced.
+- Correctness: snapshot the allowed list on every miss so in-place mutation
+  cannot validate a stale mask; include logits shape in the fingerprint.
+  Key-context/EOS filtering, parser order, custom processors, samplers, RNG,
+  stop handling, and cache state remain unchanged.
+- Evidence: the 18-process short B4 and 24,601-token B2 matrices passed with
+  balanced intervals `[+114.79%,+119.26%]` and `[+64.81%,+68.91%]`. Throughput
+  medians improved `+112.39%/+65.94%`; all 36 outputs matched, all nine
+  replicates per cell were stable, both order strata cleared the gate, and
+  swap did not grow.
+- Memory: conservative dual-runner MLX peak deltas versus Iteration 057 were
+  7,979,008 bytes at short B4 and 3,989,504 bytes at long B2, below the
+  predeclared 16/8 MiB bounds.
+- Rollback: remove the three request-local fields and the fingerprint,
+  equality, snapshot, and assignment block in `_mask`; the prior construction
+  path then runs on every row without a migration or configuration change.
+- Next experiment: profile the retained path again. Pre-cache percentages are
+  invalid after this speedup and must not be used to choose the next change.
+
+## 2026-07-24: Bound iteration state and benchmark evidence
+
+- Decision: use `CURRENT.json` as the only mutable iteration state and the
+  short iteration protocol as the operating contract. One iteration owns one
+  hypothesis, one primary metric, and at most one production candidate.
+- Workspace gate: the read-only checker measures changed/staged/untracked
+  paths, artifact files and bytes, cross-iteration evidence, mixed index state,
+  reference updates, and generated caches. The initial report fails at 1,163
+  changed paths and 1,114 artifact files; this is the debt baseline, not a
+  reason to delete existing user work.
+- Evidence policy: exploratory raw output stays under ignored
+  `run/loop-engineering/<iteration>/`. Only source, manifests, aggregate or
+  admission results, and the minimum raw records needed to recompute a formal
+  claim are promoted. More than 150 files or 100 MiB requires an explicit
+  retention justification and compact representation.
+- Scientific gate: a 3% screen only authorizes TDD. Admission still requires
+  independent processes, balanced AB/BA strata, predeclared intervals, exact
+  behavior, memory and swap bounds, and a recorded full-suite result.
+- Tradeoff: compact evidence makes review and recovery faster, while full
+  exploratory payloads are local scratch rather than permanent repository
+  history. Manifests and hashes preserve provenance; formal evidence needed to
+  recompute an admitted claim remains tracked.
+
+## 2026-07-24: Cap snapshot cloning for long-context requests
+
+- Decision: before cloning a prefix snapshot, reserve space for both the live
+  cache and its clone. For requests with at least 65,536 prompt tokens, cap the
+  available-memory portion of the snapshot budget at 2 GiB; shorter requests
+  retain the existing budget and the configured snapshot limit still applies.
+- Basis: a controlled 128K comparison changed the snapshot budget from 8 GiB
+  to 2 GiB. The request completed instead of failing, snapshot stores fell from
+  8 to 5, active MLX memory fell from 8.47 GiB to 3.15 GiB, and swap did not
+  grow. This is directional evidence; the automatic default-config path still
+  needs a fresh archived real-model reproduction.
+- Verification: threshold boundary, lower-memory behavior, clone preflight,
+  and both checkpoint call paths are covered; the full suite passes with 498
+  tests and nine skips.
+- Rollback: remove the request-aware budget helper and pass only the configured
+  snapshot and available-memory minimum to clone preflight.
+
+## 2026-07-24: Reuse exact structured EOS membership
+
+- Decision: retain one EOS-presence boolean beside each request-local exact mask
+  snapshot. Reuse requires the same probes and full allowed-list equality;
+  mutations and fingerprint collisions remain verified misses.
+- Semantics: incomplete JSON still rechecks completion on every call. EOS/key
+  filtering creates a new list, LMFE-owned lists are not mutated, and parser,
+  mask, sampler, RNG, stop, and cache ordering remain unchanged.
+- Evidence: 18 fresh processes / nine runner-balanced replicates per cell gave
+  balanced intervals `[+38.01%,+47.33%]` at short B4 and
+  `[+21.09%,+24.47%]` at 24,601-token B2. Both order strata cleared 10%, all 36
+  outputs matched exactly, 9/9 replicates were stable, and swap stayed flat.
+- Correctness: stop-aware B4 produced 4/4 schema-valid results and membership
+  shrank `4 -> 3 -> 1`. Mutation, completion recheck, collision, EOS filter, and
+  shape invalidation have automated coverage.
+- Memory correction: numeric ceilings were absent before the first formal
+  matrix, so its memory data remains discovery evidence. After recording 4/2
+  GiB RSS and 16/8 MiB MLX-delta limits, four fresh confirmations passed.
+- Evidence retention: 50 logical files are stored in one 237,686-byte archive;
+  the composite admission recomputes both strict aggregates and passes 12/12
+  gates.
+- Rollback: remove the cached and pending EOS booleans and perform the original
+  membership scan in `_allowed_tokens` on every call.
+- Next experiment: measure which LMFE prefix-state `TokenList` objects remain
+  live before changing their ownership or lifetime.
+
+## 2026-07-24: Separate inherited workspace debt from iteration growth
+
+- Decision: keep the initial 1,164 changed / 1,114 artifact paths as an
+  immutable debt baseline at HEAD `2cb14052d4a3`. The checker reports that debt
+  as a warning while blocking net growth beyond 25 files / 20 artifacts and
+  enforcing a 20-file / 5 MiB active-iteration artifact budget.
+- Reason: treating inherited shared-worktree inventory as fresh work made every
+  future iteration permanently fail; deleting or staging owner-unknown work
+  would be worse. Incremental gates keep new work bounded without hiding debt.
+- Constraint: the baseline must never move upward to absorb new files. Lower it
+  only after owner-attributed consolidation, and continue reporting foreign
+  iterations, reference updates, mixed index paths, and generated caches.

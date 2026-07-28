@@ -6,11 +6,12 @@ import asyncio
 import importlib.metadata
 import json
 import platform
-import psutil
 import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+import psutil
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -241,6 +242,37 @@ def _build_workload(
             )
             for index in range(max(concurrency, 1))
         ]
+    if name == "agent-long":
+        turn_count = 16
+        words_per_turn, remainder = divmod(long_prompt_words, turn_count)
+        messages: list[dict[str, str]] = [
+            {
+                "role": "system",
+                "content": "Maintain exact technical context across the full agent session.",
+            }
+        ]
+        for index in range(turn_count):
+            word_count = words_per_turn + (1 if index < remainder else 0)
+            messages.append(
+                {
+                    "role": "user" if index % 2 == 0 else "assistant",
+                    "content": (
+                        f"Turn {index}: " + " ".join(["context"] * word_count)
+                    ),
+                }
+            )
+        messages.append(
+            {"role": "user", "content": "Return one concise acknowledgement."}
+        )
+        return [
+            InferenceRequest(
+                messages=messages,
+                max_tokens=128,
+                temperature=temperature,
+                trace_id=f"agent-long-{index}",
+            )
+            for index in range(max(concurrency, 1))
+        ]
     raise ValueError(f"Unknown workload: {name}")
 
 
@@ -450,7 +482,16 @@ def main() -> None:
     parser.add_argument("--config", default="configs/config.yaml")
     parser.add_argument(
         "--workload",
-        choices=["single", "reuse", "reuse-divergent", "mixed", "staggered", "long", "all"],
+        choices=[
+            "single",
+            "reuse",
+            "reuse-divergent",
+            "mixed",
+            "staggered",
+            "long",
+            "agent-long",
+            "all",
+        ],
         default="all",
     )
     parser.add_argument("--concurrency", type=int, default=2)

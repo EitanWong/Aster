@@ -3,16 +3,16 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
+from aster.inference.contracts import InferenceRequest
 from scripts.dev.benchmark_live import (
     _build_workload,
     _collect_runtime_metadata,
-    _extract_staggered_latency_metrics,
     _engine_timing_memory_gb,
+    _extract_staggered_latency_metrics,
     _max_response_peak_memory_gb,
     _prefix_cache_counter_delta,
     _run_requests,
 )
-from aster.inference.contracts import InferenceRequest
 
 
 def test_build_workload_uses_explicit_sampling_temperature() -> None:
@@ -62,6 +62,18 @@ def test_build_long_workload_accepts_configured_prompt_length() -> None:
     requests = _build_workload("long", 1, temperature=0.0, long_prompt_words=12)
 
     assert (requests[0].prompt or "").split().count("section") == 12
+
+
+def test_build_agent_long_workload_distributes_context_across_turns() -> None:
+    requests = _build_workload("agent-long", 1, temperature=0.0, long_prompt_words=32)
+    messages = requests[0].messages or []
+
+    assert messages[0]["role"] == "system"
+    assert [message["role"] for message in messages[1:-1]] == [
+        "user" if index % 2 == 0 else "assistant" for index in range(16)
+    ]
+    assert messages[-1]["role"] == "user"
+    assert sum(message["content"].split().count("context") for message in messages[1:-1]) == 32
 
 
 def test_extract_staggered_latency_metrics_separates_long_and_short_requests() -> None:

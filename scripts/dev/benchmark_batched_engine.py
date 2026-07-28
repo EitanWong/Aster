@@ -48,6 +48,7 @@ def _apply_benchmark_overrides(
     lane_admission_window_ms: float = 0.0,
     cohort_target_size: int = 0,
     longest_lane_step_quanta: int = 1,
+    lane_streams: bool = False,
 ) -> RuntimeSettings:
     if max_lanes > 1 and lane_admission_window_ms <= 0:
         raise ValueError(
@@ -71,6 +72,7 @@ def _apply_benchmark_overrides(
                     "batch_generator_lane_admission_window_ms": lane_admission_window_ms,
                     "batch_generator_lane_target_size": cohort_target_size,
                     "batch_generator_longest_lane_step_quanta": longest_lane_step_quanta,
+                    "batch_generator_lane_streams": lane_streams,
                 }
             )
         }
@@ -299,6 +301,7 @@ async def run_benchmark(
     lane_admission_window_ms: float,
     cohort_target_size: int,
     longest_lane_step_quanta: int,
+    lane_streams: bool,
 ) -> dict[str, Any]:
     settings = load_settings(config_path)
     settings = _apply_benchmark_overrides(
@@ -309,6 +312,7 @@ async def run_benchmark(
         lane_admission_window_ms=lane_admission_window_ms,
         cohort_target_size=cohort_target_size,
         longest_lane_step_quanta=longest_lane_step_quanta,
+        lane_streams=lane_streams,
     )
     engine = BatchedEngine(settings, MetricsRegistry(settings.telemetry.metrics_namespace))
     await engine.start()
@@ -375,6 +379,7 @@ async def run_benchmark(
         "batch_generator_lane_admission_window_ms": lane_admission_window_ms,
         "batch_generator_lane_target_size": cohort_target_size,
         "batch_generator_longest_lane_step_quanta": longest_lane_step_quanta,
+        "batch_generator_lane_streams": lane_streams,
         "workloads": workloads,
         "concurrency_levels": concurrency_levels,
         "rounds": rounds,
@@ -400,6 +405,7 @@ def main() -> None:
     parser.add_argument("--lane-admission-window-ms", type=float, default=0.0)
     parser.add_argument("--cohort-target-size", type=int, default=0)
     parser.add_argument("--longest-lane-step-quanta", type=int, default=1)
+    parser.add_argument("--lane-streams", action="store_true")
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
@@ -418,6 +424,7 @@ def main() -> None:
             lane_admission_window_ms=args.lane_admission_window_ms,
             cohort_target_size=args.cohort_target_size,
             longest_lane_step_quanta=args.longest_lane_step_quanta,
+            lane_streams=args.lane_streams,
         )
     )
     rendered = json.dumps(payload, indent=2)

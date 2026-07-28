@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "metric_scope": "paired structured decode hot path",
+  "not_measured": [
+    "TTFT",
+    "prefill throughput",
+    "prefix cache hit rate",
+    "power"
+  ],
+  "cells": {
+    "short_structured_b4": {
+      "batch_size": 4,
+      "context_words": 128,
+      "actual_prompt_tokens": 409,
+      "measured_steps_per_process": 256,
+      "paired_warmup_steps": 32,
+      "processes": 18,
+      "assignment_balanced_replicates": 9,
+      "decode_step_latency_ms": {
+        "baseline": {
+          "count": 4608,
+          "min": 73.21145798778161,
+          "median": 79.96206250390969,
+          "p95": 111.80263538117268,
+          "max": 936.5424579882529,
+          "population_stdev": 40.243017064357005
+        },
+        "production": {
+          "count": 4608,
+          "min": 53.234417020576075,
+          "median": 59.125020503415726,
+          "p95": 81.57748520898164,
+          "max": 1144.559999986086,
+          "population_stdev": 42.74378011637027
+        },
+        "median_change_percent": -26.058660004517954
+      },
+      "process_throughput_tokens_per_second": {
+        "baseline": {
+          "count": 18,
+          "min": 44.52905526614247,
+          "median": 46.64916146460571,
+          "p95": 48.077757592161774,
+          "max": 48.18300072894933,
+          "population_stdev": 0.9453752348376954
+        },
+        "production": {
+          "count": 18,
+          "min": 58.248921502144114,
+          "median": 61.565402091081324,
+          "p95": 63.857514665561254,
+          "max": 64.34943067142173,
+          "population_stdev": 1.7051069781331452
+        },
+        "median_change_percent": 31.97536709806257
+      },
+      "process_speedup_percent": {
+        "count": 18,
+        "min": 26.376369512934584,
+        "median": 32.23348891553303,
+        "p95": 37.55281702893068,
+        "max": 37.87845210548528,
+        "population_stdev": 3.967082961706563
+      },
+      "balanced_median_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 31.334189299676197,
+        "upper": 33.39518367371011,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 25.19452484835847,
+        "upper": 27.08899008063721,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "production_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 37.28888502787371,
+        "upper": 39.902192121188776,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "mlx_peak_bytes": {
+        "count": 18,
+        "min": 758656324.0,
+        "median": 758705476.0,
+        "p95": 758754628.0,
+        "max": 758754628.0,
+        "population_stdev": 24710.47980008922
+      },
+      "rss_after_bytes": {
+        "count": 18,
+        "min": 3664019456.0,
+        "median": 4142530560.0,
+        "p95": 4606137139.199999,
+        "max": 5152915456.0,
+        "population_stdev": 312101554.7685031
+      },
+      "all_exact_token_text_cache_parity": true,
+      "all_swap_non_growth": true,
+      "admission_passed": true
+    },
+    "long_structured_b2": {
+      "batch_size": 2,
+      "context_words": 8192,
+      "actual_prompt_tokens": 24601,
+      "measured_steps_per_process": 128,
+      "paired_warmup_steps": 16,
+      "processes": 18,
+      "assignment_balanced_replicates": 9,
+      "decode_step_latency_ms": {
+        "baseline": {
+          "count": 2304,
+          "min": 47.79937499552034,
+          "median": 51.022729006945156,
+          "p95": 58.2157839089632,
+          "max": 195.95716599724256,
+          "population_stdev": 11.160951804759428
+        },
+        "production": {
+          "count": 2304,
+          "min": 36.664457991719246,
+          "median": 40.9719165036222,
+          "p95": 45.35910803970182,
+          "max": 165.88533300091513,
+          "population_stdev": 10.297877838093406
+        },
+        "median_change_percent": -19.698696441648302
+      },
+      "process_throughput_tokens_per_second": {
+        "baseline": {
+          "count": 18,
+          "min": 36.028198782688,
+          "median": 37.53383430193663,
+          "p95": 38.600229867936385,
+          "max": 38.90951550529577,
+          "population_stdev": 0.8220076824086813
+        },
+        "production": {
+          "count": 18,
+          "min": 45.53157463553688,
+          "median": 47.62050503820065,
+          "p95": 48.33345691816762,
+          "max": 48.35297778895869,
+          "population_stdev": 0.8236628223353648
+        },
+        "median_change_percent": 26.87354202910086
+      },
+      "process_speedup_percent": {
+        "count": 18,
+        "min": 23.259860556197953,
+        "median": 26.363978626958954,
+        "p95": 29.402121770551936,
+        "max": 29.967684068324772,
+        "population_stdev": 1.7624647977636714
+      },
+      "balanced_median_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 24.963138635497508,
+        "upper": 27.631281250692076,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 28.29715430373372,
+        "upper": 32.86433893457858,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "production_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 20.96143085314408,
+        "upper": 23.21650714806871,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "mlx_peak_bytes": {
+        "count": 18,
+        "min": 2053999034.0,
+        "median": 2054056378.0,
+        "p95": 2054080954.0,
+        "max": 2054080954.0,
+        "population_stdev": 27306.666666666668
+      },
+      "rss_after_bytes": {
+        "count": 18,
+        "min": 2665447424.0,
+        "median": 2669576192.0,
+        "p95": 2726332825.6,
+        "max": 2728017920.0,
+        "population_stdev": 21317833.35611777
+      },
+      "all_exact_token_text_cache_parity": true,
+      "all_swap_non_growth": true,
+      "admission_passed": true
+    }
+  }
+}

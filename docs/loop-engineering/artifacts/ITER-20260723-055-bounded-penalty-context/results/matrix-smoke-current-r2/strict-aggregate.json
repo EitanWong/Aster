@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "manifest_sha256": "fcad97a6aaf1996e72a23d26c52ed39c053b36d080bd59737dac3283080b5ae4",
+  "records": 2,
+  "unique_pids": 2,
+  "minimum_processes_per_cell": 18,
+  "minimum_replicates_per_cell": 9,
+  "cells": {
+    "penalties-b2": {
+      "workload": "penalties",
+      "batch_size": 2,
+      "speed_floor_percent": 3.0,
+      "independent_processes": 2,
+      "independent_replicates": 1,
+      "stable_replicates": 0,
+      "all_swap_zero": true,
+      "order_strata_inference_required": true,
+      "within_replicate_stability_required": true,
+      "intervals": {
+        "balanced": {
+          "confidence_target": 0.95,
+          "coverage": 0.0,
+          "lower": -1.0031446732683302,
+          "upper": -1.0031446732683302,
+          "order_statistic_rank": 1,
+          "observations": 1,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        },
+        "baseline_first": {
+          "confidence_target": 0.95,
+          "coverage": 0.0,
+          "lower": -2.861205216740015,
+          "upper": -2.861205216740015,
+          "order_statistic_rank": 1,
+          "observations": 1,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        },
+        "production_first": {
+          "confidence_target": 0.95,
+          "coverage": 0.0,
+          "lower": 0.8913972487063271,
+          "upper": 0.8913972487063271,
+          "order_statistic_rank": 1,
+          "observations": 1,
+          "confidence_met": false,
+          "speed_floor_percent": 3.0,
+          "lower_meets_speed_floor": false
+        }
+      },
+      "gates": {
+        "minimum_independent_processes": false,
+        "minimum_assignment_balanced_replicates": false,
+        "all_exact_token_text_cache_parity": true,
+        "all_swap_non_growth": true,
+        "all_balanced_ab_ba_order": true,
+        "all_runner_assignment_pairs_balanced": true,
+        "balanced_median_interval_clears_floor": false,
+        "baseline_first_median_interval_clears_floor": false,
+        "production_first_median_interval_clears_floor": false,
+        "order_strata_speed_floor_required": false,
+        "within_replicate_stability": true
+      },
+      "passed": false,
+      "replicates": [
+        {
+          "replicate_id": 1,
+          "run_ids": [
+            1,
+            2
+          ],
+          "end_to_end_speedup_percent": -1.0031446732683302,
+          "baseline_first_speedup_percent": -2.861205216740015,
+          "production_first_speedup_percent": 0.8913972487063271,
+          "block_speedup_percent_median": -1.1722511942604485,
+          "block_floor_fraction": 0.0,
+          "within_replicate_stable": false,
+          "runner_assignment_balanced": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": [
+            0,
+            0
+          ],
+          "swap_zero": true,
+          "swap_non_growth": true
+        }
+      ],
+      "runs": [
+        {
+          "run_id": 1,
+          "pid": 87784,
+          "end_to_end_speedup_percent": 2.9384788460103284,
+          "baseline_first_speedup_percent": 2.9785799748485164,
+          "production_first_speedup_percent": 2.8972418587209336,
+          "block_speedup_percent_median": 2.5962887626617412,
+          "positive_block_fraction": 0.5,
+          "block_floor_fraction": 0.5,
+          "within_process_stable": false,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": 0,
+          "swap_zero": true,
+          "swap_non_growth": true
+        },
+        {
+          "run_id": 2,
+          "pid": 89051,
+          "end_to_end_speedup_percent": -4.793839247978349,
+          "baseline_first_speedup_percent": -8.36982356671715,
+          "production_first_speedup_percent": -1.0753460936081316,
+          "block_speedup_percent_median": -4.298162327866045,
+          "positive_block_fraction": 0.25,
+          "block_floor_fraction": 0.0,
+          "within_process_stable": false,
+          "balanced_ab_ba_order": true,
+          "exact_token_text_cache_parity": true,
+          "swap_delta_bytes": 0,
+          "swap_zero": true,
+          "swap_non_growth": true
+        }
+      ]
+    }
+  },
+  "all_cells_passed": false
+}

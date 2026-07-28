@@ -196,6 +196,40 @@ def test_batched_engine_prioritizes_the_longest_prompt_lane() -> None:
     assert engine._lane_step_quanta(long, [short, long]) == 2
 
 
+def test_batched_engine_can_create_a_dedicated_mlx_stream_for_a_lane(monkeypatch) -> None:
+    import importlib
+
+    import mlx.core as mx
+    generate_module = importlib.import_module("mlx_lm.generate")
+
+    captured: dict[str, object] = {}
+    stream = object()
+
+    class BatchGenerator:
+        def __init__(self, model: object, **kwargs: object) -> None:
+            captured["model"] = model
+            captured.update(kwargs)
+
+    monkeypatch.setattr(mx, "new_stream", lambda device: stream)
+    monkeypatch.setattr(generate_module, "BatchGenerator", BatchGenerator)
+
+    engine = object.__new__(BatchedEngine)
+    engine._model = object()
+    engine._batch_generator_max_lanes = 2
+    engine._batch_generator_lane_streams = True
+    engine.settings = SimpleNamespace(
+        engine=SimpleNamespace(
+            max_active_requests=4,
+            prefill_token_budget=32,
+        )
+    )
+
+    engine._create_batch_generator()
+
+    assert captured["model"] is engine._model
+    assert captured["stream"] is stream
+
+
 def test_batched_engine_abort_removes_request_from_its_lane() -> None:
     removed: list[list[int]] = []
 
