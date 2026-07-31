@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "kind": "exact-hit-sustained-lifecycle",
+  "iteration": "ITER-20260731-083-exact-hit-commit-and-sustained-loop",
+  "baseline_commit": "5e32228f201435d595afb03d6d73d35cbdc8eae0",
+  "decision": "completed-uncommitted",
+  "implementation": {
+    "engine_sha256": "0e699c09da3c5188b591432734d584b57733f60341faa838176ecdb548e55f9f",
+    "arrival_harness_sha256": "728ba624da3cf3622ae23727651f5c210555802124371ffcf9b246832a38d5d9",
+    "runtime_tests_sha256": "abeb8be69382b5754a2319317d5cfba85865caef3f529eebddef98d7f748311e",
+    "arrival_tests_sha256": "a3d733b1854da3c20b049ab0fe1a7047a052b142ffe7145991fda1a345ede02c",
+    "production_change": "Default positive prefix hits skip a duplicate full-prompt checkpoint; the false compatibility switch retains refresh behavior.",
+    "measurement_change": "Two serial public-source lifecycle scenarios record compact terminal cache, pin, queue, and reservation-trace state after each request."
+  },
+  "execution_contract": {
+    "model": "Qwen3.5-9B",
+    "model_fingerprint": {
+      "model_sha256": "d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a",
+      "tokenizer_sha256": "94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e"
+    },
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "engine": "aster-manual",
+    "max_output_tokens": 8,
+    "decode_active_prefill_token_budget": 512,
+    "snapshot_budget_bytes": 8589934592,
+    "snapshot_max_entries": 256,
+    "snapshot_reservation_trace_max_events": 64,
+    "fresh_process_per_scenario": true,
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    }
+  },
+  "plan_compatibility": {
+    "i080_capacity_window_6_sha256": "9612ccb4d1da60c0a3474795bbd22f012f1a7093ad305b59da6ebcc300e6ee1e",
+    "current_capacity_window_6_sha256": "9612ccb4d1da60c0a3474795bbd22f012f1a7093ad305b59da6ebcc300e6ee1e",
+    "byte_identical": true,
+    "sustained_exact_plan_sha256": "9e3c937d28c6db2787ee5e23a8a0d2f47d0825b2f4bf0edfcaa29c5ecaff3d1a",
+    "strict_prefix_plan_sha256": "407193a9990af4b0a955f5eefdd5646049ac5f2a6c6f354a3e8d551984a655b3"
+  },
+  "sustained_exact": {
+    "raw": "run/loop-engineering/ITER-20260731-083-exact-hit-commit-and-sustained-loop/sustained-exact-8x-8gib.json",
+    "raw_sha256": "e51f6e766335179fd4e2538b9e11a9b57deea36bdc070101669ca21793de0bbb",
+    "events": 9,
+    "cold_requests": 1,
+    "exact_replays": 8,
+    "elapsed_seconds": 20.094584416001453,
+    "prompt_tokens": 10334,
+    "cached_tokens_per_replay": 10334,
+    "prefill_steps": [8, 0, 0, 0, 0, 0, 0, 0, 0],
+    "exact_hits": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    "stores": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "entries": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "pinned_entries": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "active_requests": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "trace_events": [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "trace_dropped_events": 0,
+    "snapshot_bytes": 390103040,
+    "output_token_ids_sha256": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+    "text_sha256": "6893ba973bddf438b6d847f413228728e822b3378ca4d77f93199d2ce4f7cd70",
+    "finish_reason": "length",
+    "peak_rss_bytes": 1742716928,
+    "swap_delta_bytes": 0
+  },
+  "strict_prefix_append": {
+    "raw": "run/loop-engineering/ITER-20260731-083-exact-hit-commit-and-sustained-loop/strict-prefix-append-8gib.json",
+    "raw_sha256": "21ac29c00383d6f8226fb1f8e1d3ea24bd1f0cd49ad98ae71f8eef81840962b6",
+    "events": 3,
+    "base_prompt_tokens": 10334,
+    "derived_prompt_tokens": 10342,
+    "derived_cached_tokens": 10334,
+    "prefill_steps": [8, 1, 1],
+    "prefix_hits": [0, 1, 2],
+    "exact_hits": [0, 0, 0],
+    "stores": [1, 1, 1],
+    "entries": [1, 1, 1],
+    "pinned_entries": [0, 0, 0],
+    "active_requests": [0, 0, 0],
+    "trace_events": [1, 1, 1],
+    "trace_dropped_events": 0,
+    "derived_output_token_ids_sha256": "3ab9cbc99be45f6dd921bc4583a161fedb73406708d4373b1bceade3e4ec1079",
+    "derived_text_sha256": "d66f73f617265760b8c8420c3036aebaf4776ac8da8ce538de6efe8ebdc7071a",
+    "derived_finish_reason": "length",
+    "derived_repeats_match": true,
+    "peak_rss_bytes": 5457510400,
+    "swap_delta_bytes": 0
+  },
+  "cancellation": {
+    "raw": "run/loop-engineering/ITER-20260731-083-exact-hit-commit-and-sustained-loop/cancel-prefill-8gib.json",
+    "raw_sha256": "3fdd8eab09ec7162d44cbc7d552628f724c0f8b8619900b3e0b601c345025cf2",
+    "cancel_accepted": true,
+    "cancelled_requests": 1,
+    "cancelled_prefill_checkpoints": 1,
+    "completed_follow_up_requests": 1,
+    "failed_requests": 0,
+    "snapshot_entries": 1,
+    "snapshot_bytes": 85065728,
+    "stores": 1,
+    "evictions": 0,
+    "pinned_entries": 0,
+    "active_estimated_bytes": 0,
+    "pending_requests": 0,
+    "trace_events": 2,
+    "trace_dropped_events": 0,
+    "follow_up_output_token_ids_sha256": "d7e09d2e28fa4702572b4156db0f0bd365e71e555a610a265ab7d9697deaa6e3",
+    "follow_up_text_sha256": "82141670e758a750bce0b0ba4018f9338492327e31c77e017bf009ec61ba6272",
+    "follow_up_matches_i082": true,
+    "peak_rss_bytes": 5478449152,
+    "swap_delta_bytes": 0
+  },
+  "current_source_cross_engine_smoke": {
+    "workload_sha256": "7e801bfc6cfe934c95c5e1fe878aa2910b6eff8c2f4c5ad688fd3fc8cc3c40f1",
+    "records_per_engine": 2,
+    "aster_raw_sha256": "1405a1d3ecbf007f86bbc3f93e15ad18d53ddfff05743f42d41dbca444147c78",
+    "mlx_lm_raw_sha256": "2cf5bb4705d43bb2389b50e68ce11583734c71d48038fde619a480df2f70e16b",
+    "source_model_generation_prompt_output_token_text_finish_parity": true,
+    "zero_swap": true,
+    "scope": "Fresh compatibility smoke only; two records cannot establish a heterogeneous timing ranking or replace the complete public matrices."
+  },
+  "verification": {
+    "arrival_harness_red": "Three sustained-exact tests failed before implementation; two strict-prefix tests then failed before that scenario was implemented.",
+    "arrival_harness_green": "22 passed in 0.36s",
+    "full_suite": "559 passed, 9 skipped, 1 warning in 7.35s",
+    "touched_ruff": "passed",
+    "diff_check": "passed"
+  },
+  "upstream_refresh": {
+    "captured_utc": "2026-07-31T14:13:57Z",
+    "sglang": {
+      "head": "5f9b0db18c787cf56ed9bbaf255f083f26c6ebc2",
+      "radix_cache_sha256": "0b4542eb726b48688b7510e83a5a9fec9907ba5af2e74ebf6be83f05759c11db"
+    },
+    "vllm": {
+      "head": "82ae4164ee016d4daecd2033c26f5c0827984a80",
+      "kv_cache_manager_sha256": "70f7f608c0963af155540630a5633483e5c19c0c0280dfd621760d5db2a419a6",
+      "block_pool_sha256": "51cad2fd425128a0ff433ca4685acfc022e40659153ea5d7180fc586e1eebb6c"
+    },
+    "mlx_lm": {
+      "head": "e5baded8c1d286754edb479ffbde4655a68e2758",
+      "cache_sha256": "819ed95dcbf755652363cfdb15a639890447abb534a06dcefd52c7fff5055750",
+      "local_example_cache_is_current": true
+    },
+    "papers": [
+      "arXiv:2607.28069 SemPIC",
+      "arXiv:2607.16892 Robust KV Cache Management",
+      "arXiv:2607.13095 MiMo-V2.5 Full-Pipeline Optimization",
+      "arXiv:2607.03333 SPORK",
+      "arXiv:2607.01299 HYPIC",
+      "arXiv:2606.30560 TraceLab"
+    ],
+    "decision": "Do not replace Aster's already-indexed bounded PrefixStore with a Python token trie without a measured bottleneck. Use vLLM/SGLang reference-counted shared-cache ownership to motivate a concurrent exact-hit fanout baseline first."
+  },
+  "boundary": "I083 completes packaging and lifecycle evidence but creates no commit or push. The configured 8 GiB budget, eviction policy, snapshot representation, and compatibility switch remain unchanged."
+}

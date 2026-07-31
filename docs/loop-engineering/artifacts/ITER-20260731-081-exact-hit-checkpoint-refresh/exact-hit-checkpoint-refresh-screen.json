@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "kind": "exact-hit-checkpoint-refresh-screen",
+  "iteration": "ITER-20260731-081-exact-hit-checkpoint-refresh",
+  "baseline_commit": "5e32228f201435d595afb03d6d73d35cbdc8eae0",
+  "decision": "admitted-for-8gib-validation",
+  "scope": {
+    "candidate": "Suppress the duplicate full-prompt checkpoint after a default exact snapshot hit.",
+    "production_default": "8 GiB snapshot budget remains unchanged.",
+    "rollback": "Set snapshot_skip_full_prompt_on_prefix_hit=false to retain the prior exact-hit refresh path, or revert the uncommitted predicate and tests."
+  },
+  "source_lock": {
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "plan_hashes": {
+      "offset_6": "9612ccb4d1da60c0a3474795bbd22f012f1a7093ad305b59da6ebcc300e6ee1e",
+      "offset_18": "a47a0e88993c7d0fe7937c06e3669d22baf9cb900d80b09d1f73afb0197a8644",
+      "offset_24": "9908df5d2d63185e8bbb8237da32e5c130035841656ecbd0d84e685dac9f7a81"
+    },
+    "plan_identity_to_i080": true
+  },
+  "implementation": {
+    "engine_sha256": "0e699c09da3c5188b591432734d584b57733f60341faa838176ecdb548e55f9f",
+    "engine_change": "_should_store_full_prompt_checkpoint returns false for every positive matched_prefix_tokens value when the skip setting is enabled.",
+    "runtime_test_sha256": "abeb8be69382b5754a2319317d5cfba85865caef3f529eebddef98d7f748311e",
+    "arrival_harness_sha256": "62dd045b44bdc3e8789c544f3eb902086bda2c167a381fc13af5b12dc2c03ce9",
+    "config_sha256": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3"
+  },
+  "tdd": {
+    "red": {
+      "exact_hit_duplicate_store": true,
+      "exact_hit_replay_store_growth": true,
+      "exact_hit_cancellation_store_growth": true,
+      "rollback_refresh_control": false
+    },
+    "green": {
+      "focused_tests": 4,
+      "affected_tests": 97,
+      "full_suite_passed": true,
+      "full_suite": "554 passed, 9 skipped, 1 warning",
+      "touched_ruff": "passed",
+      "diff_check": "passed"
+    },
+    "contract": {
+      "default_exact_hit": "one lookup clone, no second reservation/clone/store, LRU touch retained, pin released at cleanup",
+      "disabled_skip_setting": "exact checkpoint refresh remains available",
+      "miss_strict_prefix_persistence_and_cancel": "existing controls remain green"
+    }
+  },
+  "four_gib_screen": {
+    "execution": {
+      "model": "Qwen3.5-9B",
+      "engine": "aster-manual",
+      "concurrency": 2,
+      "max_output_tokens": 8,
+      "prefill_step_tokens": 512,
+      "prefix_cache_enabled": true,
+      "snapshot_budget_bytes": 4294967296,
+      "snapshot_max_entries": 256,
+      "reservation_trace_max_events": 64,
+      "persistence": "disabled",
+      "fresh_process_per_row": true,
+      "replacement_rows": false
+    },
+    "rows": [
+      {
+        "offset": 6,
+        "order": 1,
+        "raw": "run/loop-engineering/ITER-20260731-081-exact-hit-checkpoint-refresh/w06-4gib-order01.json",
+        "raw_sha256": "678946a6d928a9c18cb93a15a68070811adf41d09c6de972922ca4091bf83100",
+        "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w06-8gib-order01.json",
+        "paired_identity": {
+          "source": true,
+          "plan": true,
+          "terminal": true
+        },
+        "cache": {
+          "entries": 6,
+          "bytes": 2987687936,
+          "stores": 6,
+          "evictions": 0,
+          "evicted_bytes": 0,
+          "preflight_skips": 0,
+          "exact_hits": 1,
+          "replay_prefill_steps": 0,
+          "replay_cached_tokens": 19057,
+          "trace_events": 6,
+          "trace_dropped_events": 0
+        },
+        "cleanup": {
+          "active_estimated_bytes": 0,
+          "pending_requests": 0,
+          "pinned_entries": 0
+        },
+        "resources": {
+          "elapsed_seconds": 121.00482650000049,
+          "peak_rss_bytes": 5029511168,
+          "swap_delta_bytes": -8388608
+        },
+        "replay_output_token_ids_sha256": "aeec33de5fff9f06dbd82a0286932b8f35a0d1333a2e978f728a404b1b6e55b5",
+        "replay_text_sha256": "e8ff43325e72cc1a4b3910d5fd435a0153858accab65626c0f9864522fd7ef60"
+      },
+      {
+        "offset": 18,
+        "order": 2,
+        "raw": "run/loop-engineering/ITER-20260731-081-exact-hit-checkpoint-refresh/w18-4gib-order02.json",
+        "raw_sha256": "5d7dac224476ec6431d242b8c5f0e0fd13dc0ccc09f901a93c464ea9ec19e299",
+        "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w18-8gib-order05.json",
+        "paired_identity": {
+          "source": true,
+          "plan": true,
+          "terminal": true
+        },
+        "cache": {
+          "entries": 6,
+          "bytes": 3601104896,
+          "stores": 6,
+          "evictions": 0,
+          "evicted_bytes": 0,
+          "preflight_skips": 0,
+          "exact_hits": 1,
+          "replay_prefill_steps": 0,
+          "replay_cached_tokens": 17999,
+          "trace_events": 6,
+          "trace_dropped_events": 0
+        },
+        "cleanup": {
+          "active_estimated_bytes": 0,
+          "pending_requests": 0,
+          "pinned_entries": 0
+        },
+        "resources": {
+          "elapsed_seconds": 149.03391866700258,
+          "peak_rss_bytes": 5501566976,
+          "swap_delta_bytes": 0
+        },
+        "replay_output_token_ids_sha256": "8ca9065d6d525a2c82dd8b841f36d0e65b1889b995338d4eedc826a4975e96ae",
+        "replay_text_sha256": "11ea4353ce9626c14407afaa2645640d944f0ad18e0efeec38216ef9b5a321c7"
+      },
+      {
+        "offset": 24,
+        "order": 3,
+        "raw": "run/loop-engineering/ITER-20260731-081-exact-hit-checkpoint-refresh/w24-4gib-order03.json",
+        "raw_sha256": "66a16f9fca1d8915b2b6335d5637f65e0b9835923f2cf1fca51b6db4f95a1ac0",
+        "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w24-8gib-order08.json",
+        "paired_identity": {
+          "source": true,
+          "plan": true,
+          "terminal": true
+        },
+        "cache": {
+          "entries": 6,
+          "bytes": 3439755264,
+          "stores": 6,
+          "evictions": 0,
+          "evicted_bytes": 0,
+          "preflight_skips": 0,
+          "exact_hits": 1,
+          "replay_prefill_steps": 0,
+          "replay_cached_tokens": 13622,
+          "trace_events": 6,
+          "trace_dropped_events": 0
+        },
+        "cleanup": {
+          "active_estimated_bytes": 0,
+          "pending_requests": 0,
+          "pinned_entries": 0
+        },
+        "resources": {
+          "elapsed_seconds": 143.7736481250031,
+          "peak_rss_bytes": 5508890624,
+          "swap_delta_bytes": 0
+        },
+        "replay_output_token_ids_sha256": "f58b595e554e858b19db3fbbc7075da9cd7208c1b1c5749f1e7133b872efc304",
+        "replay_text_sha256": "a599e6923e7d0649b23187400b7d42bcf94b63f5a18931c1ea89335b4f9bd6d5"
+      }
+    ],
+    "aggregate": {
+      "rows_passing_retention_gate": 3,
+      "rows_total": 3,
+      "all_terminal_identity": true,
+      "all_zero_eviction": true,
+      "all_zero_replay_prefill": true,
+      "all_cleanup_zero": true
+    }
+  },
+  "current_source_cross_engine_smoke": {
+    "workload": "run/loop-engineering/ITER-20260729-072-decode-aware-prefill-budget/current-source-cross-engine/mt-bench-short-output.json",
+    "workload_sha256": "7e801bfc6cfe934c95c5e1fe878aa2910b6eff8c2f4c5ad688fd3fc8cc3c40f1",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "model_fingerprint": {
+      "model_sha256": "d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a",
+      "tokenizer_sha256": "94b66525e309d7ce24691be8194369f880e4f8f5ba82b726782e70fc97e1559e"
+    },
+    "record_count_per_engine": 2,
+    "aster_raw_sha256": "0ae03c00c28103c298a9675b8eb61bee47fa1160f2d30d07aa6a80a44f401e22",
+    "mlx_lm_raw_sha256": "9ceb59cc3b18bb2a9f1c4dbab76edc2bdaefbdf07275d7b68b682dd1d5f8f57e",
+    "exact_token_text_finish_parity": true,
+    "zero_swap": true,
+    "scope": "Compatibility smoke only; no heterogeneous timing ranking or complete-matrix replacement."
+  },
+  "next_gate": "Run fresh configured-8-GiB windows before treating the predicate as production-admitted."
+}

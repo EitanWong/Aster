@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "kind": "concurrent-exact-fanout-ownership-screen",
+  "iteration": "ITER-20260731-084-concurrent-exact-fanout-ownership-screen",
+  "baseline_commit": "5e32228f201435d595afb03d6d73d35cbdc8eae0",
+  "source": {
+    "model": "Qwen3.5-9B",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "prompt_tokens": 10334,
+    "max_output_tokens": 8,
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    },
+    "snapshot_budget_bytes": 8589934592,
+    "snapshot_max_entries": 256,
+    "decode_active_prefill_token_budget": 512
+  },
+  "sampler_noop": {
+    "order": [
+      "untraced",
+      "sampled",
+      "sampled",
+      "untraced"
+    ],
+    "absolute_gate_percent": 3.0,
+    "untraced_medians": {
+      "elapsed_seconds": 16.653885,
+      "replay_ttft_seconds": 0.157751,
+      "replay_latency_seconds": 0.471681,
+      "replay_generation_tps": 22.00271
+    },
+    "sampled_medians": {
+      "elapsed_seconds": 16.796336,
+      "replay_ttft_seconds": 0.153249,
+      "replay_latency_seconds": 0.467345,
+      "replay_generation_tps": 21.962403
+    },
+    "sampled_delta_percent": {
+      "elapsed_seconds": 0.855362,
+      "replay_ttft_seconds": -2.853874,
+      "replay_latency_seconds": -0.919265,
+      "replay_generation_tps": -0.183191
+    },
+    "sample_counts": [
+      282,
+      281
+    ],
+    "output_identity": {
+      "output_token_ids_sha256": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+      "text_sha256": "6893ba973bddf438b6d847f413228728e822b3378ca4d77f93199d2ce4f7cd70",
+      "finish_reason": "length",
+      "swap_delta_bytes": 0
+    },
+    "passed": true,
+    "raw_sha256": {
+      "01-untraced.json": "4455a474eeff4c32dd59154877185c2c71089a49a038695d2e425b1d2e9df445",
+      "02-sampled.json": "fa81253194362cce5ad07e83bfe545eae31bc654f4f4a958de37725afb734753",
+      "03-sampled.json": "d7c0f12471d50d56fdeb45c6b3a6172801dfd5ef17a2128e0da04214fb3aca2b",
+      "04-untraced.json": "ec7c0bf8e61cc3bccd36e42ba304ac2a51d0f9b7f01f7a869e2710ae3e84a3c1"
+    }
+  },
+  "plans": {
+    "rotation": [
+      [2, 4, 8],
+      [8, 2, 4],
+      [4, 8, 2]
+    ],
+    "sha256": {
+      "b2": "4698d0f6fdd243681f2b3b00a1a8cd03ce7afbc82bdde63452ce1609cf36317c",
+      "b4": "8b8ce42198adef0275b2d0c9839eaf9066c1c583d8f03870335565d2b96ac651",
+      "b8": "2b9641ae6d09b4c0b52659d285b397ff2845a7185ab8900abdf8ec684425ee66"
+    },
+    "all_embedded_plans_match": true
+  },
+  "matrix": {
+    "repetitions_per_width": 3,
+    "statistics": {
+      "p95_method": "nearest-rank over pooled replay requests at each width",
+      "dispersion": "population coefficient of variation in percent",
+      "b2": {
+        "elapsed_seconds": {"min": 16.455227, "median": 16.74727, "p95": 17.197161, "max": 17.197161, "cv_percent": 1.816499},
+        "aggregate_requests_per_second": {"min": 0.116298, "median": 0.119422, "p95": 0.121542, "max": 0.121542, "cv_percent": 1.808564},
+        "replay_ttft_seconds": {"min": 0.143755, "median": 0.149628, "p95": 0.152002, "max": 0.152002, "cv_percent": 2.334853},
+        "replay_latency_seconds": {"min": 0.450341, "median": 0.463888, "p95": 0.473074, "max": 0.473074, "cv_percent": 2.019197},
+        "replay_generation_tps": {"min": 21.36303, "median": 22.073327, "p95": 22.50908, "max": 22.50908, "cv_percent": 2.148716},
+        "peak_rss_bytes": {"min": 5547130880, "median": 5572395008, "p95": 5572952064, "max": 5572952064, "cv_percent": 0.21644},
+        "peak_mlx_memory_gb": 8.257609,
+        "peak_active_requests": 1,
+        "peak_active_estimated_bytes": 390397952,
+        "peak_live_snapshot_bytes": 780500992,
+        "peak_pending_requests": {"min": 0, "median": 0, "max": 0},
+        "swap_delta_bytes": {"min": -125829120, "median": -50331648, "max": 0}
+      },
+      "b4": {
+        "elapsed_seconds": {"min": 17.266645, "median": 17.424762, "p95": 17.757704, "max": 17.757704, "cv_percent": 1.17065},
+        "aggregate_requests_per_second": {"min": 0.225254, "median": 0.229558, "p95": 0.231661, "max": 0.231661, "cv_percent": 1.16522},
+        "replay_ttft_seconds": {"min": 0.169019, "median": 0.360955, "p95": 0.590637, "max": 0.590637, "cv_percent": 44.587631},
+        "replay_latency_seconds": {"min": 0.840303, "median": 0.98491, "p95": 1.142484, "max": 1.142484, "cv_percent": 9.782619},
+        "replay_generation_tps": {"min": 10.597883, "median": 11.344656, "p95": 14.269832, "max": 14.269832, "cv_percent": 10.161044},
+        "peak_rss_bytes": {"min": 5472403456, "median": 5541822464, "p95": 5542346752, "max": 5542346752, "cv_percent": 0.595208},
+        "peak_mlx_memory_gb": 8.257609,
+        "peak_active_requests": 3,
+        "peak_active_estimated_bytes": 1171193856,
+        "peak_live_snapshot_bytes": 1561296896,
+        "peak_pending_requests": {"min": 0, "median": 0, "max": 2},
+        "swap_delta_bytes": {"min": -75497472, "median": -16777216, "max": 0}
+      },
+      "b8": {
+        "elapsed_seconds": {"min": 20.279195, "median": 20.930164, "p95": 24.146744, "max": 24.146744, "cv_percent": 7.760998},
+        "aggregate_requests_per_second": {"min": 0.331308, "median": 0.382223, "p95": 0.394493, "max": 0.394493, "cv_percent": 7.406808},
+        "replay_ttft_seconds": {"min": 0.195038, "median": 0.951959, "p95": 3.791151, "max": 4.163097, "cv_percent": 80.622704},
+        "replay_latency_seconds": {"min": 2.619886, "median": 3.913107, "p95": 6.512238, "max": 6.732736, "cv_percent": 29.055244},
+        "replay_generation_tps": {"min": 1.666305, "median": 2.953996, "p95": 3.693795, "max": 3.774868, "cv_percent": 21.92596},
+        "peak_rss_bytes": {"min": 5472763904, "median": 5685526528, "p95": 5704466432, "max": 5704466432, "cv_percent": 1.868847},
+        "peak_mlx_memory_gb": 10.587893,
+        "peak_active_requests": 7,
+        "peak_active_estimated_bytes": 2732785664,
+        "peak_live_snapshot_bytes": 3122888704,
+        "peak_pending_requests": {"min": 3, "median": 6, "max": 6},
+        "swap_delta_bytes": {"min": 943456256, "median": 1854341120, "max": 4565434368}
+      }
+    },
+    "ownership_signal": {
+      "retained_snapshot_bytes": 390103040,
+      "estimated_bytes_per_active_replay": 390397952,
+      "estimated_overhead_beyond_retained_snapshot_per_replay": 294912,
+      "peak_active_bytes_relation": "(concurrency - 1) * 390397952",
+      "peak_live_bytes_relation": "390103040 + peak_active_estimated_bytes",
+      "peak_mlx_b8_minus_b4_gb": 2.330285,
+      "interpretation": "Every exact replay receives a deepcopy-owned mutable cache wrapper/state before decode. Engine-estimated active bytes and MLX peak grow with concurrent replay ownership; retained-store bytes remain one snapshot. Physical-byte attribution below the measured MLX peak remains deferred to the implementation experiment."
+    },
+    "correctness_gates": {
+      "requests": 42,
+      "matrix_requests": 42,
+      "request_errors": 0,
+      "unique_output_token_hashes": 1,
+      "unique_text_hashes": 1,
+      "unique_finish_reasons": 1,
+      "exact_hits_equal_concurrency_minus_one": true,
+      "one_store_and_one_entry": true,
+      "zero_evictions": true,
+      "zero_preflight_skips": true,
+      "one_bounded_reservation_event": true,
+      "zero_dropped_reservation_events": true,
+      "zero_terminal_requests_queues_pins_and_active_bytes": true,
+      "passed": true
+    },
+    "swap_context": "Host-global swap is not process-owned. Its B8-only positive deltas are recorded as pressure context and are not used alone for ownership attribution or policy selection.",
+    "raw_sha256": {
+      "01-r1-b2.json": "5d404fdaff0360f5862a927d23a718b01e8358a5303041dc4f1754e5e14a30d1",
+      "02-r1-b4.json": "cb909e83dd25be88d01f3cef6f5ecc934e84dcb5af806f91750b9b4b2561f389",
+      "03-r1-b8.json": "cec467956eff45dae1b4727235c9346e0249e33ae91832fad954f87bd6702a44",
+      "04-r2-b8.json": "d840504b959e636d43feaf67729997a6df68ed72be4e59b58c322418c0b8bd28",
+      "05-r2-b2.json": "89269994386d44606f675626c7267467076a70a4a6b1945c3a30663b29e917be",
+      "06-r2-b4.json": "a5ed6b5ef35e1e40a0e744f3a00b4ec2751fe0f55c52dbd77ad0aea30dac1ef5",
+      "07-r3-b4.json": "666dd3d80730f8cd218e94b05137cdfa6625a7248feaa5648b6350dcd410e8ad",
+      "08-r3-b8.json": "b76ed72ae5ee39e9614837a7c55740fcf8472ff66c89f280d30d86e463be53fd",
+      "09-r3-b2.json": "59f1d00efa1812f5d46de8c7a0e9c7ea23d53e000c06b16f1fefdf928c10921a"
+    }
+  },
+  "decision": {
+    "selection_gate": "passed",
+    "advance": "exact-hit shared-state or copy-on-write feasibility",
+    "production_change": false,
+    "constraints": [
+      "Keep the 8 GiB budget, store eviction policy, and exact-hit rollback switch unchanged.",
+      "Require cache-type-specific mutation proofs; a generic shallow copy is not admissible.",
+      "Require exact, strict-prefix, cancellation, persistence, and B2/B4/B8 lifecycle parity before a default-path candidate."
+    ]
+  }
+}

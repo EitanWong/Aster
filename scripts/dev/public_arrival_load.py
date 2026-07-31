@@ -33,12 +33,16 @@ SCENARIOS = (
     "simultaneous",
     "staggered-long-prefill",
     "shared-prefix",
+    "sustained-exact-prefix",
+    "strict-prefix-append",
     "distinct-prefix",
     "capacity-replay",
     "capacity-replay-depth",
     "capacity-replay-six",
     "cancel-during-prefill",
 )
+LIFECYCLE_SCENARIOS = frozenset(("sustained-exact-prefix", "strict-prefix-append"))
+STRICT_PREFIX_APPEND_TEXT = "\n\nProvide one additional concise supporting detail."
 
 
 class ArrivalLoadError(ValueError):
@@ -53,6 +57,7 @@ class ArrivalEntry:
     release: Release
     depends_on: str | None = None
     delay_seconds: float = 0.0
+    prompt_suffix: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +110,7 @@ def _entry(
     release: Release,
     depends_on: str | None = None,
     delay_seconds: float = 0.0,
+    prompt_suffix: str | None = None,
 ) -> ArrivalEntry:
     return ArrivalEntry(
         key=key,
@@ -113,6 +119,7 @@ def _entry(
         release=release,
         depends_on=depends_on,
         delay_seconds=delay_seconds,
+        prompt_suffix=prompt_suffix,
     )
 
 
@@ -124,6 +131,7 @@ def build_arrival_plan(
     max_output_tokens: int,
     stagger_delay_seconds: float,
     qmsum_start_index: int = 0,
+    exact_replay_count: int | None = None,
 ) -> ArrivalPlan:
     """Select public records without materializing their prompt text."""
 
@@ -137,6 +145,16 @@ def build_arrival_plan(
         raise ArrivalLoadError("stagger_delay_seconds must be non-negative")
     if qmsum_start_index < 0:
         raise ArrivalLoadError("qmsum_start_index must be non-negative")
+    if scenario == "sustained-exact-prefix" and concurrency != 1:
+        raise ArrivalLoadError("sustained-exact-prefix concurrency must be one")
+    if scenario == "strict-prefix-append" and concurrency != 1:
+        raise ArrivalLoadError("strict-prefix-append concurrency must be one")
+    if exact_replay_count is not None and not 1 <= exact_replay_count <= 64:
+        raise ArrivalLoadError("exact_replay_count must be between 1 and 64")
+    if exact_replay_count is not None and scenario != "sustained-exact-prefix":
+        raise ArrivalLoadError(
+            "exact_replay_count is only supported for sustained-exact-prefix"
+        )
     if qmsum_start_index and scenario != "capacity-replay-six":
         raise ArrivalLoadError(
             "qmsum_start_index is only supported for capacity-replay-six"
@@ -173,6 +191,48 @@ def build_arrival_plan(
         cap=max_output_tokens,
         release="at-start",
     )
+
+    if scenario == "sustained-exact-prefix":
+        entries = [long_entry]
+        dependency_key = long_entry.key
+        for index in range(exact_replay_count or 8):
+            entry = _entry(
+                key=f"sustained-exact-{index + 1}",
+                record=qmsum[0],
+                cap=max_output_tokens,
+                release="after-completion",
+                depends_on=dependency_key,
+            )
+            entries.append(entry)
+            dependency_key = entry.key
+        return ArrivalPlan(
+            scenario=scenario,
+            concurrency=concurrency,
+            entries=tuple(entries),
+        )
+
+    if scenario == "strict-prefix-append":
+        strict_entry = _entry(
+            key="strict-prefix-append",
+            record=qmsum[0],
+            cap=max_output_tokens,
+            release="after-completion",
+            depends_on=long_entry.key,
+            prompt_suffix=STRICT_PREFIX_APPEND_TEXT,
+        )
+        repeat_entry = _entry(
+            key="strict-prefix-repeat",
+            record=qmsum[0],
+            cap=max_output_tokens,
+            release="after-completion",
+            depends_on=strict_entry.key,
+            prompt_suffix=STRICT_PREFIX_APPEND_TEXT,
+        )
+        return ArrivalPlan(
+            scenario=scenario,
+            concurrency=concurrency,
+            entries=(long_entry, strict_entry, repeat_entry),
+        )
 
     if scenario == "staggered-long-prefill":
         short_count = max(concurrency - 1, 1)
@@ -378,6 +438,130 @@ def _has_prefill_request(status: Any) -> bool:
     return any(isinstance(request, dict) and request.get("phase") == "prefill" for request in requests)
 
 
+def _engine_lifecycle_snapshot(status: Any) -> dict[str, Any]:
+    if not isinstance(status, dict):
+        return {}
+    requests = status.get("requests")
+    prefix_cache = status.get("prefix_cache_stats")
+    reservation_trace = status.get("snapshot_reservation_trace")
+    prefix_cache = prefix_cache if isinstance(prefix_cache, dict) else {}
+    reservation_trace = reservation_trace if isinstance(reservation_trace, dict) else {}
+    trace_events = reservation_trace.get("events")
+    return {
+        "active_requests": len(requests) if isinstance(requests, list) else 0,
+        "pending_requests": status.get("pending_requests"),
+        "prefill_requests": status.get("prefill_requests"),
+        "decode_requests": status.get("decode_requests"),
+        "active_estimated_bytes": status.get("active_estimated_bytes"),
+        "completed_requests": status.get("completed_requests"),
+        "failed_requests": status.get("failed_requests"),
+        "cancelled_requests": status.get("cancelled_requests"),
+        "snapshot_preflight_skips": status.get("snapshot_preflight_skips"),
+        "snapshot_entries": status.get("snapshot_entries"),
+        "snapshot_bytes": status.get("snapshot_bytes"),
+        "prefix_reuse_attempts": status.get("prefix_reuse_attempts"),
+        "prefix_reuse_hits": status.get("prefix_reuse_hits"),
+        "prefix_tokens_reused": status.get("prefix_tokens_reused"),
+        "prefix_cache": {
+            key: prefix_cache.get(key)
+            for key in (
+                "entries",
+                "bytes",
+                "pinned_entries",
+                "pinned_bytes",
+                "lookups",
+                "hits",
+                "stores",
+                "evictions",
+                "exact_hits",
+                "prefix_hits",
+                "lcp_hits",
+            )
+        },
+        "snapshot_reservation_trace": {
+            "enabled": reservation_trace.get("enabled"),
+            "max_events": reservation_trace.get("max_events"),
+            "retained_events": len(trace_events) if isinstance(trace_events, list) else 0,
+            "dropped_events": reservation_trace.get("dropped_events"),
+        },
+    }
+
+
+def _new_engine_lifecycle_sample_summary(*, interval_seconds: float) -> dict[str, Any]:
+    if interval_seconds <= 0:
+        raise ArrivalLoadError("engine lifecycle sample interval must be positive")
+    return {
+        "schema_version": 1,
+        "interval_seconds": interval_seconds,
+        "sample_count": 0,
+        "maxima": {
+            "active_requests": 0,
+            "pending_requests": 0,
+            "prefill_requests": 0,
+            "decode_requests": 0,
+            "active_estimated_bytes": 0,
+            "snapshot_entries": 0,
+            "snapshot_bytes": 0,
+            "live_snapshot_bytes": 0,
+            "pinned_entries": 0,
+            "pinned_bytes": 0,
+            "reservation_trace_events": 0,
+            "reservation_trace_dropped_events": 0,
+        },
+    }
+
+
+def _sample_int(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return 0
+    return max(int(value), 0)
+
+
+def _record_engine_lifecycle_sample(summary: dict[str, Any], status: Any) -> None:
+    snapshot = _engine_lifecycle_snapshot(status)
+    prefix_cache = snapshot.get("prefix_cache")
+    reservation_trace = snapshot.get("snapshot_reservation_trace")
+    prefix_cache = prefix_cache if isinstance(prefix_cache, dict) else {}
+    reservation_trace = reservation_trace if isinstance(reservation_trace, dict) else {}
+    active_bytes = _sample_int(snapshot.get("active_estimated_bytes"))
+    snapshot_bytes = _sample_int(snapshot.get("snapshot_bytes"))
+    values = {
+        "active_requests": _sample_int(snapshot.get("active_requests")),
+        "pending_requests": _sample_int(snapshot.get("pending_requests")),
+        "prefill_requests": _sample_int(snapshot.get("prefill_requests")),
+        "decode_requests": _sample_int(snapshot.get("decode_requests")),
+        "active_estimated_bytes": active_bytes,
+        "snapshot_entries": _sample_int(snapshot.get("snapshot_entries")),
+        "snapshot_bytes": snapshot_bytes,
+        "live_snapshot_bytes": active_bytes + snapshot_bytes,
+        "pinned_entries": _sample_int(prefix_cache.get("pinned_entries")),
+        "pinned_bytes": _sample_int(prefix_cache.get("pinned_bytes")),
+        "reservation_trace_events": _sample_int(reservation_trace.get("retained_events")),
+        "reservation_trace_dropped_events": _sample_int(
+            reservation_trace.get("dropped_events")
+        ),
+    }
+    maxima = summary["maxima"]
+    for key, value in values.items():
+        maxima[key] = max(_sample_int(maxima.get(key)), value)
+    summary["sample_count"] = _sample_int(summary.get("sample_count")) + 1
+
+
+async def _sample_engine_lifecycle(
+    engine: Any,
+    stop_event: asyncio.Event,
+    summary: dict[str, Any],
+) -> None:
+    interval_seconds = float(summary["interval_seconds"])
+    while True:
+        _record_engine_lifecycle_sample(summary, engine.status())
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=interval_seconds)
+        except TimeoutError:
+            continue
+        return
+
+
 async def _wait_for_prefill(engine: Any, task: asyncio.Task[dict[str, Any]], timeout_seconds: float) -> None:
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
@@ -419,8 +603,11 @@ async def execute_arrival_plan(
 
     async def submit(entry: ArrivalEntry) -> dict[str, Any]:
         record = records[entry.workload_id]
+        prompt = resolve_prompt(record)
+        if entry.prompt_suffix is not None:
+            prompt += entry.prompt_suffix
         request = InferenceRequest(
-            prompt=resolve_prompt(record),
+            prompt=prompt,
             max_tokens=entry.max_tokens,
             temperature=0.0,
             top_p=1.0,
@@ -435,20 +622,24 @@ async def execute_arrival_plan(
         try:
             response = await engine.submit(request)
         except Exception as error:
-            return {
+            event = {
                 "key": entry.key,
                 "workload_id": entry.workload_id,
                 "submitted_after_seconds": submitted_after_seconds,
                 "response": None,
                 "error": _error_summary(error),
             }
-        return {
-            "key": entry.key,
-            "workload_id": entry.workload_id,
-            "submitted_after_seconds": submitted_after_seconds,
-            "response": _response_summary(response),
-            "error": None,
-        }
+        else:
+            event = {
+                "key": entry.key,
+                "workload_id": entry.workload_id,
+                "submitted_after_seconds": submitted_after_seconds,
+                "response": _response_summary(response),
+                "error": None,
+            }
+        if plan.scenario in LIFECYCLE_SCENARIOS:
+            event["engine_lifecycle"] = _engine_lifecycle_snapshot(engine.status())
+        return event
 
     def launch(entry: ArrivalEntry) -> None:
         if entry.key in tasks:
@@ -529,13 +720,19 @@ def _load_workload(path: Path) -> dict[str, Any]:
 
 
 def _plan_payload(plan: ArrivalPlan) -> dict[str, Any]:
+    entries = []
+    for entry in plan.entries:
+        payload = asdict(entry)
+        if payload["prompt_suffix"] is None:
+            payload.pop("prompt_suffix")
+        entries.append(payload)
     return {
         "schema_version": 1,
         "kind": "public-arrival-load-plan",
         "scenario": plan.scenario,
         "concurrency": plan.concurrency,
         "cancel_target_key": plan.cancel_target_key,
-        "entries": [asdict(entry) for entry in plan.entries],
+        "entries": entries,
     }
 
 
@@ -699,6 +896,8 @@ async def run_public_arrival_baseline(
     snapshot_budget_bytes: int | None = None,
     snapshot_max_entries: int | None = None,
     snapshot_reservation_trace_max_events: int | None = None,
+    sample_engine_lifecycle: bool = False,
+    engine_lifecycle_sample_interval_seconds: float = 0.05,
 ) -> dict[str, Any]:
     workload = _load_workload(workload_path)
     if workload.get("lock_sha256") != public.sha256_file(lock_path):
@@ -718,10 +917,18 @@ async def run_public_arrival_baseline(
         "before_engine_create": _resource_snapshot()
     }
     engine = InferenceEngine(settings, MetricsRegistry(settings.telemetry.metrics_namespace))
+    engine_lifecycle_summary = (
+        _new_engine_lifecycle_sample_summary(
+            interval_seconds=engine_lifecycle_sample_interval_seconds
+        )
+        if sample_engine_lifecycle
+        else None
+    )
     lifecycle["after_engine_create"] = _resource_snapshot()
     rss_samples: list[int] = []
     rss_stop = asyncio.Event()
     rss_task: asyncio.Task[None] | None = None
+    engine_lifecycle_task: asyncio.Task[None] | None = None
     try:
         await engine.start()
         lifecycle["after_engine_start"] = _resource_snapshot()
@@ -730,6 +937,10 @@ async def run_public_arrival_baseline(
         lifecycle["before_workload"] = _resource_snapshot()
         rss_samples.append(int(lifecycle["before_workload"]["process_rss_bytes"]))
         rss_task = asyncio.create_task(_sample_rss(rss_stop, rss_samples))
+        if engine_lifecycle_summary is not None:
+            engine_lifecycle_task = asyncio.create_task(
+                _sample_engine_lifecycle(engine, rss_stop, engine_lifecycle_summary)
+            )
         result = await execute_arrival_plan(
             engine,
             plan,
@@ -738,9 +949,11 @@ async def run_public_arrival_baseline(
             timeout_seconds=timeout_seconds,
         )
     finally:
+        rss_stop.set()
         if rss_task is not None:
-            rss_stop.set()
             await rss_task
+        if engine_lifecycle_task is not None:
+            await engine_lifecycle_task
         lifecycle["after_workload"] = _resource_snapshot()
         try:
             await engine.aclose()
@@ -748,6 +961,31 @@ async def run_public_arrival_baseline(
             lifecycle["after_close"] = _resource_snapshot()
 
     _attach_timelines(result)
+    resources = _resource_summary(lifecycle=lifecycle, rss_samples=rss_samples)
+    execution = {
+        "engine": "aster-manual",
+        "config": str(config_path.resolve()),
+        "prefix_cache_enabled": prefix_cache_enabled,
+        "decode_active_prefill_token_budget": (
+            settings.engine.decode_active_prefill_token_budget
+        ),
+        "snapshot_budget_bytes": settings.engine.snapshot_budget_bytes,
+        "snapshot_max_entries": settings.engine.snapshot_max_entries,
+        "snapshot_reservation_trace_max_events": (
+            settings.engine.snapshot_reservation_trace_max_events
+        ),
+        "max_active_requests": settings.engine.max_active_requests,
+        "timeout_seconds": timeout_seconds,
+        "max_output_tokens": _plan_max_output_tokens(plan),
+    }
+    if engine_lifecycle_summary is not None:
+        engine_lifecycle_summary["final"] = _engine_lifecycle_snapshot(
+            result.get("engine_status")
+        )
+        resources["engine_lifecycle_sampling"] = engine_lifecycle_summary
+        execution["engine_lifecycle_sample_interval_seconds"] = (
+            engine_lifecycle_sample_interval_seconds
+        )
     return {
         "schema_version": 1,
         "kind": "public-arrival-load-result",
@@ -757,24 +995,9 @@ async def run_public_arrival_baseline(
             "source_lock_sha256": public.sha256_file(lock_path),
             "generation": workload.get("generation"),
         },
-        "execution": {
-            "engine": "aster-manual",
-            "config": str(config_path.resolve()),
-            "prefix_cache_enabled": prefix_cache_enabled,
-            "decode_active_prefill_token_budget": (
-                settings.engine.decode_active_prefill_token_budget
-            ),
-            "snapshot_budget_bytes": settings.engine.snapshot_budget_bytes,
-            "snapshot_max_entries": settings.engine.snapshot_max_entries,
-            "snapshot_reservation_trace_max_events": (
-                settings.engine.snapshot_reservation_trace_max_events
-            ),
-            "max_active_requests": settings.engine.max_active_requests,
-            "timeout_seconds": timeout_seconds,
-            "max_output_tokens": _plan_max_output_tokens(plan),
-        },
+        "execution": execution,
         "plan": _plan_payload(plan),
-        "resources": _resource_summary(lifecycle=lifecycle, rss_samples=rss_samples),
+        "resources": resources,
         "result": result,
     }
 
@@ -787,6 +1010,7 @@ def main() -> None:
     parser.add_argument("--max-output-tokens", type=int, default=32)
     parser.add_argument("--stagger-delay-seconds", type=float, default=0.05)
     parser.add_argument("--qmsum-start-index", type=int, default=0)
+    parser.add_argument("--exact-replay-count", type=int)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "configs/config.yaml")
     parser.add_argument("--lock", type=Path, default=public.DEFAULT_LOCK_PATH)
@@ -796,6 +1020,8 @@ def main() -> None:
     parser.add_argument("--snapshot-budget-bytes", type=int)
     parser.add_argument("--snapshot-max-entries", type=int)
     parser.add_argument("--snapshot-reservation-trace-max-events", type=int)
+    parser.add_argument("--sample-engine-lifecycle", action="store_true")
+    parser.add_argument("--engine-lifecycle-sample-interval-seconds", type=float, default=0.05)
     parser.add_argument("--timeout-seconds", type=float, default=120.0)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -807,6 +1033,7 @@ def main() -> None:
         max_output_tokens=args.max_output_tokens,
         stagger_delay_seconds=args.stagger_delay_seconds,
         qmsum_start_index=args.qmsum_start_index,
+        exact_replay_count=args.exact_replay_count,
     )
     payload = (
         asyncio.run(
@@ -823,6 +1050,10 @@ def main() -> None:
                 snapshot_max_entries=args.snapshot_max_entries,
                 snapshot_reservation_trace_max_events=(
                     args.snapshot_reservation_trace_max_events
+                ),
+                sample_engine_lifecycle=args.sample_engine_lifecycle,
+                engine_lifecycle_sample_interval_seconds=(
+                    args.engine_lifecycle_sample_interval_seconds
                 ),
             )
         )

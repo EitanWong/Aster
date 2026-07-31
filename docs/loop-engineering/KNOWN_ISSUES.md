@@ -2,16 +2,16 @@
 
 - Historical workspace debt remains. Its immutable baseline is 1,164 changed
   paths / 1,114 artifact files at `2cb14052d4a3`; the active iteration keeps its
-  own 20-file / 5 MiB budget. The latest strict audit has 22 changed paths and
-  4 artifact files (0.04 MiB), with zero staged paths, mixed-index paths, and
-  reference updates, plus 24 generated caches. It warns about retained I077-I080
-  evidence and generated caches.
+  own 20-file / 5 MiB budget. The latest strict audit has 18 changed paths and
+  4 artifact files (33,089 bytes), with zero staged paths, mixed-index paths,
+  reference updates, and active-I085 artifacts, plus 24 generated caches. It
+  warns about retained I081-I084 evidence and generated caches.
 - Long-context snapshot preflight is now implemented and the full suite is
-  green (`552 passed, 9 skipped, 1 warning`). The threshold and both checkpoint call paths
+  green (`561 passed, 9 skipped, 1 warning`). The threshold and both checkpoint call paths
   have automated coverage. The earlier controlled 128K comparison supports
   the 2 GiB cap, but a fresh default-8-GiB real-model run through the automatic
   policy has not yet been archived as formal evidence.
-- Ruff passes for every Python file touched by I077-I080. The broader
+- Ruff passes for every Python file touched by I081-I084. The broader
   `aster tests scripts` tree still reports 227 historical lint errors, so
   full-tree Ruff remains an explicit repository-debt boundary rather than an
   iteration admission gate.
@@ -81,10 +81,11 @@
   source-bound observer preserves exact output but fails its 3% no-op gate on
   both engines, so it does not align a production-valid lower-level boundary.
   QMSUM ABBA is intentionally not rerun from that observer.
-- A 2026-07-29 external-source refresh could not complete in this environment:
-  the configured Web search returned HTTP 404 and read-only GitHub API requests
-  returned HTTP 403. The frontier radar retains local/pinned evidence only
-  until a future read-only lookup succeeds.
+- The configured Web search still returns HTTP 404, but a 2026-07-31 read-only
+  GitHub/ArXiv refresh succeeded through official endpoints. It pins current
+  SGLang/vLLM/MLX-LM heads and six current cache/agent papers in I083's compact
+  artifact. Network search quality remains unavailable, so conclusions use
+  only upstream source, commit metadata, and paper records.
 - The installed comparison set currently contains only Aster and direct MLX-LM.
   Exo, Ollama, llama.cpp, vLLM, SGLang, vLLM-MLX, MLC-LLM, mistral.rs, LM Studio
   MLX Engine, and OMLX probes are unavailable. Their absence is recorded in the
@@ -195,9 +196,18 @@
   disjoint windows retained all six keys without eviction; the other three
   evicted `2,110,849,024` bytes in total during the final exact-replay
   reservation. Replay still hit with zero prefill because lookup occurs first.
-  Current source then reserves/clones/stores the same full prefix again without
-  a request-local checkpoint marker, potentially evicting a different unpinned
-  entry before same-key replacement. I081 must prove any exact-hit suppression
-  with miss, strict-prefix, cancellation, LRU, pin/unpin, and persistence
-  controls. Clone reserve, general eviction policy, and the 8 GiB production
-  default remain unchanged.
+  I081's exact-hit predicate suppresses that duplicate work in all three
+  previously failing 4 GiB windows while retaining exact output, LRU touch,
+  pin/unpin, and terminal cleanup. I082 then passed four fresh configured
+  8 GiB windows plus real-model cancellation and persistence/cancellation
+  controls. The small predicate is admitted for a minimal production commit;
+  clone reserve, general eviction policy, and the production default remain
+  unchanged. I083 proves sequential exact/strict/cancellation stability. I084
+  then measures repeatable exact-hit fanout ownership: active estimates scale
+  as one/three/seven full request estimates at B2/B4/B8, B8 MLX peak rises by
+  2.330 GB over B4, and replay latency reaches a 3.913s median / 6.512s p95.
+  This selects I085's shared-state/COW feasibility experiment, but the current
+  `copy.deepcopy` remains the default. Cache-layer mutation semantics, physical
+  aliasing, persistence, and sibling isolation are not yet proven; unknown or
+  in-place-mutating layer types must continue to clone eagerly. B8's positive
+  host-global swap is pressure context and not process-owned attribution.

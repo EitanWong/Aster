@@ -788,24 +788,82 @@ def test_activate_decode_skips_full_checkpoint_after_prefix_hit() -> None:
     asyncio.run(scenario())
 
 
-def test_activate_decode_keeps_full_checkpoint_for_exact_hit() -> None:
+def test_activate_decode_skips_duplicate_full_checkpoint_after_exact_hit() -> None:
     async def scenario() -> None:
-        engine, _runner = _make_engine()
+        engine, runner = _make_engine()
+        entry = engine.prefix_store.store(
+            model_name=engine.settings.model.name,
+            model_fingerprint="fake-model",
+            prefix_tokens=[1, 2, 3, 4, 5, 6],
+            cache_token_count=5,
+            prompt_cache={"cache_tokens": 5},
+            approx_bytes=64,
+        )
+        assert entry is not None
+        engine.prefix_store.pin(entry.key)
         state = RequestState(
             request_id="exact-checkpoint",
             request=InferenceRequest(prompt="ignored"),
             prompt_tokens=[1, 2, 3, 4, 5, 6],
             prompt_cache={"cache_tokens": 5},
             matched_prefix_tokens=6,
+            attached_snapshot_key=entry.key,
             model_fingerprint="fake-model",
         )
         engine._requests[state.request_id] = state
         try:
             await engine._activate_decode(state)
-            assert engine.prefix_store.entry_count == 1
+            snapshot = engine.prefix_store.stats_snapshot()
+            assert snapshot["entries"] == 1
+            assert snapshot["stores"] == 1
+            assert snapshot["pinned_entries"] == 1
+            assert runner.clone_cache_token_counts == []
+            assert engine.status()["snapshot_reservation_trace"]["events"] == []
+            engine._cleanup_request(state)
+            assert engine.prefix_store.stats_snapshot()["pinned_entries"] == 0
         finally:
             await engine.aclose()
 
+    asyncio.run(scenario())
+
+
+def test_activate_decode_refreshes_exact_checkpoint_when_skip_setting_disabled() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(
+            engine_overrides={"snapshot_skip_full_prompt_on_prefix_hit": False}
+        )
+        entry = engine.prefix_store.store(
+            model_name=engine.settings.model.name,
+            model_fingerprint="fake-model",
+            prefix_tokens=[1, 2, 3, 4, 5, 6],
+            cache_token_count=5,
+            prompt_cache={"cache_tokens": 5},
+            approx_bytes=64,
+        )
+        assert entry is not None
+        engine.prefix_store.pin(entry.key)
+        state = RequestState(
+            request_id="exact-checkpoint-refresh",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            prompt_cache={"cache_tokens": 5},
+            matched_prefix_tokens=6,
+            attached_snapshot_key=entry.key,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._activate_decode(state)
+            snapshot = engine.prefix_store.stats_snapshot()
+            assert snapshot["entries"] == 1
+            assert snapshot["stores"] == 2
+            assert snapshot["pinned_entries"] == 1
+            assert runner.clone_cache_token_counts == [5]
+            assert len(engine.status()["snapshot_reservation_trace"]["events"]) == 1
+            engine._cleanup_request(state)
+            assert engine.prefix_store.stats_snapshot()["pinned_entries"] == 0
+        finally:
+            await engine.aclose()
 
     asyncio.run(scenario())
 
@@ -1397,17 +1455,72 @@ def test_engine_reuses_prefix_checkpoints_and_skips_prefill_work() -> None:
         try:
             first = await engine.submit(InferenceRequest(prompt="alpha beta gamma", max_tokens=1))
             first_prefill_calls = runner.prefill_calls
+            first_clone_counts = list(runner.clone_cache_token_counts)
+            first_store_count = engine.prefix_store.stats.stores
+            first_entry_count = engine.prefix_store.entry_count
+            first_trace_count = len(
+                engine.status()["snapshot_reservation_trace"]["events"]
+            )
             second = await engine.submit(InferenceRequest(prompt="alpha beta gamma", max_tokens=1))
+            status = engine.status()
         finally:
             await engine.stop()
 
         assert first.text == "a"
         assert second.text == "a"
         assert runner.prefill_calls == first_prefill_calls
-        status = engine.status()
+        assert runner.clone_cache_token_counts == [*first_clone_counts, 3]
         assert status["prefix_reuse_hits"] == 1
         assert status["prefix_tokens_reused"] > 0
         assert status["prefix_cache_stats"]["exact_hits"] == 1
+        assert status["prefix_cache_stats"]["stores"] == first_store_count
+        assert status["prefix_cache_stats"]["entries"] == first_entry_count
+        assert status["prefix_cache_stats"]["pinned_entries"] == 0
+        assert len(status["snapshot_reservation_trace"]["events"]) == first_trace_count
+
+    asyncio.run(scenario())
+
+
+def test_exact_hit_cancellation_unpins_without_refreshing_checkpoint() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine()
+        prompt_tokens = [1, 2, 3, 4, 5, 6]
+        runner.prompt_map["exact cancel"] = prompt_tokens
+        entry = engine.prefix_store.store(
+            model_name=engine.settings.model.name,
+            model_fingerprint="fake-model",
+            prefix_tokens=prompt_tokens,
+            cache_token_count=5,
+            prompt_cache={"cache_tokens": 5},
+            approx_bytes=64,
+        )
+        assert entry is not None
+        last_used_before = entry.last_used_at
+        state = RequestState(
+            request_id="exact-cancel",
+            request=InferenceRequest(prompt="exact cancel", max_tokens=4),
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._prepare_request(state)
+            await engine._step_prefill()
+
+            active = engine.prefix_store.stats_snapshot()
+            assert state.phase is RequestPhase.DECODE_READY
+            assert active["stores"] == 1
+            assert active["pinned_entries"] == 1
+            assert runner.clone_cache_token_counts == [5]
+            assert engine.prefix_store._entries[entry.key].last_used_at > last_used_before
+            assert engine.status()["snapshot_reservation_trace"]["events"] == []
+
+            await engine._cancel_request(state)
+            final = engine.prefix_store.stats_snapshot()
+            assert final["entries"] == 1
+            assert final["stores"] == 1
+            assert final["pinned_entries"] == 0
+            assert state.request_id not in engine._requests
+        finally:
+            await engine.aclose()
 
     asyncio.run(scenario())
 

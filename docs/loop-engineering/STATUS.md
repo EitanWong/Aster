@@ -8,7 +8,7 @@ Updated: 2026-07-31
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 080. Active iteration: 081, phase `planned`.
+- Last completed iteration: 083. Active iteration: 084, phase `planned`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -165,12 +165,59 @@ Updated: 2026-07-31
   each evicted another retained snapshot during the final replay reservation
   and ended with five entries. Total candidate eviction was three entries /
   `2,110,849,024` bytes. The production 8 GiB default remains unchanged.
-- I081 is planned around that measured lifecycle boundary. Exact lookup already
-  touches and pins the matched entry, yet decode activation reserves, clones,
-  and stores the same full prefix again because the new request has no matching
-  `checkpoints_created` marker. Focused TDD must preserve miss, strict-prefix,
-  cancellation, LRU, pin/unpin, and persistence behavior before three bounded
-  4 GiB reruns; I081 cannot lower the production default.
+- I081 completed the measured lifecycle fix. Exact-hit TDD reproduced three
+  duplicate-store failures before implementation, then the one-line predicate
+  change passed the focused, affected (`97`), and full (`554 passed, 9
+  skipped, 1 warning`) suites. The default exact path preserves lookup LRU
+  touch and pin ownership while avoiding a second reservation/clone/store;
+  `snapshot_skip_full_prompt_on_prefix_hit=false` retains the old refresh path.
+  Fresh 4 GiB offsets 6, 18, and 24 all matched I080 source/plan/terminal
+  identity, retained six entries, and had zero eviction/preflight/replay
+  prefill/terminal state. The candidate is admitted only to I082's configured
+  8 GiB validation.
+- I081 also reran the current-source two-record 9B MT-Bench smoke through fresh
+  Aster and direct MLX-LM processes. Source/model/generation, token IDs, text,
+  length finishes, and zero swap match; this remains compatibility evidence,
+  not a heterogeneous timing ranking or a replacement for I066/I067.
+- I082 validated the predicate at the configured 8 GiB budget. Fresh offsets
+  6, 12, 18, and 24 all match their I080 source/plan/execution/terminal
+  controls, retain six entries with six stores and one exact hit, record zero
+  evictions/preflight skips/replay prefill, and clean up all active/pinned
+  state. A fresh real-model cancellation plus four persistence/cancellation
+  tests also pass. The change is admitted for a minimal production commit;
+  the budget and eviction policy remain unchanged.
+- I083 completed the packaging and repeated lifecycle gate without creating a
+  commit. A fresh 9B cold-plus-eight-exact chain advanced exact hits from zero
+  through eight while retaining one store/entry/trace event, zero replay
+  prefill, exact token/text/finish identity, zero terminal state, and zero
+  swap delta. A real 10,334/10,342-token strict-prefix append repeated with
+  one prefill step, identical derived outputs, one retained store, and zero
+  terminal pins. Fresh cancellation matches I082, and the two-record
+  Aster/direct-MLX-LM compatibility smoke remains exact and zero-swap.
+- I083 also added opt-in serial lifecycle plans and compact per-request terminal
+  snapshots to the public arrival harness. The existing I080 plan remains byte
+  identical. The full suite is `559 passed, 9 skipped, 1 warning`; the arrival
+  harness has 22 passing tests and touched Ruff passes.
+- The read-only frontier refresh now succeeds. Current heads are SGLang
+  `5f9b0db1`, vLLM `82ae4164`, and MLX-LM `e5baded8`; MLX-LM's cache source is
+  byte-identical to the local example. Aster already has O(1) exact, bounded
+  distinct-length prefix, and sorted-neighbor LCP lookup, so an unmeasured
+  Python token trie is not selected. I084 instead measured concurrent exact
+  fanout ownership before considering shared-block or copy-on-write state.
+- I084 added an opt-in prompt-free lifecycle sampler; its harness has 24
+  passing tests. The fresh B2 ABBA no-op
+  screen retained exact output/zero swap and kept elapsed, replay TTFT,
+  latency, and throughput movement inside 3%. Nine fresh rotated B2/B4/B8 9B
+  processes then completed all 42 requests with exact output, expected hits,
+  one store/entry, zero eviction/preflight/error, bounded traces, and clean
+  terminal state.
+- Concurrent active estimates scale exactly as one/three/seven times
+  `390,397,952` bytes while retained storage stays at one `390,103,040`-byte
+  snapshot. B8 reports 10.588 GB peak MLX memory versus 8.258 GB at B2/B4;
+  replay latency grows from B2's 0.464s median / 0.473s p95 to B8's 3.913s /
+  6.512s. This passes the gate for I085's type-specific shared-state/COW
+  feasibility work, but does not authorize generic shallow copies or a default
+  change. Positive B8 host-global swap remains pressure context only.
 - The current engine-gap assessment is recorded in
   `CORE_REFERENCE_MATRIX.md`. It distinguishes confirmed Aster capabilities
   from unmeasured reference-engine differences: the public QMSUM result now
@@ -183,12 +230,12 @@ Updated: 2026-07-31
   and only if Qwen3.5 public/chat/special-token parity plus queue-aware TTFT
   and end-to-end gates pass. It does not stand in for GPU/Metal SIMD inference
   work, which remains a separate measured kernel class.
-- The latest strict audit is `WARN` with 22 changed paths, 4 artifact files
-  (0.04 MiB), zero staged/mixed/reference paths, 24 generated caches, and no
-  blocker. Warnings cover the retained I077-I080 evidence plus generated
-  caches. The full suite passes (`552 passed, 9 skipped, 1 warning`) and Ruff
-  passes on all six touched Python files; full-tree Ruff still reports 227
-  historical issues outside this iteration boundary.
+- The post-I084 strict audit is WARN with no blockers: 18 changed paths, four
+  compact artifacts / 33,089 bytes, zero staged/mixed/reference paths, and
+  zero active-I085 artifacts. Historical warnings cover the retained I081-I084
+  artifacts and 24 generated caches. The full suite passes (`561 passed, 9
+  skipped, 1 warning`), touched-file Ruff and diff checks pass, and full-tree
+  Ruff still reports 227 historical issues outside this iteration boundary.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.
@@ -433,7 +480,8 @@ Updated: 2026-07-31
   `1.511 GB -> 0.739 GB` (`-51.1%`) with identical hashes, hits, and saved
   tokens. Randomized 4-seed pairing showed branch deltas of `-0.17%~+0.49%`,
   append `+0.63%`, and recovery `+0.51%`; the initial grouped branch variance
-  did not reproduce.
+  did not reproduce. I081/I082 supersede only its exact-hit refresh detail:
+  exact hits now reuse the lookup-owned clone and pin without a second store.
 - Iteration 040 resets the active priority to core manual-runtime work. A
   prefix-off Qwen3.5-0.8B baseline at concurrency 4 measured `5.307s` and
   `31.16` average generation tok/s for the 4,820-token long workload, with
@@ -562,7 +610,7 @@ Updated: 2026-07-31
   changes. Strict checking has no blocker because growth is bounded against
   the immutable debt baseline, but the underlying 1,172-path inventory remains
   an ownership and reviewability risk rather than a clean Git boundary.
-- The full suite is green (`503 passed, 9 skipped`). Long-context snapshot
+- The full suite is green (`561 passed, 9 skipped, 1 warning`). Long-context snapshot
   budgeting is implemented and covered, but the automatic default-config
   128K real-model reproduction remains unarchived.
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
@@ -601,9 +649,9 @@ Updated: 2026-07-31
 
 ## Next Priority
 
-1. Execute Iteration 081's exact-hit checkpoint TDD: prove the current duplicate
-   reservation/clone/store path, preserve LRU and pin ownership, then rerun
-   only I080's three failing 4 GiB windows as a bounded retention screen.
+1. Execute I085's cache-type mutation audit and opt-in exact-hit shared-state
+   feasibility tests. Prove retained-snapshot and sibling isolation before any
+   9B B2/B4/B8 A/B or default-path proposal.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Keep generated caches at zero and prevent growth beyond the
    recorded +25/+20 allowances.

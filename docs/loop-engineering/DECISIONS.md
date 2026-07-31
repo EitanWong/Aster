@@ -605,6 +605,11 @@
   seed. This clears the memory goal without a material branch regression.
 - Rollback: `git revert 07bd566` or set
   `engine.snapshot_skip_full_prompt_on_prefix_hit=false`.
+- Superseded exact-hit detail (2026-07-31): I081/I082 extend the default skip
+  to exact hits after three 4 GiB and four configured-8-GiB source-bound
+  windows proved that lookup already owns the LRU touch, request clone, and
+  pin. Exact hits no longer create a second full-prompt reservation/store by
+  default; the same false setting still restores the historical refresh path.
 - Next experiment: randomized sustained branch/cancel/recovery ordering, then
   model-native fixed-shape state isolation for batching.
 
@@ -1451,3 +1456,98 @@
   checkpoint work after an exact hit while preserving LRU touch, pin/unpin,
   miss, strict-prefix append, cancellation, and persistence behavior. Even a
   passing 4 GiB replay screen cannot lower the production default in I081.
+
+## 2026-07-31: Admit I081 exact-hit lifecycle to 8 GiB validation
+
+- Decision: retain the configured 8 GiB snapshot budget and advance the
+  exact-hit checkpoint predicate to a fresh production-budget validation. The
+  I081 runtime/test change remains an uncommitted candidate; it is not yet a
+  production release.
+- Evidence: three predeclared exact-hit tests failed before the change while
+  the explicit refresh rollback control passed. After the one-line predicate
+  change, four focused tests, the affected 97-test cache/engine/config/
+  persistence/arrival suite, and the full suite (`554 passed, 9 skipped, 1
+  warning`) passed. Default exact hits retain the lookup LRU touch and pin
+  ownership, perform no second reservation/clone/store, and unpin at cleanup.
+- Retention screen: fresh 4 GiB offsets 6, 18, and 24 match I080 source, plan,
+  execution, and seven-request terminal identities. Each retains six entries
+  with six stores, one exact hit, zero evictions/preflight skips, zero replay
+  prefill, six bounded trace events, zero dropped events, and zero terminal
+  active/pinned state.
+- Compatibility boundary: a fresh two-record 9B Aster/direct-MLX-LM smoke
+  matches source/model/generation, token IDs, text hashes, length finishes,
+  and zero swap. It is output-compatibility evidence only, not a timing
+  ranking or a replacement for the complete public matrices.
+- Next decision: I082 runs fresh order-balanced six-key windows at the
+  configured 8 GiB budget and widens cancellation/persistence controls. A
+  failed gate restores exact-hit refresh behavior; a pass may authorize a
+  small production commit without changing cache budget or eviction policy.
+
+## 2026-07-31: Admit I082 exact-hit lifecycle for production commit
+
+- Decision: admit the I081 exact-hit predicate for a minimal production
+  commit. Keep the configured 8 GiB budget, two-clone reservation, eviction
+  policy, persistence behavior, and snapshot representation unchanged.
+- Evidence: four fresh configured-8-GiB windows at offsets 6, 12, 18, and 24
+  match their I080 source/plan/execution/terminal controls. Every row retains
+  six entries with six stores and one exact hit, zero evictions/preflight
+  skips, exact zero-prefill replay, six bounded prompt-free trace events, and
+  zero active/pending/pinned state. A fresh real-model cancellation accepts
+  the cancellation, completes its deterministic follow-up, and ends cleanly;
+  four persistence/cancellation tests pass.
+- Boundary: this is a correctness and retention-lifecycle admission only. It
+  makes no throughput or memory-saving claim and does not alter the complete
+  public cross-engine matrices. The source change remains uncommitted pending
+  the I083 packaging review.
+- Next decision: I083 performs the minimal diff review and a short repeated
+  exact/strict-prefix/cancellation loop. Commit/push remains a separate
+  explicitly requested action.
+
+## 2026-07-31: Complete I083 lifecycle packaging without a commit
+
+- Decision: retain the admitted exact-hit predicate and its explicit rollback
+  switch. Complete I083 without changing the 8 GiB budget, eviction policy,
+  snapshot representation, or repository history.
+- Exact evidence: one cold 10,334-token request plus eight serial exact replays
+  keeps stores/entries/trace events at one, advances exact hits `0..8`, uses
+  zero replay prefill steps, and ends every request with zero active/pending/
+  pinned state. All output token/text/finish identities match and swap delta is
+  zero.
+- Strict/cancel evidence: two 10,342-token derived requests each reuse the
+  10,334-token base and need one prefill step; their outputs match while store,
+  entry, trace, and pin counts stay bounded. A fresh cancellation matches I082
+  follow-up identity and terminal cleanup.
+- Compatibility: the new optional plan suffix is omitted from legacy payloads;
+  I080 window 6 remains byte-identical. Fresh two-record Aster/direct-MLX-LM
+  processes match source/model/generation/prompt/output tokens/text/finish and
+  zero swap. Full verification is `559 passed, 9 skipped, 1 warning`.
+- Reference decision: do not replace Aster's already-indexed bounded lookup
+  with a Python token trie without a measured bottleneck. Current SGLang/vLLM
+  shared-cache reference counting instead motivates I084's concurrent exact
+  fanout ownership screen.
+- Next decision: I084 measures fresh rotated B2/B4/B8 fanout before selecting
+  or rejecting a shared-block/COW ownership candidate. No production change is
+  pre-authorized.
+
+## 2026-07-31: Advance exact-hit shared-state feasibility after I084
+
+- Decision: advance a type-specific exact-hit shared-state or copy-on-write
+  feasibility experiment. Do not change the production `copy.deepcopy` path,
+  configured 8 GiB budget, reservation/eviction policy, persistence format, or
+  rollback switch in I084.
+- Observer gate: B2 untraced/sampled/sampled/untraced processes preserved exact
+  output and zero swap. Sampled elapsed, replay TTFT, replay latency, and replay
+  throughput median deltas were `+0.855%`, `-2.854%`, `-0.919%`, and `-0.183%`,
+  each inside the absolute 3% no-op band.
+- Fanout evidence: nine fresh Qwen3.5-9B processes in rotated B2/B4/B8 order
+  passed all source, plan, output, cache, trace, and terminal-cleanup gates.
+  Peak active estimates were exactly one/three/seven times `390,397,952` bytes;
+  only one `390,103,040`-byte store entry remained. B8 raised reported MLX peak
+  from 8.258 to 10.588 GB and pooled replay latency from B2's 0.464s median /
+  0.473s p95 to 3.913s / 6.512s.
+- Boundary: host-global B8 swap deltas are pressure context, not standalone
+  ownership attribution. I084 supports a design experiment, not a physical-byte
+  claim for every cache layer and not a cross-engine ranking.
+- Next decision: I085 inventories concrete Qwen3.5 cache mutation semantics and
+  requires base/sibling isolation before an opt-in shared-state implementation.
+  Unknown or in-place-mutating layers must retain eager cloning.

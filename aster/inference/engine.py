@@ -1130,7 +1130,7 @@ class InferenceEngine:
     def _should_store_full_prompt_checkpoint(self, state: RequestState) -> bool:
         if not self.settings.engine.snapshot_skip_full_prompt_on_prefix_hit:
             return True
-        return not (0 < state.matched_prefix_tokens < len(state.prompt_tokens))
+        return state.matched_prefix_tokens <= 0
 
     async def _activate_decode(self, state: RequestState) -> None:
         full_cache_tokens = state.target_cache_token_count

@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "kind": "exact-hit-production-budget-validation",
+  "iteration": "ITER-20260731-082-exact-hit-production-budget-validation",
+  "decision": "admitted-for-production-commit",
+  "baseline": {
+    "i081_engine_sha256": "0e699c09da3c5188b591432734d584b57733f60341faa838176ecdb548e55f9f",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "model": "Qwen3.5-9B",
+    "model_fingerprint": {
+      "model_sha256": "d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a",
+      "tokenizer_sha256": "94b66525e309d7ce24691be8194369f880e4f8f5ba82b726782e70fc97e1559e"
+    }
+  },
+  "execution_contract": {
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "decode_active_prefill_token_budget": 512,
+    "prefix_cache_enabled": true,
+    "snapshot_budget_bytes": 8589934592,
+    "snapshot_max_entries": 256,
+    "snapshot_reservation_trace_max_events": 64,
+    "persistence": "disabled",
+    "fresh_process_per_row": true,
+    "timeout_seconds": 120.0,
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    }
+  },
+  "locked_plan_hashes": {
+    "offset_6": "9612ccb4d1da60c0a3474795bbd22f012f1a7093ad305b59da6ebcc300e6ee1e",
+    "offset_12": "bcf1309fba51b4702f3de4d7ce0090fa37688946056be1f0df4d25dcd0fc8e15",
+    "offset_18": "a47a0e88993c7d0fe7937c06e3669d22baf9cb900d80b09d1f73afb0197a8644",
+    "offset_24": "9908df5d2d63185e8bbb8237da32e5c130035841656ecbd0d84e685dac9f7a81"
+  },
+  "eight_gib_rows": [
+    {
+      "offset": 6,
+      "order": 1,
+      "raw": "run/loop-engineering/ITER-20260731-082-exact-hit-production-budget-validation/w06-8gib-order01.json",
+      "raw_sha256": "89a7d61c72a7cdbb56a8ee2b2f2fc6dbb10a676d57b777f2f81d8736eea658d85",
+      "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w06-8gib-order01.json",
+      "paired_identity": {"source": true, "plan": true, "execution": true, "terminal": true},
+      "cache": {"entries": 6, "bytes": 2987687936, "stores": 6, "exact_hits": 1, "evictions": 0, "evicted_bytes": 0, "preflight_skips": 0, "replay_prefill_steps": 0, "replay_cached_tokens": 19057, "trace_events": 6, "trace_dropped_events": 0},
+      "cleanup": {"active_estimated_bytes": 0, "pending_requests": 0, "pinned_entries": 0},
+      "resources": {"elapsed_seconds": 122.75939583400032, "peak_rss_bytes": 1808875520, "swap_delta_bytes": -8388608},
+      "replay_output_token_ids_sha256": "aeec33de5fff9f06dbd82a0286932b8f35a0d1333a2e978f728a404b1b6e55b5",
+      "replay_text_sha256": "e8ff43325e72cc1a4b3910d5fd435a0153858accab65626c0f9864522fd7ef60"
+    },
+    {
+      "offset": 12,
+      "order": 2,
+      "raw": "run/loop-engineering/ITER-20260731-082-exact-hit-production-budget-validation/w12-8gib-order02.json",
+      "raw_sha256": "2ab326c67170f7cb4ce6e1cd3a91f0cd817aedc26a687c1b2a7db0d4f71ee9c4",
+      "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w12-8gib-order04.json",
+      "paired_identity": {"source": true, "plan": true, "execution": true, "terminal": true},
+      "cache": {"entries": 6, "bytes": 3049947136, "stores": 6, "exact_hits": 1, "evictions": 0, "evicted_bytes": 0, "preflight_skips": 0, "replay_prefill_steps": 0, "replay_cached_tokens": 16385, "trace_events": 6, "trace_dropped_events": 0},
+      "cleanup": {"active_estimated_bytes": 0, "pending_requests": 0, "pinned_entries": 0},
+      "resources": {"elapsed_seconds": 120.96461662499496, "peak_rss_bytes": 5552996352, "swap_delta_bytes": 0},
+      "replay_output_token_ids_sha256": "815b5cca50582b5bd8048ac68399db1bdf7dbfb02d63a52ada33bfcd5186c679",
+      "replay_text_sha256": "f090c786fe4c2b68bfa227f6b974010dc7889e686763bb555aa6de6b96b70e2e"
+    },
+    {
+      "offset": 18,
+      "order": 3,
+      "raw": "run/loop-engineering/ITER-20260731-082-exact-hit-production-budget-validation/w18-8gib-order03.json",
+      "raw_sha256": "f9d350807291e2ef1a54063a8cb5cdef0a7980f552a509cb8a5d253ba0003546",
+      "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w18-8gib-order05.json",
+      "paired_identity": {"source": true, "plan": true, "execution": true, "terminal": true},
+      "cache": {"entries": 6, "bytes": 3601104896, "stores": 6, "exact_hits": 1, "evictions": 0, "evicted_bytes": 0, "preflight_skips": 0, "replay_prefill_steps": 0, "replay_cached_tokens": 17999, "trace_events": 6, "trace_dropped_events": 0},
+      "cleanup": {"active_estimated_bytes": 0, "pending_requests": 0, "pinned_entries": 0},
+      "resources": {"elapsed_seconds": 150.32983416699426, "peak_rss_bytes": 5554339840, "swap_delta_bytes": 0},
+      "replay_output_token_ids_sha256": "8ca9065d6d525a2c82dd8b841f36d0e65b1889b995338d4eedc826a4975e96ae",
+      "replay_text_sha256": "11ea4353ce9626c14407afaa2645640d944f0ad18e0efeec38216ef9b5a321c7"
+    },
+    {
+      "offset": 24,
+      "order": 4,
+      "raw": "run/loop-engineering/ITER-20260731-082-exact-hit-production-budget-validation/w24-8gib-order04.json",
+      "raw_sha256": "5541a77dfdc2130d0193c33ccca3b111bc39ce9315b58100e010b6f6e742ecb2",
+      "paired_i080_raw": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w24-8gib-order08.json",
+      "paired_identity": {"source": true, "plan": true, "execution": true, "terminal": true},
+      "cache": {"entries": 6, "bytes": 3439755264, "stores": 6, "exact_hits": 1, "evictions": 0, "evicted_bytes": 0, "preflight_skips": 0, "replay_prefill_steps": 0, "replay_cached_tokens": 13622, "trace_events": 6, "trace_dropped_events": 0},
+      "cleanup": {"active_estimated_bytes": 0, "pending_requests": 0, "pinned_entries": 0},
+      "resources": {"elapsed_seconds": 151.4894558330052, "peak_rss_bytes": 5552521216, "swap_delta_bytes": 0},
+      "replay_output_token_ids_sha256": "f58b595e554e858b19db3fbbc7075da9cd7208c1b1c5749f1e7133b872efc304",
+      "replay_text_sha256": "a599e6923e7d0649b23187400b7d42bcf94b63f5a18931c1ea89335b4f9bd6d5"
+    }
+  ],
+  "cancellation_control": {
+    "raw": "run/loop-engineering/ITER-20260731-082-exact-hit-production-budget-validation/cancel-8gib.json",
+    "raw_sha256": "6c24d8fe8b3de00441e8bb360b2da695a47f0bb180152f81deb8997460f88a1f",
+    "cancel_accepted": true,
+    "cancelled_requests": 1,
+    "cancelled_prefill_checkpoints": 1,
+    "completed_follow_up_requests": 1,
+    "snapshot_entries": 1,
+    "snapshot_bytes": 85065728,
+    "evictions": 0,
+    "preflight_skips": 0,
+    "trace_events": 2,
+    "trace_dropped_events": 0,
+    "active_estimated_bytes": 0,
+    "pending_requests": 0,
+    "follow_up_output_token_ids_sha256": "d7e09d2e28fa4702572b4156db0f0bd365e71e555a610a265ab7d9697deaa6e3",
+    "follow_up_text_sha256": "82141670e758a750bce0b0ba4018f9338492327e31c77e017bf009ec61ba6272"
+  },
+  "focused_persistence_and_cancellation_tests": {
+    "command_scope": [
+      "tests/test_cache.py::test_prefix_store_persists_entries_to_disk",
+      "tests/test_engine_runtime.py::test_exact_hit_cancellation_unpins_without_refreshing_checkpoint",
+      "tests/test_engine_runtime.py::test_cancel_during_prefill_keeps_request_accounted_until_runner_safe_point",
+      "tests/test_engine_runtime.py::test_cancelled_prefill_checkpoint_is_reused_by_next_request"
+    ],
+    "result": "4 passed in 0.76s"
+  },
+  "aggregate": {
+    "rows_total": 4,
+    "rows_source_plan_execution_terminal_equal": 4,
+    "rows_retaining_six_entries": 4,
+    "rows_zero_eviction": 4,
+    "rows_zero_replay_prefill": 4,
+    "rows_zero_terminal_state": 4,
+    "production_budget_gate": true
+  },
+  "boundary": "This admits the small exact-hit lifecycle change for a production commit; it does not change the 8 GiB budget, eviction policy, cache representation, or imply a throughput/memory gain or engine ranking."
+}

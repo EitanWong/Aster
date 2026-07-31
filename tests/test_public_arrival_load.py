@@ -255,6 +255,106 @@ def test_capacity_replay_six_keeps_source_identity_and_dependency_chain() -> Non
     ]
 
 
+def test_sustained_exact_prefix_plan_chains_one_public_record() -> None:
+    tool = load_tool()
+    plan = tool.build_arrival_plan(
+        _workload(),
+        scenario="sustained-exact-prefix",
+        concurrency=1,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+        exact_replay_count=3,
+    )
+
+    assert [entry.key for entry in plan.entries] == [
+        "long-primary",
+        "sustained-exact-1",
+        "sustained-exact-2",
+        "sustained-exact-3",
+    ]
+    assert {entry.workload_id for entry in plan.entries} == {"longbench:qmsum:one"}
+    assert [entry.release for entry in plan.entries] == [
+        "at-start",
+        "after-completion",
+        "after-completion",
+        "after-completion",
+    ]
+    assert [entry.depends_on for entry in plan.entries[1:]] == [
+        "long-primary",
+        "sustained-exact-1",
+        "sustained-exact-2",
+    ]
+
+
+def test_sustained_exact_prefix_plan_rejects_misleading_controls() -> None:
+    tool = load_tool()
+
+    with pytest.raises(tool.ArrivalLoadError, match="concurrency must be one"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="sustained-exact-prefix",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="between 1 and 64"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="sustained-exact-prefix",
+            concurrency=1,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+            exact_replay_count=0,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="only supported"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="shared-prefix",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+            exact_replay_count=3,
+        )
+
+
+def test_strict_prefix_append_plan_declares_one_source_derived_prompt() -> None:
+    tool = load_tool()
+    plan = tool.build_arrival_plan(
+        _workload(),
+        scenario="strict-prefix-append",
+        concurrency=1,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+    )
+
+    assert [entry.key for entry in plan.entries] == [
+        "long-primary",
+        "strict-prefix-append",
+        "strict-prefix-repeat",
+    ]
+    assert {entry.workload_id for entry in plan.entries} == {"longbench:qmsum:one"}
+    assert plan.entries[0].prompt_suffix is None
+    assert plan.entries[1].prompt_suffix == tool.STRICT_PREFIX_APPEND_TEXT
+    assert plan.entries[2].prompt_suffix == tool.STRICT_PREFIX_APPEND_TEXT
+    assert [entry.depends_on for entry in plan.entries[1:]] == [
+        "long-primary",
+        "strict-prefix-append",
+    ]
+
+    payload = tool._plan_payload(plan)
+    assert "prompt_suffix" not in payload["entries"][0]
+    assert payload["entries"][1]["prompt_suffix"] == tool.STRICT_PREFIX_APPEND_TEXT
+
+    with pytest.raises(tool.ArrivalLoadError, match="concurrency must be one"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="strict-prefix-append",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+        )
+
+
 def test_capacity_replay_six_requires_six_distinct_qmsum_records() -> None:
     tool = load_tool()
 
@@ -485,6 +585,78 @@ def test_resource_summary_separates_engine_lifecycle_from_workload() -> None:
     }
 
 
+def test_engine_lifecycle_sampler_keeps_only_peak_ownership_fields() -> None:
+    tool = load_tool()
+    summary = tool._new_engine_lifecycle_sample_summary(interval_seconds=0.05)
+
+    tool._record_engine_lifecycle_sample(
+        summary,
+        {
+            "requests": [{"request_id": "must-not-be-retained"}] * 2,
+            "pending_requests": 1,
+            "prefill_requests": 2,
+            "decode_requests": 0,
+            "active_estimated_bytes": 200,
+            "snapshot_entries": 1,
+            "snapshot_bytes": 100,
+            "prefix_cache_stats": {"pinned_entries": 1, "pinned_bytes": 100},
+            "snapshot_reservation_trace": {
+                "enabled": True,
+                "max_events": 64,
+                "dropped_events": 0,
+                "events": [{"request_id": "must-not-be-retained"}],
+            },
+        },
+    )
+    tool._record_engine_lifecycle_sample(
+        summary,
+        {
+            "requests": [{"request_id": "also-not-retained"}] * 4,
+            "pending_requests": 0,
+            "prefill_requests": 0,
+            "decode_requests": 4,
+            "active_estimated_bytes": 800,
+            "snapshot_entries": 1,
+            "snapshot_bytes": 100,
+            "prefix_cache_stats": {"pinned_entries": 1, "pinned_bytes": 100},
+            "snapshot_reservation_trace": {
+                "enabled": True,
+                "max_events": 64,
+                "dropped_events": 1,
+                "events": [{"request_id": "also-not-retained"}] * 64,
+            },
+        },
+    )
+
+    assert summary == {
+        "schema_version": 1,
+        "interval_seconds": 0.05,
+        "sample_count": 2,
+        "maxima": {
+            "active_requests": 4,
+            "pending_requests": 1,
+            "prefill_requests": 2,
+            "decode_requests": 4,
+            "active_estimated_bytes": 800,
+            "snapshot_entries": 1,
+            "snapshot_bytes": 100,
+            "live_snapshot_bytes": 900,
+            "pinned_entries": 1,
+            "pinned_bytes": 100,
+            "reservation_trace_events": 64,
+            "reservation_trace_dropped_events": 1,
+        },
+    }
+    assert "request_id" not in str(summary)
+
+
+def test_engine_lifecycle_sampler_requires_a_positive_interval() -> None:
+    tool = load_tool()
+
+    with pytest.raises(tool.ArrivalLoadError, match="positive"):
+        tool._new_engine_lifecycle_sample_summary(interval_seconds=0.0)
+
+
 class _CancelledRequest(Exception):
     code = "request_cancelled"
 
@@ -555,6 +727,67 @@ class _CompletionFakeEngine:
         return {"requests": requests, "recent_request_timelines": []}
 
 
+class _LifecycleFakeEngine:
+    def __init__(self) -> None:
+        self.submissions: list[str] = []
+        self.prompts: list[str | None] = []
+
+    async def submit(self, request: Any) -> Any:
+        alias = request.request_aliases[0]
+        self.submissions.append(alias)
+        self.prompts.append(request.prompt)
+        exact_hit = len(self.submissions) > 1
+        return SimpleNamespace(
+            request_id=f"request-{alias}",
+            text="stable response",
+            completion_tokens=2,
+            prefill_cache_hit=exact_hit,
+            generation_tps=10.0,
+            peak_memory_gb=1.0,
+            finish_reason="length",
+        )
+
+    def status(self) -> dict[str, object]:
+        completed = len(self.submissions)
+        exact_hits = max(completed - 1, 0)
+        return {
+            "requests": [],
+            "recent_request_timelines": [],
+            "pending_requests": 0,
+            "prefill_requests": 0,
+            "decode_requests": 0,
+            "completed_requests": completed,
+            "failed_requests": 0,
+            "cancelled_requests": 0,
+            "snapshot_preflight_skips": 0,
+            "active_estimated_bytes": 0,
+            "snapshot_entries": 1,
+            "snapshot_bytes": 1024,
+            "prefix_reuse_attempts": exact_hits,
+            "prefix_reuse_hits": exact_hits,
+            "prefix_tokens_reused": exact_hits * 128,
+            "prefix_cache_stats": {
+                "entries": 1,
+                "bytes": 1024,
+                "pinned_entries": 0,
+                "pinned_bytes": 0,
+                "lookups": exact_hits,
+                "hits": exact_hits,
+                "stores": 1,
+                "evictions": 0,
+                "exact_hits": exact_hits,
+                "prefix_hits": 0,
+                "lcp_hits": 0,
+            },
+            "snapshot_reservation_trace": {
+                "enabled": True,
+                "max_events": 8,
+                "dropped_events": 0,
+                "events": [{"decision": "accepted"}],
+            },
+        }
+
+
 def test_execute_cancel_plan_waits_for_prefill_then_runs_follow_up() -> None:
     tool = load_tool()
     workload = _workload()
@@ -618,6 +851,87 @@ def test_execute_idle_lifecycle_plan_submits_no_request() -> None:
         assert result["events"] == []
         assert result["cancel_accepted"] is None
         assert result["engine_status"] == {"requests": [], "recent_request_timelines": []}
+
+    asyncio.run(run_plan())
+
+
+def test_execute_sustained_exact_prefix_records_each_terminal_lifecycle() -> None:
+    tool = load_tool()
+    workload = _workload()
+    plan = tool.build_arrival_plan(
+        workload,
+        scenario="sustained-exact-prefix",
+        concurrency=1,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+        exact_replay_count=3,
+    )
+
+    async def run_plan() -> None:
+        engine = _LifecycleFakeEngine()
+        result = await tool.execute_arrival_plan(
+            engine,
+            plan,
+            workload,
+            resolve_prompt=lambda record: str(record["workload_id"]),
+            timeout_seconds=1.0,
+        )
+
+        assert engine.submissions == [
+            "long-primary",
+            "sustained-exact-1",
+            "sustained-exact-2",
+            "sustained-exact-3",
+        ]
+        lifecycle = [event["engine_lifecycle"] for event in result["events"]]
+        assert [snapshot["prefix_cache"]["exact_hits"] for snapshot in lifecycle] == [
+            0,
+            1,
+            2,
+            3,
+        ]
+        assert {snapshot["prefix_cache"]["stores"] for snapshot in lifecycle} == {1}
+        assert {snapshot["prefix_cache"]["entries"] for snapshot in lifecycle} == {1}
+        assert {snapshot["prefix_cache"]["pinned_entries"] for snapshot in lifecycle} == {0}
+        assert {snapshot["active_requests"] for snapshot in lifecycle} == {0}
+        assert {snapshot["pending_requests"] for snapshot in lifecycle} == {0}
+        assert {
+            snapshot["snapshot_reservation_trace"]["retained_events"]
+            for snapshot in lifecycle
+        } == {1}
+        assert {
+            snapshot["snapshot_reservation_trace"]["dropped_events"]
+            for snapshot in lifecycle
+        } == {0}
+
+    asyncio.run(run_plan())
+
+
+def test_execute_strict_prefix_append_resolves_the_declared_suffix() -> None:
+    tool = load_tool()
+    workload = _workload()
+    plan = tool.build_arrival_plan(
+        workload,
+        scenario="strict-prefix-append",
+        concurrency=1,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+    )
+
+    async def run_plan() -> None:
+        engine = _LifecycleFakeEngine()
+        result = await tool.execute_arrival_plan(
+            engine,
+            plan,
+            workload,
+            resolve_prompt=lambda record: str(record["workload_id"]),
+            timeout_seconds=1.0,
+        )
+
+        assert engine.prompts[0] == "longbench:qmsum:one"
+        assert engine.prompts[1] == engine.prompts[0] + tool.STRICT_PREFIX_APPEND_TEXT
+        assert engine.prompts[2] == engine.prompts[1]
+        assert all("engine_lifecycle" in event for event in result["events"])
 
     asyncio.run(run_plan())
 

@@ -1,7 +1,7 @@
 # Iteration 081: Exact-Hit Checkpoint Refresh
 
 - Date: 2026-07-31
-- Phase: planned
+- Phase: admitted-for-8gib-validation
 - Baseline commit: `d69557e1b1801cf47619b2bbe2978d36e356e661` plus the
   SHA-bound I077-I080 checkpoint recorded in Git history
 - Scope: exact-hit snapshot lifecycle only; no snapshot-budget default,
@@ -82,3 +82,50 @@ six entries with zero reservation/store eviction.
 
 Revert the exact-hit lifecycle change and its tests. The I080 harness offset,
 raw evidence, rejection artifact, and configured 8 GiB default remain valid.
+
+## Result
+
+The predeclared red tests reproduced the duplicate exact-hit store, replay
+store growth, and cancellation store growth. The explicit
+`snapshot_skip_full_prompt_on_prefix_hit=false` rollback control continued to
+refresh the exact checkpoint. The one-line predicate change then passed the
+four focused tests and the affected 97-test cache/engine/config/persistence/
+arrival suite. The full suite is green at `554 passed, 9 skipped, 1 warning`;
+touched-file Ruff and `git diff --check` also pass.
+
+In the default path, an exact hit now performs the lookup clone only. It keeps
+the lookup LRU touch and request pin until cleanup, and does not emit a second
+reservation event or call `PrefixStore.store`. Misses, strict-prefix appends,
+cancellation, persistence, and the disabled-cache controls retain their
+existing behavior. The compatibility switch remains an immediate rollback
+without a code revert.
+
+## Four-GiB Screen
+
+Fresh processes reran I080's failing offsets 6, 18, and 24 with the locked
+plans and unchanged source. All three rows match their I080 source, plan, and
+seven-request terminal identities. Each retains six entries, performs six
+stores, records one exact hit, zero evictions, zero preflight skips, six
+prompt-free trace events, zero dropped events, zero replay prefill steps, and
+zero active/pinned state after cleanup. The raw rows and paired hashes are
+bound in `docs/loop-engineering/artifacts/ITER-20260731-081-exact-hit-checkpoint-refresh/exact-hit-checkpoint-refresh-screen.json`.
+
+This clears the bounded lifecycle screen and admits the candidate to the next
+configured-8-GiB validation. It does not change the production budget, claim a
+memory or throughput gain, or establish a cross-engine ranking.
+
+## Compatibility Smoke
+
+The current source was also run in fresh Aster and direct MLX-LM processes on
+the two-record locked MT-Bench smoke. Workload/source/model fingerprints,
+greedy generation settings, output token IDs, text hashes, length finishes,
+and zero swap delta match across both engines. This is output-compatibility
+evidence only; the complete I066/I067 matrices remain the timing boundary.
+
+## Next Iteration
+
+I082 runs the same exact-hit lifecycle at the configured 8 GiB budget across
+fresh, order-balanced windows, then exercises the wider cancellation and
+persistence branches. The predicate remains an uncommitted candidate until
+those production-budget gates pass; any failure rolls back to the explicit
+refresh switch and leaves the 8 GiB default unchanged.
