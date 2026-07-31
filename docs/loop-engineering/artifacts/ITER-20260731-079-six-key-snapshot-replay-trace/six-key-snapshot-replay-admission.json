@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "kind": "six-key-snapshot-replay-admission",
+  "iteration": "ITER-20260731-079-six-key-snapshot-replay-trace",
+  "completed": "2026-07-31",
+  "baseline_commit": "d69557e1b1801cf47619b2bbe2978d36e356e661",
+  "environment": {
+    "platform": "macOS 27.0 (26A5388g)",
+    "chip": "Apple M5",
+    "logical_cpus": 10,
+    "memory_bytes": 25769803776,
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "compiler": "Apple clang 21.0.0 (clang-2100.3.27.1)",
+    "energy_measurement": "unavailable"
+  },
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "source_verify_sha256": "a788475a8f3a5b4051eb9a0cb4db9487af8479da8f2e4a7d0396a39d0184f71a",
+    "plan_sha256": "713f38bb3df6ec50a0cb19716d4052a08aaa4d9c45e082da10b5be7fc1004aed",
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    },
+    "ordered_records": [
+      "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "longbench:qmsum:ff770653bb3cc4fd9b0921c77d356e3769d01ed91292299e",
+      "longbench:qmsum:fb7891826fb3f47e3750d45365e8c0c97e23613752335cc0",
+      "longbench:qmsum:e408de08efe124bbc147640da859edafe3a9ffd398d76134",
+      "longbench:qmsum:23625b932c93b52caf7504ee1a134d53a4096dc59744d759",
+      "longbench:qmsum:e0d4f5b971b7fafacd2c38ac34ac2eb514b590f6e89dbfe9",
+      "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606"
+    ]
+  },
+  "implementation_contract": {
+    "engine_policy_changes": [],
+    "scenario": "capacity-replay-six",
+    "source_sha256": {
+      "engine": "2d885a07c4d99915caead21e39affd9e29745ef4418756553e7779d4d53ace75",
+      "config_model": "4be7b8b89008e55afb6201b169a14edbf53f7e392f531f72bfba9a9d66ae8905",
+      "runtime_config": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3",
+      "config_template": "d035dcdd4a402fc0f2b5fe6a9c71d4d5d314e3240c05d9803024695eedabe539",
+      "arrival_harness": "c4f23fa954d72013e369b9b5b77f62a1a78c63d8edc5a697555de6b5fb435091",
+      "arrival_tests": "73ec609406621598fceb4969c6fa14011b3714567e81ef209393f7888896b5b0",
+      "engine_tests": "016d4bb77e52f42072a77fc7baa9a76800b37242954b9a58b28ab1632844a75c",
+      "config_tests": "b4497376ee9e32fd458e3046f402fd2331003c093d4f7b4b704f4fef5ad2f85a"
+    }
+  },
+  "execution_contract": {
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "decode_active_prefill_token_budget": 512,
+    "snapshot_reservation_trace_max_events": 64,
+    "snapshot_max_entries": 256,
+    "prefix_cache_persistence": false,
+    "timeout_seconds": 120.0
+  },
+  "raw_results": {
+    "control_8_gib": {
+      "path": "run/loop-engineering/ITER-20260731-079-six-key-snapshot-replay-trace/control-8gib.json",
+      "sha256": "0bb565578c35b5418a1e58ff07ff0f1ec5f600331a10d7a3c64dc49b32034e13",
+      "snapshot_budget_bytes": 8589934592,
+      "elapsed_seconds_context_only": 114.01099799999793,
+      "peak_rss_bytes_context_only": 2604711936,
+      "max_prefill_peak_memory_gb_context_only": 10.594675,
+      "workload_swap_delta_bytes_context_only": 479264768,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 2846359552,
+      "replay_ttft_s": 0.172272
+    },
+    "candidate_4_gib": {
+      "path": "run/loop-engineering/ITER-20260731-079-six-key-snapshot-replay-trace/candidate-4gib.json",
+      "sha256": "2034d367348546cb2573aa6a118666842b3fb3ef7bc2a747278b53bd9e62c1be",
+      "snapshot_budget_bytes": 4294967296,
+      "elapsed_seconds_context_only": 114.01954716599721,
+      "peak_rss_bytes_context_only": 5474271232,
+      "max_prefill_peak_memory_gb_context_only": 10.850036,
+      "workload_swap_delta_bytes_context_only": 284557312,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 2846359552,
+      "replay_ttft_s": 0.167437
+    },
+    "context_only_deltas_percent": {
+      "elapsed": 0.007498545008166602,
+      "replay_ttft": -2.8066081545462973
+    }
+  },
+  "terminal_identity": {
+    "control_candidate_equal": true,
+    "completion_tokens_each": 8,
+    "finish_reason_each": "length",
+    "ordered_output_token_ids_sha256": [
+      "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+      "8ca9065d6d525a2c82dd8b841f36d0e65b1889b995338d4eedc826a4975e96ae",
+      "76f301426485f5f2af2c72ff2c0efd00a69e204e5e9d0a823ea947382e7c1de2",
+      "f58b595e554e858b19db3fbbc7075da9cd7208c1b1c5749f1e7133b872efc304",
+      "a094ee95afc3b7d55cb2d03f324e348f21b9e652c578386d310473f05c284dbf",
+      "ec5771e7a1f122e976a0ffcdf40dbfa9681612009301b084d2e43974f6cfc5c0",
+      "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe"
+    ],
+    "ordered_text_sha256": [
+      "6893ba973bddf438b6d847f413228728e822b3378ca4d77f93199d2ce4f7cd70",
+      "11ea4353ce9626c14407afaa2645640d944f0ad18e0efeec38216ef9b5a321c7",
+      "6b0aec5ed4d1d8a3276c754fe2399be207a102930429922b97880f3237324b36",
+      "a599e6923e7d0649b23187400b7d42bcf94b63f5a18931c1ea89335b4f9bd6d5",
+      "a24df04938569e5c0c9d6911adae8752afbe9aa346cad7db5ecbff1722fbe23b",
+      "132453ff429c393996fca5eec156955d576a0d85b1a7c6831da8b387fcf65d88",
+      "6893ba973bddf438b6d847f413228728e822b3378ca4d77f93199d2ce4f7cd70"
+    ]
+  },
+  "candidate_reservation_events": [
+    {
+      "request_id": "public-arrival:long-primary",
+      "logical_prefix_tokens": 10334,
+      "estimated_bytes": 390103040,
+      "clone_reserve_bytes": 780206080,
+      "effective_budget_bytes": 4294967296,
+      "target_store_bytes": 3514761216,
+      "store_bytes_before": 0,
+      "store_bytes_after": 0,
+      "evictions": 0,
+      "accepted": true
+    },
+    {
+      "request_id": "public-arrival:capacity-six-distinct-1",
+      "logical_prefix_tokens": 10530,
+      "estimated_bytes": 396525568,
+      "clone_reserve_bytes": 793051136,
+      "effective_budget_bytes": 4294967296,
+      "target_store_bytes": 3501916160,
+      "store_bytes_before": 390103040,
+      "store_bytes_after": 390103040,
+      "evictions": 0,
+      "accepted": true
+    },
+    {
+      "request_id": "public-arrival:capacity-six-distinct-2",
+      "logical_prefix_tokens": 17612,
+      "estimated_bytes": 628588544,
+      "clone_reserve_bytes": 1257177088,
+      "effective_budget_bytes": 4294967296,
+      "target_store_bytes": 3037790208,
+      "store_bytes_before": 786628608,
+      "store_bytes_after": 786628608,
+      "evictions": 0,
+      "accepted": true
+    },
+    {
+      "request_id": "public-arrival:capacity-six-distinct-3",
+      "logical_prefix_tokens": 15911,
+      "estimated_bytes": 572850176,
+      "clone_reserve_bytes": 1145700352,
+      "effective_budget_bytes": 3888252518,
+      "target_store_bytes": 2742552166,
+      "store_bytes_before": 1415217152,
+      "store_bytes_after": 1415217152,
+      "evictions": 0,
+      "accepted": true
+    },
+    {
+      "request_id": "public-arrival:capacity-six-distinct-4",
+      "logical_prefix_tokens": 16144,
+      "estimated_bytes": 580485120,
+      "clone_reserve_bytes": 1160970240,
+      "effective_budget_bytes": 4294967296,
+      "target_store_bytes": 3133997056,
+      "store_bytes_before": 1988067328,
+      "store_bytes_after": 1988067328,
+      "evictions": 0,
+      "accepted": true
+    },
+    {
+      "request_id": "public-arrival:capacity-six-distinct-5",
+      "logical_prefix_tokens": 6907,
+      "estimated_bytes": 277807104,
+      "clone_reserve_bytes": 555614208,
+      "effective_budget_bytes": 4294967296,
+      "target_store_bytes": 3739353088,
+      "store_bytes_before": 2568552448,
+      "store_bytes_after": 2568552448,
+      "evictions": 0,
+      "accepted": true
+    },
+    {
+      "request_id": "public-arrival:capacity-six-replay-0",
+      "logical_prefix_tokens": 10334,
+      "estimated_bytes": 390103040,
+      "clone_reserve_bytes": 780206080,
+      "effective_budget_bytes": 4294967296,
+      "target_store_bytes": 3514761216,
+      "store_bytes_before": 2846359552,
+      "store_bytes_after": 2846359552,
+      "evictions": 0,
+      "accepted": true
+    }
+  ],
+  "gates": {
+    "source_equal": true,
+    "plan_equal": true,
+    "execution_equal_except_budget": true,
+    "terminal_identity_all_seven_requests": true,
+    "zero_active_state": true,
+    "six_entries_retained": true,
+    "final_bytes_at_or_below_4_gib": true,
+    "zero_reservation_and_store_evictions": true,
+    "zero_preflight_skips": true,
+    "exact_zero_prefill_replay": true,
+    "all_events_accepted": true,
+    "all_store_bytes_at_or_below_target": true,
+    "all_effective_budgets_at_or_below_4_gib": true,
+    "forbidden_payload_fields_present": false,
+    "production_default_changed": false
+  },
+  "selection": {
+    "control_minimum_configured_budget_bytes": 3626565632,
+    "three_gib_all_decisions_fit": false,
+    "four_gib_all_decisions_fit": true,
+    "four_gib_headroom_bytes": 668401664
+  },
+  "decision": {
+    "status": "admitted-for-order-balanced-formal-matrix",
+    "production_change": "none",
+    "reason": "The trace-selected 4 GiB candidate preserves six-key retention and exact replay with zero eviction, but one ordered chain and one process per budget do not justify a production default change.",
+    "rollback": "The 4 GiB value existed only in the experiment process; the tracked 8 GiB default remains unchanged."
+  },
+  "scope": {
+    "cross_engine_claim": false,
+    "performance_claim": false,
+    "resource_claim": false,
+    "note": "This is Aster-specific snapshot retention evidence. The host-global swap meter and unmatched process RSS baselines are context only."
+  },
+  "next_iteration": {
+    "objective": "Run an order-balanced public 8 GiB versus 4 GiB six-key retention matrix across multiple disjoint QMSUM chains before considering a default change.",
+    "non_goal": "Do not infer sustained-session retention, memory benefit, or a cross-engine ranking from this single chain."
+  }
+}

@@ -459,6 +459,179 @@ def test_checkpoint_skips_clone_when_snapshot_memory_is_unavailable() -> None:
     asyncio.run(scenario())
 
 
+def test_snapshot_reservation_trace_records_accepted_decision() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(
+            engine_overrides={
+                "memory_headroom_ratio": 0.0,
+                "snapshot_budget_bytes": 1024,
+                "snapshot_reservation_trace_max_events": 4,
+            }
+        )
+        runner.available_memory_bytes_value = 1024
+        runner.estimated_cache_bytes_value = 100
+        state = RequestState(
+            request_id="trace-accepted",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            prompt_cache={"cache_tokens": 5},
+            cache_token_count=5,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._store_checkpoint(
+                state,
+                logical_prefix_tokens=6,
+                cache_token_count=5,
+            )
+
+            trace = engine.status()["snapshot_reservation_trace"]
+            assert trace == {
+                "enabled": True,
+                "max_events": 4,
+                "dropped_events": 0,
+                "events": [
+                    {
+                        "request_id": "trace-accepted",
+                        "logical_prefix_tokens": 6,
+                        "estimated_bytes": 100,
+                        "configured_budget_bytes": 1024,
+                        "state_budget_bytes": 1024,
+                        "effective_budget_bytes": 1024,
+                        "clone_reserve_bytes": 200,
+                        "target_store_bytes": 824,
+                        "store_entries_before": 0,
+                        "store_bytes_before": 0,
+                        "store_entries_after": 0,
+                        "store_bytes_after": 0,
+                        "evictions": 0,
+                        "evicted_bytes": 0,
+                        "accepted": True,
+                        "reason": "accepted",
+                    }
+                ],
+            }
+            assert engine.prefix_store.entry_count == 1
+            assert engine.prefix_store.current_bytes == 100
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_snapshot_reservation_trace_attributes_reserve_evictions() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(
+            engine_overrides={
+                "memory_headroom_ratio": 0.0,
+                "snapshot_budget_bytes": 1024,
+                "snapshot_reservation_trace_max_events": 4,
+            }
+        )
+        runner.available_memory_bytes_value = 1024
+        runner.estimated_cache_bytes_value = 300
+        for index in range(3):
+            engine.prefix_store.store(
+                model_name=engine.settings.model.name,
+                model_fingerprint="fake-model",
+                prefix_tokens=[index + 10, index + 20, index + 30],
+                cache_token_count=2,
+                prompt_cache={"cache_tokens": 2},
+                approx_bytes=300,
+            )
+        state = RequestState(
+            request_id="trace-reserve-eviction",
+            request=InferenceRequest(prompt="ignored"),
+            prompt_tokens=[1, 2, 3, 4, 5, 6],
+            prompt_cache={"cache_tokens": 5},
+            cache_token_count=5,
+            model_fingerprint="fake-model",
+        )
+        engine._requests[state.request_id] = state
+        try:
+            await engine._store_checkpoint(
+                state,
+                logical_prefix_tokens=6,
+                cache_token_count=5,
+            )
+
+            event = engine.status()["snapshot_reservation_trace"]["events"][0]
+            assert event["reason"] == "accepted_after_eviction"
+            assert event["accepted"] is True
+            assert event["target_store_bytes"] == 424
+            assert event["store_entries_before"] == 3
+            assert event["store_bytes_before"] == 900
+            assert event["store_entries_after"] == 1
+            assert event["store_bytes_after"] == 300
+            assert event["evictions"] == 2
+            assert event["evicted_bytes"] == 600
+            assert engine.prefix_store.entry_count == 2
+            assert engine.prefix_store.current_bytes == 600
+            assert engine.prefix_store.stats.evictions == 2
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_snapshot_reservation_trace_bounds_preflight_skip_events() -> None:
+    async def scenario() -> None:
+        engine, runner = _make_engine(
+            engine_overrides={
+                "memory_headroom_ratio": 0.0,
+                "snapshot_budget_bytes": 100,
+                "snapshot_reservation_trace_max_events": 2,
+            }
+        )
+        runner.available_memory_bytes_value = 100
+        runner.estimated_cache_bytes_value = 60
+        try:
+            for index in range(3):
+                state = RequestState(
+                    request_id=f"trace-preflight-{index}",
+                    request=InferenceRequest(prompt="ignored"),
+                    prompt_tokens=[1, 2, 3, 4, 5, index + 6],
+                    prompt_cache={"cache_tokens": 5},
+                    cache_token_count=5,
+                    model_fingerprint="fake-model",
+                )
+                engine._requests[state.request_id] = state
+                await engine._store_checkpoint(
+                    state,
+                    logical_prefix_tokens=6,
+                    cache_token_count=5,
+                )
+
+            trace = engine.status()["snapshot_reservation_trace"]
+            assert trace["max_events"] == 2
+            assert trace["dropped_events"] == 1
+            assert [event["request_id"] for event in trace["events"]] == [
+                "trace-preflight-1",
+                "trace-preflight-2",
+            ]
+            for event in trace["events"]:
+                assert event["accepted"] is False
+                assert event["reason"] == "reserve_exceeds_budget"
+                assert event["clone_reserve_bytes"] == 120
+                assert event["target_store_bytes"] == 0
+                assert event["store_entries_before"] == 0
+                assert event["store_entries_after"] == 0
+                assert not {
+                    "prompt",
+                    "prompt_text",
+                    "prompt_tokens",
+                    "token_ids",
+                }.intersection(event)
+            assert runner.clone_cache_token_counts == []
+            assert engine.prefix_store.entry_count == 0
+            assert engine.status()["snapshot_preflight_skips"] == 3
+        finally:
+            await engine.aclose()
+
+    asyncio.run(scenario())
+
+
 @pytest.mark.parametrize(
     ("prompt_token_count", "memory_budget", "expected_budget"),
     [

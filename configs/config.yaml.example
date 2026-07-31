@@ -40,6 +40,7 @@ engine:
   snapshot_budget_bytes: 8589934592   # 8 GB
   snapshot_min_prefix_tokens: 64
   snapshot_max_entries: 256
+  snapshot_reservation_trace_max_events: 64
   prefix_cache_enabled: true
   prefix_cache_persist_path: null  # e.g. ./data/prefix-cache.pkl
   prefix_cache_load_on_warmup: true

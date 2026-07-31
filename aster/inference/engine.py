@@ -7,7 +7,7 @@ import uuid
 from collections import deque
 from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from functools import partial
 from typing import TypeVar
 
@@ -84,6 +84,26 @@ class EngineStatus:
     prefill_yield_rotations: int
 
 
+@dataclass(frozen=True, slots=True)
+class SnapshotReservationEvent:
+    request_id: str
+    logical_prefix_tokens: int
+    estimated_bytes: int
+    configured_budget_bytes: int
+    state_budget_bytes: int | None
+    effective_budget_bytes: int | None
+    clone_reserve_bytes: int
+    target_store_bytes: int | None
+    store_entries_before: int
+    store_bytes_before: int
+    store_entries_after: int
+    store_bytes_after: int
+    evictions: int
+    evicted_bytes: int
+    accepted: bool
+    reason: str
+
+
 class InferenceEngine:
     def __init__(self, settings: RuntimeSettings, metrics: MetricsRegistry) -> None:
         self.settings = settings
@@ -111,6 +131,10 @@ class InferenceEngine:
         self._requests: dict[str, RequestState] = {}
         self._request_aliases: dict[str, str] = {}
         self._recent_request_timelines: deque[dict[str, object]] = deque(maxlen=256)
+        self._snapshot_reservation_events: deque[SnapshotReservationEvent] = deque(
+            maxlen=settings.engine.snapshot_reservation_trace_max_events
+        )
+        self._snapshot_reservation_dropped_events = 0
         self._active_estimated_bytes = 0
         self._task: asyncio.Task[None] | None = None
         self._idle_event = asyncio.Event()
@@ -218,6 +242,7 @@ class InferenceEngine:
             "prefix_reuse_hits": status.prefix_reuse_hits,
             "prefix_tokens_reused": status.prefix_tokens_reused,
             "prefix_cache_stats": self.prefix_store.stats_snapshot(),
+            "snapshot_reservation_trace": self._snapshot_reservation_trace_snapshot(),
             "prefill_steps": status.prefill_steps,
             "decode_steps": status.decode_steps,
             "completed_requests": status.completed_requests,
@@ -421,9 +446,30 @@ class InferenceEngine:
     def get_cache_stats(self) -> dict[str, object]:
         return {
             "prefix_cache": self.prefix_store.stats_snapshot(),
+            "snapshot_reservation_trace": self._snapshot_reservation_trace_snapshot(),
             "runtime_kernel": self.runtime_kernel.capabilities.name,
             "active_estimated_bytes": self._active_estimated_bytes,
         }
+
+    def _snapshot_reservation_trace_snapshot(self) -> dict[str, object]:
+        max_events = self.settings.engine.snapshot_reservation_trace_max_events
+        return {
+            "enabled": max_events > 0,
+            "max_events": max_events,
+            "dropped_events": self._snapshot_reservation_dropped_events,
+            "events": [asdict(event) for event in self._snapshot_reservation_events],
+        }
+
+    def _record_snapshot_reservation_event(
+        self,
+        event: SnapshotReservationEvent,
+    ) -> None:
+        max_events = self._snapshot_reservation_events.maxlen
+        if not max_events:
+            return
+        if len(self._snapshot_reservation_events) == max_events:
+            self._snapshot_reservation_dropped_events += 1
+        self._snapshot_reservation_events.append(event)
 
     def clear_prefix_cache(self) -> dict[str, object]:
         result = self.prefix_store.clear(include_pinned=False)
@@ -1170,7 +1216,11 @@ class InferenceEngine:
             return
         if state.prompt_cache is None:
             return
-        if not await self._reserve_snapshot_capacity(state, state.prompt_cache):
+        if not await self._reserve_snapshot_capacity(
+            state,
+            state.prompt_cache,
+            logical_prefix_tokens=logical_prefix_tokens,
+        ):
             return
         snapshot_cache = await self._runner_call(
             self.runtime_kernel.clone_cache,
@@ -1208,7 +1258,11 @@ class InferenceEngine:
         if logical_prefix_tokens in state.checkpoints_created:
             return
         try:
-            if not await self._reserve_snapshot_capacity(state, result.prompt_cache):
+            if not await self._reserve_snapshot_capacity(
+                state,
+                result.prompt_cache,
+                logical_prefix_tokens=logical_prefix_tokens,
+            ):
                 return
             snapshot_cache = await self._runner_call(
                 self.runtime_kernel.clone_cache,
@@ -1250,27 +1304,97 @@ class InferenceEngine:
         self,
         state: RequestState,
         prompt_cache: object,
+        *,
+        logical_prefix_tokens: int,
     ) -> bool:
+        configured_budget = self.settings.engine.snapshot_budget_bytes
+        entries_before = self.prefix_store.entry_count
+        bytes_before = self.prefix_store.current_bytes
+        stats_before = self.prefix_store.stats
         approx_bytes = await self._runner_call(
             self.runtime_kernel.estimate_cache_bytes,
             prompt_cache,
         )
         if approx_bytes <= 0:
+            self._record_snapshot_reservation_event(
+                SnapshotReservationEvent(
+                    request_id=state.request_id,
+                    logical_prefix_tokens=logical_prefix_tokens,
+                    estimated_bytes=approx_bytes,
+                    configured_budget_bytes=configured_budget,
+                    state_budget_bytes=None,
+                    effective_budget_bytes=None,
+                    clone_reserve_bytes=0,
+                    target_store_bytes=None,
+                    store_entries_before=entries_before,
+                    store_bytes_before=bytes_before,
+                    store_entries_after=entries_before,
+                    store_bytes_after=bytes_before,
+                    evictions=0,
+                    evicted_bytes=0,
+                    accepted=True,
+                    reason="estimate_unavailable",
+                )
+            )
             return True
         available = await self._runner_call(self.runtime_kernel.available_memory_bytes)
         memory_budget = int(
             available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1)
         )
-        snapshot_budget = min(
-            self.settings.engine.snapshot_budget_bytes,
-            self._snapshot_budget_for_state(state, memory_budget=memory_budget),
-        )
+        state_budget = self._snapshot_budget_for_state(state, memory_budget=memory_budget)
+        snapshot_budget = min(configured_budget, state_budget)
         # Keep one cache-sized slot free while the runner materializes the clone.
         reserved_bytes = approx_bytes * 2
+        target_store_bytes = max(snapshot_budget - reserved_bytes, 0)
         if reserved_bytes > snapshot_budget:
             self._snapshot_preflight_skips += 1
+            self._record_snapshot_reservation_event(
+                SnapshotReservationEvent(
+                    request_id=state.request_id,
+                    logical_prefix_tokens=logical_prefix_tokens,
+                    estimated_bytes=approx_bytes,
+                    configured_budget_bytes=configured_budget,
+                    state_budget_bytes=state_budget,
+                    effective_budget_bytes=snapshot_budget,
+                    clone_reserve_bytes=reserved_bytes,
+                    target_store_bytes=target_store_bytes,
+                    store_entries_before=entries_before,
+                    store_bytes_before=bytes_before,
+                    store_entries_after=entries_before,
+                    store_bytes_after=bytes_before,
+                    evictions=0,
+                    evicted_bytes=0,
+                    accepted=False,
+                    reason="reserve_exceeds_budget",
+                )
+            )
             return False
-        self.prefix_store.evict_until_below(max(snapshot_budget - reserved_bytes, 0))
+        self.prefix_store.evict_until_below(target_store_bytes)
+        entries_after = self.prefix_store.entry_count
+        bytes_after = self.prefix_store.current_bytes
+        stats_after = self.prefix_store.stats
+        evictions = max(stats_after.evictions - stats_before.evictions, 0)
+        evicted_bytes = max(stats_after.evicted_bytes - stats_before.evicted_bytes, 0)
+        self._record_snapshot_reservation_event(
+            SnapshotReservationEvent(
+                request_id=state.request_id,
+                logical_prefix_tokens=logical_prefix_tokens,
+                estimated_bytes=approx_bytes,
+                configured_budget_bytes=configured_budget,
+                state_budget_bytes=state_budget,
+                effective_budget_bytes=snapshot_budget,
+                clone_reserve_bytes=reserved_bytes,
+                target_store_bytes=target_store_bytes,
+                store_entries_before=entries_before,
+                store_bytes_before=bytes_before,
+                store_entries_after=entries_after,
+                store_bytes_after=bytes_after,
+                evictions=evictions,
+                evicted_bytes=evicted_bytes,
+                accepted=True,
+                reason="accepted_after_eviction" if evictions else "accepted",
+            )
+        )
         return True
 
     @staticmethod

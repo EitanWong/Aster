@@ -60,6 +60,7 @@ class EngineSettings(BaseModel):
     snapshot_min_prefix_tokens: int = 32
     snapshot_chunk_checkpoint_max_tokens: int = 0
     snapshot_max_entries: int = 256
+    snapshot_reservation_trace_max_events: int = Field(default=64, ge=0, le=256)
     snapshot_max_chat_reuse_points: int = Field(default=8, ge=0)
     snapshot_chat_reuse_sparse_points: int = Field(default=4, ge=0)
     snapshot_chat_reuse_sparse_min_tokens: int = Field(default=2048, ge=0)

@@ -30,6 +30,25 @@ def test_example_config_enables_decode_aware_prefill_budget() -> None:
     settings = load_settings(str(PROJECT_ROOT / "configs" / "config.yaml.example"))
 
     assert settings.engine.decode_active_prefill_token_budget == 512
+    assert settings.engine.snapshot_reservation_trace_max_events == 64
+
+
+def test_snapshot_reservation_trace_capacity_is_bounded() -> None:
+    assert RuntimeSettings().engine.snapshot_reservation_trace_max_events == 64
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"snapshot_reservation_trace_max_events": 0}}
+        ).engine.snapshot_reservation_trace_max_events
+        == 0
+    )
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate(
+            {"engine": {"snapshot_reservation_trace_max_events": -1}}
+        )
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate(
+            {"engine": {"snapshot_reservation_trace_max_events": 257}}
+        )
 
 
 def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:

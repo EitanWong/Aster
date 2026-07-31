@@ -1366,3 +1366,88 @@
 - Next decision: I077 adds bounded prompt-free per-reservation telemetry and
   first proves that observer is neutral on source-bound replay. It changes no
   clone-reserve or eviction behavior.
+
+## 2026-07-31: Admit I077 bounded reservation observability
+
+- Decision: retain a default-64, maximum-256 FIFO of immutable snapshot
+  reservation events in engine status and cache statistics. Value 0 disables
+  collection. No clone-reserve, eviction, cache budget, entry limit, or
+  snapshot representation changes.
+- Evidence: accepted, reserve-eviction, preflight-skip, disabled, and FIFO-drop
+  behavior has focused coverage. A separate-process traced/untraced 8 GiB
+  four-key replay retained exact terminal identities, zero active state, four
+  snapshots / 1,988,067,328 bytes, and zero evictions. Exact replay stayed at
+  zero prefill steps and TTFT moved `0.169433 -> 0.166854s` (`-1.522%`), inside
+  the absolute 3% observer gate.
+- Privacy/size boundary: the five captured events include request ID, logical
+  length, byte budgets/reserve/targets, store state, and eviction deltas. They
+  contain no prompt, text, prompt-token array, or token IDs and dropped none.
+- Reference basis: current upstream vLLM carries structured KV eviction samples
+  in scheduler statistics; current SGLang returns a structured per-call
+  `EvictResult`. Aster adopts only that observability boundary around its
+  existing policy.
+- Next decision: I078 tests the trace-predicted 3 GiB four-key boundary without
+  changing the production default.
+
+## 2026-07-31: Admit I078 3 GiB only for wider retention testing
+
+- Decision: the temporary 3 GiB value becomes a candidate for a wider
+  reuse-distance matrix, not a production default. The tracked 8 GiB default
+  and existing cache policy remain unchanged.
+- Evidence: all five terminal identities match I077. Every effective budget is
+  exactly 3 GiB and every store-before/store-after value is below the recorded
+  target. The process retains four snapshots / 1,988,067,328 bytes with zero
+  reservation/store evictions, zero preflight skips, zero active state, and an
+  exact zero-prefill replay at `0.165729s` TTFT.
+- Boundary: four ordered QMSUM keys do not represent a sustained agent reuse
+  window. Timing, RSS, and host-global swap are context only in this
+  retention-capacity decision.
+- Next decision: I079 establishes a six-distinct-key 8 GiB traced replay
+  baseline before selecting at most one lower candidate.
+
+## 2026-07-31: Admit I079 4 GiB only to a balanced multi-window screen
+
+- Decision: retain the configured 8 GiB production default. The temporary
+  4 GiB value advances to I080 as an experiment-only candidate; 3 GiB is
+  excluded by the six-key trace.
+- Selection evidence: the 8 GiB control retained six snapshots / 2,846,359,552
+  bytes and exact first replay. Its maximum observed store-before plus
+  two-clone reserve was 3,626,565,632 bytes. That exceeds 3 GiB but leaves
+  668,401,664 bytes of headroom under 4 GiB.
+- Candidate evidence: the fresh 4 GiB row matched all seven control workload
+  IDs, completion counts, finishes, output-token hashes, and text hashes. It
+  retained the same six snapshots / 2,846,359,552 bytes, had zero reservation
+  or store evictions, zero preflight skips, zero active state, and exact
+  zero-prefill replay at 0.167437 seconds.
+- Boundary: this is one ordered public chain and one process per budget.
+  Replay timing, unmatched RSS baselines, and host-global swap are context only;
+  no performance, resource, sustained-session, or cross-engine claim is made.
+- Next decision: I080 uses four new disjoint six-key QMSUM windows and balanced
+  8/4 versus 4/8 process order. It rejects 4 GiB on any utility or correctness
+  failure and does not directly change the production default.
+
+## 2026-07-31: Reject I080 4 GiB snapshot budget
+
+- Decision: retain the configured 8 GiB production default. The temporary
+  4 GiB candidate is rejected after passing only one of four fresh disjoint
+  six-key windows. No cache-policy or runtime behavior changes in I080.
+- Evidence: all eight fresh processes match their paired source, plan,
+  execution contract except budget, and all seven terminal token/text
+  identities. Every control retains six snapshots with zero eviction and exact
+  zero-prefill replay. Candidate windows 6, 18, and 24 each evict one other
+  snapshot during the final replay reservation and end with five entries;
+  window 12 retains six. Total candidate eviction is three entries /
+  2,110,849,024 bytes.
+- Interpretation: replay correctness remains exact because lookup hits before
+  the eviction. Current source then schedules another full-prefix checkpoint
+  for the exact hit, reserves duplicate clone capacity, and may evict an
+  unrelated unpinned entry before replacing the same logical key. This is the
+  next measured lifecycle hypothesis, not authorization to weaken capacity or
+  eviction gates.
+- Boundary: timing, RSS, MLX peak, and host-global swap are context only. The
+  result supports no memory-saving, performance, sustained-session, or
+  cross-engine claim.
+- Next decision: I081 uses TDD to test suppression of duplicate full-prefix
+  checkpoint work after an exact hit while preserving LRU touch, pin/unpin,
+  miss, strict-prefix append, cancellation, and persistence behavior. Even a
+  passing 4 GiB replay screen cannot lower the production default in I081.

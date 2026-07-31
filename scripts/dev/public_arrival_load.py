@@ -36,6 +36,7 @@ SCENARIOS = (
     "distinct-prefix",
     "capacity-replay",
     "capacity-replay-depth",
+    "capacity-replay-six",
     "cancel-during-prefill",
 )
 
@@ -122,6 +123,7 @@ def build_arrival_plan(
     concurrency: int,
     max_output_tokens: int,
     stagger_delay_seconds: float,
+    qmsum_start_index: int = 0,
 ) -> ArrivalPlan:
     """Select public records without materializing their prompt text."""
 
@@ -133,6 +135,12 @@ def build_arrival_plan(
         raise ArrivalLoadError("max_output_tokens must be at least one")
     if stagger_delay_seconds < 0:
         raise ArrivalLoadError("stagger_delay_seconds must be non-negative")
+    if qmsum_start_index < 0:
+        raise ArrivalLoadError("qmsum_start_index must be non-negative")
+    if qmsum_start_index and scenario != "capacity-replay-six":
+        raise ArrivalLoadError(
+            "qmsum_start_index is only supported for capacity-replay-six"
+        )
 
     records = _records(workload)
     if scenario == "idle-lifecycle":
@@ -156,9 +164,12 @@ def build_arrival_plan(
 
     if not qmsum:
         raise ArrivalLoadError("public workload has no QMSUM long-prefill record")
+    capacity_six_records = qmsum[qmsum_start_index : qmsum_start_index + 6]
+    if scenario == "capacity-replay-six" and len(capacity_six_records) < 6:
+        raise ArrivalLoadError("public workload has too few distinct QMSUM records")
     long_entry = _entry(
         key="long-primary",
-        record=qmsum[0],
+        record=capacity_six_records[0] if scenario == "capacity-replay-six" else qmsum[0],
         cap=max_output_tokens,
         release="at-start",
     )
@@ -280,6 +291,34 @@ def build_arrival_plan(
             scenario=scenario,
             concurrency=concurrency,
             entries=(long_entry, second_entry, third_entry, fourth_entry, replay_entry),
+        )
+
+    if scenario == "capacity-replay-six":
+        entries = [long_entry]
+        dependency_key = long_entry.key
+        for index, record in enumerate(capacity_six_records[1:], start=1):
+            entry = _entry(
+                key=f"capacity-six-distinct-{index}",
+                record=record,
+                cap=max_output_tokens,
+                release="after-completion",
+                depends_on=dependency_key,
+            )
+            entries.append(entry)
+            dependency_key = entry.key
+        entries.append(
+            _entry(
+                key="capacity-six-replay-0",
+                record=capacity_six_records[0],
+                cap=max_output_tokens,
+                release="after-completion",
+                depends_on=dependency_key,
+            )
+        )
+        return ArrivalPlan(
+            scenario=scenario,
+            concurrency=concurrency,
+            entries=tuple(entries),
         )
 
     if not interactive:
@@ -512,6 +551,7 @@ def _apply_baseline_settings(
     decode_active_prefill_token_budget: int | None,
     snapshot_budget_bytes: int | None,
     snapshot_max_entries: int | None,
+    snapshot_reservation_trace_max_events: int | None = None,
 ) -> RuntimeSettings:
     if decode_active_prefill_token_budget is not None and decode_active_prefill_token_budget < 1:
         raise ArrivalLoadError("decode_active_prefill_token_budget must be positive")
@@ -519,6 +559,16 @@ def _apply_baseline_settings(
         raise ArrivalLoadError("snapshot_budget_bytes must be positive")
     if snapshot_max_entries is not None and snapshot_max_entries < 1:
         raise ArrivalLoadError("snapshot_max_entries must be positive")
+    if (
+        snapshot_reservation_trace_max_events is not None
+        and snapshot_reservation_trace_max_events < 0
+    ):
+        raise ArrivalLoadError("snapshot_reservation_trace_max_events must be non-negative")
+    if (
+        snapshot_reservation_trace_max_events is not None
+        and snapshot_reservation_trace_max_events > 256
+    ):
+        raise ArrivalLoadError("snapshot_reservation_trace_max_events must be at most 256")
     engine_updates: dict[str, Any] = {
         "engine_type": "manual",
         "runtime_kernel": "manual",
@@ -533,6 +583,10 @@ def _apply_baseline_settings(
         engine_updates["snapshot_budget_bytes"] = snapshot_budget_bytes
     if snapshot_max_entries is not None:
         engine_updates["snapshot_max_entries"] = snapshot_max_entries
+    if snapshot_reservation_trace_max_events is not None:
+        engine_updates["snapshot_reservation_trace_max_events"] = (
+            snapshot_reservation_trace_max_events
+        )
     return settings.model_copy(
         update={
             "engine": settings.engine.model_copy(update=engine_updates)
@@ -644,6 +698,7 @@ async def run_public_arrival_baseline(
     decode_active_prefill_token_budget: int | None = None,
     snapshot_budget_bytes: int | None = None,
     snapshot_max_entries: int | None = None,
+    snapshot_reservation_trace_max_events: int | None = None,
 ) -> dict[str, Any]:
     workload = _load_workload(workload_path)
     if workload.get("lock_sha256") != public.sha256_file(lock_path):
@@ -657,6 +712,7 @@ async def run_public_arrival_baseline(
         decode_active_prefill_token_budget=decode_active_prefill_token_budget,
         snapshot_budget_bytes=snapshot_budget_bytes,
         snapshot_max_entries=snapshot_max_entries,
+        snapshot_reservation_trace_max_events=snapshot_reservation_trace_max_events,
     )
     lifecycle: dict[str, dict[str, int | str]] = {
         "before_engine_create": _resource_snapshot()
@@ -710,6 +766,9 @@ async def run_public_arrival_baseline(
             ),
             "snapshot_budget_bytes": settings.engine.snapshot_budget_bytes,
             "snapshot_max_entries": settings.engine.snapshot_max_entries,
+            "snapshot_reservation_trace_max_events": (
+                settings.engine.snapshot_reservation_trace_max_events
+            ),
             "max_active_requests": settings.engine.max_active_requests,
             "timeout_seconds": timeout_seconds,
             "max_output_tokens": _plan_max_output_tokens(plan),
@@ -727,6 +786,7 @@ def main() -> None:
     parser.add_argument("--concurrency", type=int, required=True)
     parser.add_argument("--max-output-tokens", type=int, default=32)
     parser.add_argument("--stagger-delay-seconds", type=float, default=0.05)
+    parser.add_argument("--qmsum-start-index", type=int, default=0)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "configs/config.yaml")
     parser.add_argument("--lock", type=Path, default=public.DEFAULT_LOCK_PATH)
@@ -735,6 +795,7 @@ def main() -> None:
     parser.add_argument("--decode-active-prefill-budget", type=int)
     parser.add_argument("--snapshot-budget-bytes", type=int)
     parser.add_argument("--snapshot-max-entries", type=int)
+    parser.add_argument("--snapshot-reservation-trace-max-events", type=int)
     parser.add_argument("--timeout-seconds", type=float, default=120.0)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -745,6 +806,7 @@ def main() -> None:
         concurrency=args.concurrency,
         max_output_tokens=args.max_output_tokens,
         stagger_delay_seconds=args.stagger_delay_seconds,
+        qmsum_start_index=args.qmsum_start_index,
     )
     payload = (
         asyncio.run(
@@ -759,6 +821,9 @@ def main() -> None:
                 decode_active_prefill_token_budget=args.decode_active_prefill_budget,
                 snapshot_budget_bytes=args.snapshot_budget_bytes,
                 snapshot_max_entries=args.snapshot_max_entries,
+                snapshot_reservation_trace_max_events=(
+                    args.snapshot_reservation_trace_max_events
+                ),
             )
         )
         if args.execute

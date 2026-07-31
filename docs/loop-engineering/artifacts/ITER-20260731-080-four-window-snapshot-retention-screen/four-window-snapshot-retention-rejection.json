@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "kind": "four-window-snapshot-retention-rejection",
+  "iteration": "ITER-20260731-080-four-window-snapshot-retention-screen",
+  "completed": "2026-07-31",
+  "baseline_commit": "d69557e1b1801cf47619b2bbe2978d36e356e661",
+  "environment": {
+    "platform": "macOS 27.0 (26A5388g)",
+    "chip": "Apple M5",
+    "logical_cpus": 10,
+    "memory_bytes": 25769803776,
+    "python": "3.14.5",
+    "mlx": "0.32.0",
+    "compiler": "Apple clang 21.0.0 (clang-2100.3.27.1)",
+    "energy_measurement": "unavailable"
+  },
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "source_verify_sha256": "a788475a8f3a5b4051eb9a0cb4db9487af8479da8f2e4a7d0396a39d0184f71a",
+    "globally_unique_source_records": 24,
+    "windows": [
+      {
+        "qmsum_start_index": 6,
+        "plan_sha256": "9612ccb4d1da60c0a3474795bbd22f012f1a7093ad305b59da6ebcc300e6ee1e"
+      },
+      {
+        "qmsum_start_index": 12,
+        "plan_sha256": "bcf1309fba51b4702f3de4d7ce0090fa37688946056be1f0df4d25dcd0fc8e15"
+      },
+      {
+        "qmsum_start_index": 18,
+        "plan_sha256": "a47a0e88993c7d0fe7937c06e3669d22baf9cb900d80b09d1f73afb0197a8644"
+      },
+      {
+        "qmsum_start_index": 24,
+        "plan_sha256": "9908df5d2d63185e8bbb8237da32e5c130035841656ecbd0d84e685dac9f7a81"
+      }
+    ],
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    }
+  },
+  "implementation_contract": {
+    "engine_policy_changes_in_iteration": [],
+    "scenario": "capacity-replay-six",
+    "qmsum_window_offset_is_harness_only": true,
+    "source_sha256": {
+      "engine": "2d885a07c4d99915caead21e39affd9e29745ef4418756553e7779d4d53ace75",
+      "config_model": "4be7b8b89008e55afb6201b169a14edbf53f7e392f531f72bfba9a9d66ae8905",
+      "runtime_config": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3",
+      "config_template": "d035dcdd4a402fc0f2b5fe6a9c71d4d5d314e3240c05d9803024695eedabe539",
+      "arrival_harness": "62dd045b44bdc3e8789c544f3eb902086bda2c167a381fc13af5b12dc2c03ce9",
+      "arrival_tests": "563d03623ac3ade4b5bf17668c8460afb88a4dc930dc023f69f704204bb9e5e1",
+      "engine_tests": "016d4bb77e52f42072a77fc7baa9a76800b37242954b9a58b28ab1632844a75c",
+      "config_tests": "b4497376ee9e32fd458e3046f402fd2331003c093d4f7b4b704f4fef5ad2f85a"
+    }
+  },
+  "execution_contract": {
+    "model": "Qwen3.5-9B",
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "decode_active_prefill_token_budget": 512,
+    "snapshot_reservation_trace_max_events": 64,
+    "snapshot_max_entries": 256,
+    "prefix_cache_persistence": false,
+    "timeout_seconds": 120.0,
+    "fresh_process_budget_order_gib": [8, 4, 4, 8, 8, 4, 4, 8]
+  },
+  "raw_results": [
+    {
+      "process_order": 1,
+      "qmsum_start_index": 6,
+      "budget_gib": 8,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w06-8gib-order01.json",
+      "sha256": "ffc76d487220377894325e3d987fe702504bbc75e1ea8b2ab2d15345c8e79b8d",
+      "elapsed_seconds_context_only": 123.87935441700392,
+      "peak_rss_bytes_context_only": 4108894208,
+      "workload_swap_delta_bytes_context_only": 617611264,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 2987687936,
+      "evictions": 0,
+      "evicted_bytes": 0,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.255886
+    },
+    {
+      "process_order": 2,
+      "qmsum_start_index": 6,
+      "budget_gib": 4,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w06-4gib-order02.json",
+      "sha256": "0f50ab7ce4f66cc0fc44ec9d8a484dedf5aa0eaf60e909a376f1c7d6e2192121",
+      "elapsed_seconds_context_only": 121.49162420799985,
+      "peak_rss_bytes_context_only": 5457592320,
+      "workload_swap_delta_bytes_context_only": 0,
+      "snapshot_entries": 5,
+      "snapshot_bytes": 2313748480,
+      "evictions": 1,
+      "evicted_bytes": 673939456,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.253319
+    },
+    {
+      "process_order": 3,
+      "qmsum_start_index": 12,
+      "budget_gib": 4,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w12-4gib-order03.json",
+      "sha256": "b39f3f4b7cf6e477dec4ce4c7bbf8342508d8e7bd3239e290fc6da4cd03f06dc",
+      "elapsed_seconds_context_only": 121.23146300000371,
+      "peak_rss_bytes_context_only": 5551374336,
+      "workload_swap_delta_bytes_context_only": 453050368,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 3049947136,
+      "evictions": 0,
+      "evicted_bytes": 0,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.187767
+    },
+    {
+      "process_order": 4,
+      "qmsum_start_index": 12,
+      "budget_gib": 8,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w12-8gib-order04.json",
+      "sha256": "8e5665ca562dcbc302aef063988c35332e36a57234b9c0551995b01432ce3f33",
+      "elapsed_seconds_context_only": 121.9105565419959,
+      "peak_rss_bytes_context_only": 5588647936,
+      "workload_swap_delta_bytes_context_only": 0,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 3049947136,
+      "evictions": 0,
+      "evicted_bytes": 0,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.193655
+    },
+    {
+      "process_order": 5,
+      "qmsum_start_index": 18,
+      "budget_gib": 8,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w18-8gib-order05.json",
+      "sha256": "a0831dde2d79f731d23958298585ee166bd4489fff66f190047c97181e023193",
+      "elapsed_seconds_context_only": 150.64032258299994,
+      "peak_rss_bytes_context_only": 5576146944,
+      "workload_swap_delta_bytes_context_only": 0,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 3601104896,
+      "evictions": 0,
+      "evicted_bytes": 0,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.201636
+    },
+    {
+      "process_order": 6,
+      "qmsum_start_index": 18,
+      "budget_gib": 4,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w18-4gib-order06.json",
+      "sha256": "c6a91786090184abd62303afe6ae3d1df1b0e7af90f1ac62283953c0cde8cd1b",
+      "elapsed_seconds_context_only": 152.4846847499939,
+      "peak_rss_bytes_context_only": 5500551168,
+      "workload_swap_delta_bytes_context_only": 0,
+      "snapshot_entries": 5,
+      "snapshot_bytes": 2667708416,
+      "evictions": 1,
+      "evicted_bytes": 933396480,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.199452
+    },
+    {
+      "process_order": 7,
+      "qmsum_start_index": 24,
+      "budget_gib": 4,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w24-4gib-order07.json",
+      "sha256": "5ac3586ec0b2b9d16352472510d7f1bdcdee5d13c105cd0165e1893954f94cf5",
+      "elapsed_seconds_context_only": 148.03686700000253,
+      "peak_rss_bytes_context_only": 5510594560,
+      "workload_swap_delta_bytes_context_only": -8388608,
+      "snapshot_entries": 5,
+      "snapshot_bytes": 2936242176,
+      "evictions": 1,
+      "evicted_bytes": 503513088,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.208372
+    },
+    {
+      "process_order": 8,
+      "qmsum_start_index": 24,
+      "budget_gib": 8,
+      "path": "run/loop-engineering/ITER-20260731-080-four-window-snapshot-retention-screen/w24-8gib-order08.json",
+      "sha256": "1b520526c532be9a0ab94dbce91256cd2e22967e4440eb60631f9cc3c12e0428",
+      "elapsed_seconds_context_only": 151.36121112500405,
+      "peak_rss_bytes_context_only": 5585584128,
+      "workload_swap_delta_bytes_context_only": 0,
+      "snapshot_entries": 6,
+      "snapshot_bytes": 3439755264,
+      "evictions": 0,
+      "evicted_bytes": 0,
+      "replay_prefill_steps": 0,
+      "replay_ttft_s_context_only": 0.180744
+    }
+  ],
+  "pair_results": [
+    {
+      "qmsum_start_index": 6,
+      "budget_order_gib": [8, 4],
+      "control_minimum_configured_budget_bytes": 4339564544,
+      "source_plan_execution_equal_except_budget": true,
+      "terminal_identity_all_seven_requests": true,
+      "control_exact_zero_prefill_replay": true,
+      "candidate_exact_zero_prefill_replay": true,
+      "candidate_entries": 5,
+      "candidate_evictions": 1,
+      "candidate_evicted_bytes": 673939456,
+      "candidate_replay_reservation_target_bytes": 2943090688,
+      "candidate_replay_store_bytes_before": 2987687936,
+      "candidate_replay_store_bytes_after": 2313748480,
+      "candidate_pass": false
+    },
+    {
+      "qmsum_start_index": 12,
+      "budget_order_gib": [4, 8],
+      "control_minimum_configured_budget_bytes": 4226711552,
+      "source_plan_execution_equal_except_budget": true,
+      "terminal_identity_all_seven_requests": true,
+      "control_exact_zero_prefill_replay": true,
+      "candidate_exact_zero_prefill_replay": true,
+      "candidate_entries": 6,
+      "candidate_evictions": 0,
+      "candidate_evicted_bytes": 0,
+      "candidate_pass": true
+    },
+    {
+      "qmsum_start_index": 18,
+      "budget_order_gib": [8, 4],
+      "control_minimum_configured_budget_bytes": 4883644416,
+      "source_plan_execution_equal_except_budget": true,
+      "terminal_identity_all_seven_requests": true,
+      "control_exact_zero_prefill_replay": true,
+      "candidate_exact_zero_prefill_replay": true,
+      "candidate_entries": 5,
+      "candidate_evictions": 1,
+      "candidate_evicted_bytes": 933396480,
+      "candidate_replay_reservation_target_bytes": 3012427776,
+      "candidate_replay_store_bytes_before": 3601104896,
+      "candidate_replay_store_bytes_after": 2667708416,
+      "candidate_pass": false
+    },
+    {
+      "qmsum_start_index": 24,
+      "budget_order_gib": [4, 8],
+      "control_minimum_configured_budget_bytes": 4435443712,
+      "source_plan_execution_equal_except_budget": true,
+      "terminal_identity_all_seven_requests": true,
+      "control_exact_zero_prefill_replay": true,
+      "candidate_exact_zero_prefill_replay": true,
+      "candidate_entries": 5,
+      "candidate_evictions": 1,
+      "candidate_evicted_bytes": 503513088,
+      "candidate_replay_reservation_target_bytes": 3299278848,
+      "candidate_replay_store_bytes_before": 3439755264,
+      "candidate_replay_store_bytes_after": 2936242176,
+      "candidate_pass": false
+    }
+  ],
+  "aggregate_gates": {
+    "pair_count": 4,
+    "candidate_pass_count": 1,
+    "all_controls_retain_six_entries": true,
+    "all_controls_zero_evictions": true,
+    "all_controls_exact_zero_prefill_replay": true,
+    "all_pairs_source_plan_execution_equal_except_budget": true,
+    "all_pairs_terminal_identity_equal": true,
+    "all_rows_zero_active_or_failed_state": true,
+    "all_candidates_at_or_below_4_gib": true,
+    "all_candidates_zero_preflight_skips": true,
+    "all_candidates_exact_zero_prefill_replay": true,
+    "all_candidate_trace_events_accepted": true,
+    "all_candidate_trace_events_prompt_free": true,
+    "all_candidates_retain_six_entries": false,
+    "all_candidates_zero_evictions": false,
+    "total_candidate_evictions": 3,
+    "total_candidate_evicted_bytes": 2110849024,
+    "production_default_changed": false
+  },
+  "diagnosis": {
+    "status": "source-traced-next-hypothesis",
+    "observation": "All three candidate evictions occur during public-arrival:capacity-six-replay-0 after exact lookup already produced a zero-prefill hit.",
+    "current_path": "Exact lookup touches and pins the retained entry, clones it into request state, but does not mark the logical prefix in checkpoints_created. Exact hits still satisfy _should_store_full_prompt_checkpoint, so decode activation reserves and clones a duplicate full-prefix checkpoint before PrefixStore.store replaces the same key. Reservation can evict a different unpinned entry first.",
+    "production_change_authorized": false
+  },
+  "decision": {
+    "status": "rejected-4-gib-production-budget",
+    "production_change": "none",
+    "reason": "Only one of four fresh disjoint candidate windows retained all six snapshots without eviction. The predeclared any-eviction rejection gate fails in three windows despite exact terminal output and replay hits.",
+    "rollback": "The 4 GiB value existed only in four experiment processes; the tracked and local runtime configuration remain at 8 GiB."
+  },
+  "scope": {
+    "cross_engine_claim": false,
+    "performance_claim": false,
+    "resource_claim": false,
+    "note": "Timing, RSS, MLX peak, and host-global swap are context only. This result selects a cache-lifecycle hypothesis, not an engine ranking or memory-saving claim."
+  },
+  "next_iteration": {
+    "iteration": "ITER-20260731-081-exact-hit-checkpoint-refresh",
+    "objective": "Test whether suppressing duplicate full-prefix checkpoint creation after an exact snapshot hit preserves LRU touch, output, cleanup, and miss/append behavior while removing replay-time eviction and clone work.",
+    "non_goal": "Do not lower the production snapshot budget or alter miss, strict-prefix append, cancellation, persistence, or general eviction policy before focused TDD and a bounded 4 GiB screen pass."
+  }
+}

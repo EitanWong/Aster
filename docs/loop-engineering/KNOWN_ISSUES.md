@@ -2,16 +2,19 @@
 
 - Historical workspace debt remains. Its immutable baseline is 1,164 changed
   paths / 1,114 artifact files at `2cb14052d4a3`; the active iteration keeps its
-  own 20-file / 5 MiB budget. The latest strict audit has 83 incremental paths
-  and 46 artifact files (0.54 MiB), with zero staged paths, mixed-index paths,
-  and reference updates, plus 24 generated caches. It warns about retained
-  closed-I060 through I071 evidence and generated caches rather than
-  laundering or deleting owner-unknown work.
+  own 20-file / 5 MiB budget. The latest strict audit has 22 changed paths and
+  4 artifact files (0.04 MiB), with zero staged paths, mixed-index paths, and
+  reference updates, plus 24 generated caches. It warns about retained I077-I080
+  evidence and generated caches.
 - Long-context snapshot preflight is now implemented and the full suite is
-  green (`536 passed, 9 skipped, 1 warning`). The threshold and both checkpoint call paths
+  green (`552 passed, 9 skipped, 1 warning`). The threshold and both checkpoint call paths
   have automated coverage. The earlier controlled 128K comparison supports
   the 2 GiB cap, but a fresh default-8-GiB real-model run through the automatic
   policy has not yet been archived as formal evidence.
+- Ruff passes for every Python file touched by I077-I080. The broader
+  `aster tests scripts` tree still reports 227 historical lint errors, so
+  full-tree Ruff remains an explicit repository-debt boundary rather than an
+  iteration admission gate.
 - Iteration 059 now retains exact EOS-membership reuse beside the one-entry mask
   snapshot. Formal short/long balanced interval lower bounds were 38.01% and
   21.09%; all 36 outputs matched, stop-aware B4 was 4/4 schema-valid, and fresh
@@ -186,6 +189,15 @@
   an 8-step `27.859819s` miss. Aggregate final cache counters lack the
   configured/state/effective budget and per-call reserve target, so they cannot
   distinguish which reservation caused the loss.
-- I077 must add a bounded prompt-free reservation decision trace and clear an
-  output/TTFT no-op gate before it profiles another snapshot budget. Clone
-  reserve, eviction policy, and cache defaults remain unchanged.
+- I077's bounded prompt-free reservation trace cleared its output/TTFT no-op
+  gate. I079 excluded 3 GiB at a six-key reservation floor and advanced 4 GiB
+  to a fresh balanced screen. I080 then rejected 4 GiB: only one of four
+  disjoint windows retained all six keys without eviction; the other three
+  evicted `2,110,849,024` bytes in total during the final exact-replay
+  reservation. Replay still hit with zero prefill because lookup occurs first.
+  Current source then reserves/clones/stores the same full prefix again without
+  a request-local checkpoint marker, potentially evicting a different unpinned
+  entry before same-key replacement. I081 must prove any exact-hit suppression
+  with miss, strict-prefix, cancellation, LRU, pin/unpin, and persistence
+  controls. Clone reserve, general eviction policy, and the 8 GiB production
+  default remain unchanged.

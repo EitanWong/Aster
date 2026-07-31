@@ -43,7 +43,21 @@ def _record(
     }
 
 
-def _workload() -> dict[str, object]:
+def _workload(*, qmsum_count: int = 12) -> dict[str, object]:
+    qmsum_names = (
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten",
+        "eleven",
+        "twelve",
+    )
     return {
         "kind": "public-cross-engine-workload",
         "generation": {"temperature": 0.0, "top_p": 1.0, "top_k": 0, "min_p": 0.0},
@@ -52,10 +66,14 @@ def _workload() -> dict[str, object]:
                 _record(f"mt-bench:{index}:turn-1", family="interactive")
                 for index in range(81, 89)
             ],
-            _record("longbench:qmsum:one", family="long-context", dataset="qmsum"),
-            _record("longbench:qmsum:two", family="long-context", dataset="qmsum"),
-            _record("longbench:qmsum:three", family="long-context", dataset="qmsum"),
-            _record("longbench:qmsum:four", family="long-context", dataset="qmsum"),
+            *[
+                _record(
+                    f"longbench:qmsum:{name}",
+                    family="long-context",
+                    dataset="qmsum",
+                )
+                for name in qmsum_names[:qmsum_count]
+            ],
         ],
     }
 
@@ -199,6 +217,119 @@ def test_build_arrival_plans_keep_public_record_identity_and_dependencies() -> N
     assert cancellation.entries[1].release == "after-cancellation"
 
 
+def test_capacity_replay_six_keeps_source_identity_and_dependency_chain() -> None:
+    tool = load_tool()
+    plan = tool.build_arrival_plan(
+        _workload(),
+        scenario="capacity-replay-six",
+        concurrency=2,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+    )
+
+    assert [entry.workload_id for entry in plan.entries] == [
+        "longbench:qmsum:one",
+        "longbench:qmsum:two",
+        "longbench:qmsum:three",
+        "longbench:qmsum:four",
+        "longbench:qmsum:five",
+        "longbench:qmsum:six",
+        "longbench:qmsum:one",
+    ]
+    assert [entry.release for entry in plan.entries] == [
+        "at-start",
+        "after-completion",
+        "after-completion",
+        "after-completion",
+        "after-completion",
+        "after-completion",
+        "after-completion",
+    ]
+    assert [entry.depends_on for entry in plan.entries[1:]] == [
+        "long-primary",
+        "capacity-six-distinct-1",
+        "capacity-six-distinct-2",
+        "capacity-six-distinct-3",
+        "capacity-six-distinct-4",
+        "capacity-six-distinct-5",
+    ]
+
+
+def test_capacity_replay_six_requires_six_distinct_qmsum_records() -> None:
+    tool = load_tool()
+
+    with pytest.raises(tool.ArrivalLoadError, match="too few distinct QMSUM"):
+        tool.build_arrival_plan(
+            _workload(qmsum_count=5),
+            scenario="capacity-replay-six",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+        )
+
+
+def test_capacity_replay_six_selects_an_offset_source_window() -> None:
+    tool = load_tool()
+    plan = tool.build_arrival_plan(
+        _workload(),
+        scenario="capacity-replay-six",
+        concurrency=2,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+        qmsum_start_index=6,
+    )
+
+    assert [entry.workload_id for entry in plan.entries] == [
+        "longbench:qmsum:seven",
+        "longbench:qmsum:eight",
+        "longbench:qmsum:nine",
+        "longbench:qmsum:ten",
+        "longbench:qmsum:eleven",
+        "longbench:qmsum:twelve",
+        "longbench:qmsum:seven",
+    ]
+    assert [entry.depends_on for entry in plan.entries[1:]] == [
+        "long-primary",
+        "capacity-six-distinct-1",
+        "capacity-six-distinct-2",
+        "capacity-six-distinct-3",
+        "capacity-six-distinct-4",
+        "capacity-six-distinct-5",
+    ]
+
+
+def test_capacity_replay_six_rejects_invalid_source_windows() -> None:
+    tool = load_tool()
+
+    with pytest.raises(tool.ArrivalLoadError, match="non-negative"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="capacity-replay-six",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+            qmsum_start_index=-1,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="too few distinct QMSUM"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="capacity-replay-six",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+            qmsum_start_index=7,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="only supported"):
+        tool.build_arrival_plan(
+            _workload(),
+            scenario="shared-prefix",
+            concurrency=2,
+            max_output_tokens=8,
+            stagger_delay_seconds=0.0,
+            qmsum_start_index=1,
+        )
+
+
 def test_build_arrival_plan_requires_public_records_for_each_scenario() -> None:
     tool = load_tool()
     with pytest.raises(tool.ArrivalLoadError, match="interactive"):
@@ -234,10 +365,12 @@ def test_arrival_baseline_settings_keep_decode_prefill_cap_opt_in() -> None:
         decode_active_prefill_token_budget=512,
         snapshot_budget_bytes=1024,
         snapshot_max_entries=1,
+        snapshot_reservation_trace_max_events=0,
     )
     assert candidate.engine.decode_active_prefill_token_budget == 512
     assert candidate.engine.snapshot_budget_bytes == 1024
     assert candidate.engine.snapshot_max_entries == 1
+    assert candidate.engine.snapshot_reservation_trace_max_events == 0
 
     with pytest.raises(tool.ArrivalLoadError, match="positive"):
         tool._apply_baseline_settings(
@@ -265,6 +398,26 @@ def test_arrival_baseline_settings_keep_decode_prefill_cap_opt_in() -> None:
             decode_active_prefill_token_budget=None,
             snapshot_budget_bytes=None,
             snapshot_max_entries=0,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="non-negative"):
+        tool._apply_baseline_settings(
+            settings,
+            concurrency=4,
+            prefix_cache_enabled=True,
+            decode_active_prefill_token_budget=None,
+            snapshot_budget_bytes=None,
+            snapshot_max_entries=None,
+            snapshot_reservation_trace_max_events=-1,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="at most 256"):
+        tool._apply_baseline_settings(
+            settings,
+            concurrency=4,
+            prefix_cache_enabled=True,
+            decode_active_prefill_token_budget=None,
+            snapshot_budget_bytes=None,
+            snapshot_max_entries=None,
+            snapshot_reservation_trace_max_events=257,
         )
 
 
@@ -508,6 +661,19 @@ def test_execute_idle_lifecycle_plan_submits_no_request() -> None:
                 "capacity-depth-replay-0",
             ],
         ),
+        (
+            "capacity-replay-six",
+            2,
+            [
+                "long-primary",
+                "capacity-six-distinct-1",
+                "capacity-six-distinct-2",
+                "capacity-six-distinct-3",
+                "capacity-six-distinct-4",
+                "capacity-six-distinct-5",
+                "capacity-six-replay-0",
+            ],
+        ),
     ],
 )
 def test_execute_dependency_release_plans_preserve_schedule_order(
@@ -540,5 +706,40 @@ def test_execute_dependency_release_plans_preserve_schedule_order(
         assert [event["response"]["finish_reason"] for event in result["events"]] == [
             "length"
         ] * len(plan.entries)
+
+    asyncio.run(run_plan())
+
+
+def test_execute_capacity_replay_six_preserves_offset_source_window() -> None:
+    tool = load_tool()
+    workload = _workload()
+    plan = tool.build_arrival_plan(
+        workload,
+        scenario="capacity-replay-six",
+        concurrency=2,
+        max_output_tokens=8,
+        stagger_delay_seconds=0.0,
+        qmsum_start_index=6,
+    )
+
+    async def run_plan() -> None:
+        result = await tool.execute_arrival_plan(
+            _CompletionFakeEngine(),
+            plan,
+            workload,
+            resolve_prompt=lambda record: str(record["workload_id"]),
+            timeout_seconds=1.0,
+        )
+
+        assert [event["workload_id"] for event in result["events"]] == [
+            "longbench:qmsum:seven",
+            "longbench:qmsum:eight",
+            "longbench:qmsum:nine",
+            "longbench:qmsum:ten",
+            "longbench:qmsum:eleven",
+            "longbench:qmsum:twelve",
+            "longbench:qmsum:seven",
+        ]
+        assert [event["error"] for event in result["events"]] == [None] * 7
 
     asyncio.run(run_plan())

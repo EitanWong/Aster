@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-07-29
+Updated: 2026-07-31
 
 ## Current State
 
@@ -8,7 +8,7 @@ Updated: 2026-07-29
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 076. Active iteration: 077, phase `planned`.
+- Last completed iteration: 080. Active iteration: 081, phase `planned`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -140,9 +140,37 @@ Updated: 2026-07-29
   incurred two clone-reserve evictions and changed first replay from an exact
   0-prefill-step hit at `0.226819s` TTFT to an 8-step miss at `27.859819s`.
   The 8 GiB default remains unchanged.
-- I077 is planned to expose bounded prompt-free reservation decisions and prove
-  the observer is output- and replay-TTFT-neutral before it profiles another
-  budget. No clone-reserve, eviction, or default behavior is in scope.
+- I077 admitted a bounded prompt-free reservation observer. Four focused tests
+  plus the affected 77-test suite pass; the default-64/max-256 FIFO can be
+  disabled with value 0. Its source-bound 8 GiB traced/untraced replay retained
+  exact five-request terminal identity, four snapshots / 1,988,067,328 bytes,
+  zero eviction, and zero active state. Replay TTFT moved `0.169433 ->
+  0.166854s` (`-1.522%`), inside the absolute 3% no-op gate. The five events
+  contain no prompt or token-ID payload, and no cache behavior changed.
+- I078 then tested the trace-predicted temporary 3 GiB boundary. Every
+  pre-reservation store remained below its target; the row retained all four
+  snapshots, zero evictions/preflight skips, exact output identity, and a
+  zero-prefill replay at `0.165729s`. This admits 3 GiB only for wider
+  retention testing; the production 8 GiB default remains unchanged.
+- I079 completed a six-distinct-key plus first-replay chain. Its 8 GiB control
+  exposed a `3,626,565,632`-byte maximum reservation floor, excluding 3 GiB
+  and selecting 4 GiB. The fresh 4 GiB row matched all seven terminal token/
+  text identities, retained six snapshots / `2,846,359,552` bytes, recorded
+  zero evictions/preflight skips, and preserved exact zero-prefill replay at
+  `0.167437s`. The production 8 GiB default remains unchanged.
+- I080 rejected the temporary 4 GiB budget after only one of four fresh,
+  disjoint, order-balanced windows retained all six snapshots with zero
+  eviction. All eight rows preserved exact terminal identity, zero active
+  state, and exact zero-prefill replay, but candidate windows 6, 18, and 24
+  each evicted another retained snapshot during the final replay reservation
+  and ended with five entries. Total candidate eviction was three entries /
+  `2,110,849,024` bytes. The production 8 GiB default remains unchanged.
+- I081 is planned around that measured lifecycle boundary. Exact lookup already
+  touches and pins the matched entry, yet decode activation reserves, clones,
+  and stores the same full prefix again because the new request has no matching
+  `checkpoints_created` marker. Focused TDD must preserve miss, strict-prefix,
+  cancellation, LRU, pin/unpin, and persistence behavior before three bounded
+  4 GiB reruns; I081 cannot lower the production default.
 - The current engine-gap assessment is recorded in
   `CORE_REFERENCE_MATRIX.md`. It distinguishes confirmed Aster capabilities
   from unmeasured reference-engine differences: the public QMSUM result now
@@ -155,11 +183,12 @@ Updated: 2026-07-29
   and only if Qwen3.5 public/chat/special-token parity plus queue-aware TTFT
   and end-to-end gates pass. It does not stand in for GPU/Metal SIMD inference
   work, which remains a separate measured kernel class.
-- The latest strict audit is `WARN` with 87 changed paths, 47 artifact files
-  (0.54 MiB), zero staged/mixed/reference paths, 24 generated caches, and no
-  blocker. Warnings cover explicit foreign evidence from closed I060-I072
-  iterations plus generated caches; historical owner-unknown files remain
-  inventory rather than being rewritten or removed.
+- The latest strict audit is `WARN` with 22 changed paths, 4 artifact files
+  (0.04 MiB), zero staged/mixed/reference paths, 24 generated caches, and no
+  blocker. Warnings cover the retained I077-I080 evidence plus generated
+  caches. The full suite passes (`552 passed, 9 skipped, 1 warning`) and Ruff
+  passes on all six touched Python files; full-tree Ruff still reports 227
+  historical issues outside this iteration boundary.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.
@@ -572,9 +601,9 @@ Updated: 2026-07-29
 
 ## Next Priority
 
-1. Execute Iteration 071's public-source arrival/load baseline: define fixed
-   B1/B4/B8 arrivals, staggered long-prefill, shared-prefix, and cancellation
-   cases before selecting scheduler, prefill, or cache changes.
+1. Execute Iteration 081's exact-hit checkpoint TDD: prove the current duplicate
+   reservation/clone/store path, preserve LRU and pin ownership, then rerun
+   only I080's three failing 4 GiB windows as a bounded retention screen.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Keep generated caches at zero and prevent growth beyond the
    recorded +25/+20 allowances.
