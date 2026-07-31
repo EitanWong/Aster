@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import hashlib
 import json
 import threading
 import time
@@ -360,6 +361,34 @@ def test_prefill_idle_fast_path_does_not_bypass_transient_budget() -> None:
     )
 
     assert engine._prefill_chunk_target(state, remaining=8) == 4
+
+
+def test_prefill_budget_uses_decode_cap_only_when_opted_in() -> None:
+    engine, runner = _make_engine(
+        engine_overrides={
+            "prefill_token_budget": 16,
+            "pressure_prefill_token_budget": 4,
+            "decode_active_prefill_token_budget": 8,
+        }
+    )
+    runner.available_memory_bytes_value = 10_000
+
+    assert engine._prefill_budget() == 16
+    engine._decode_queue.append("interactive")
+    assert engine._prefill_budget() == 8
+
+    engine._active_estimated_bytes = 9_001
+    assert engine._prefill_budget() == 4
+
+    default_engine, default_runner = _make_engine(
+        engine_overrides={
+            "prefill_token_budget": 16,
+            "pressure_prefill_token_budget": 4,
+        }
+    )
+    default_runner.available_memory_bytes_value = 10_000
+    default_engine._decode_queue.append("interactive")
+    assert default_engine._prefill_budget() == 16
 
 
 def test_prefill_chunk_target_uses_observed_transient_growth() -> None:
@@ -725,6 +754,10 @@ def test_engine_batches_decode_steps_for_concurrent_requests() -> None:
             assert entry["queue_wait_s"] is not None
             assert entry["prefill_model_s"] > 0
             assert entry["decode_duration_s"] is not None
+            assert entry["finish_reason"] == "length"
+            assert entry["text_sha256"] == hashlib.sha256(b"ab").hexdigest()
+            assert isinstance(entry["output_token_ids_sha256"], str)
+            assert len(entry["output_token_ids_sha256"]) == 64
 
     asyncio.run(scenario())
 

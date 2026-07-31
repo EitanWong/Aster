@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "kind": "snapshot-budget-replay-depth-rejection",
+  "iteration": "ITER-20260729-076-snapshot-budget-replay-depth",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    },
+    "ordered_records": [
+      "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "longbench:qmsum:ff770653bb3cc4fd9b0921c77d356e3769d01ed91292299e",
+      "longbench:qmsum:fb7891826fb3f47e3750d45365e8c0c97e23613752335cc0",
+      "longbench:qmsum:e408de08efe124bbc147640da859edafe3a9ffd398d76134",
+      "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606"
+    ]
+  },
+  "execution_contract": {
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "timeout_seconds": 120.0,
+    "decode_active_prefill_token_budget": 512,
+    "warm_cache_persistence": false,
+    "engine_sha256": "8ba127d48c9a5b75b8f2e07ae2a4f1763f128716fa0fb4168289d1a98277d898",
+    "prefix_store_sha256": "baa1e72d0724264f96d73f69298b850a009bb5885226b37c664e341062b42ce1",
+    "arrival_harness_sha256": "01835fb6c652412c45a9d9acea36feefd7269afd4e6c95ce48a095998a0c58cd",
+    "arrival_harness_tests_sha256": "09da8fcd9d303a4b3750d17ab24089ddc6739701a6369acbbb0cf47923234bbc",
+    "focused_tests": "11 passed",
+    "config_sha256": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3"
+  },
+  "raw_results": {
+    "control_8_gib": {
+      "path": "run/loop-engineering/ITER-20260729-076-snapshot-budget-replay-depth/capacity-replay-depth-control-8gib.json",
+      "sha256": "395f54e7904fa393d0d44a4993d75e2689b693281c7d7bd7f55ff572ef94cb57",
+      "budget_bytes": 8589934592,
+      "snapshot_entries": 4,
+      "snapshot_bytes": 1988067328,
+      "evictions": 0,
+      "snapshot_preflight_skips": 0,
+      "replay_cache_hit": true,
+      "replay_ttft_s": 0.226819,
+      "replay_prefill_steps": 0
+    },
+    "candidate_2_gib": {
+      "path": "run/loop-engineering/ITER-20260729-076-snapshot-budget-replay-depth/capacity-replay-depth-candidate-2gib.json",
+      "sha256": "4560967bfa352924eac14bac8d5308f5a29402886491cbc90e33b5eff819d5f8",
+      "budget_bytes": 2147483648,
+      "snapshot_entries": 3,
+      "snapshot_bytes": 1591541760,
+      "evictions": 2,
+      "evicted_bytes": 786628608,
+      "snapshot_preflight_skips": 0,
+      "replay_cache_hit": false,
+      "replay_ttft_s": 27.859819,
+      "replay_prefill_steps": 8
+    }
+  },
+  "gates": {
+    "same_source_generation_execution_contract": true,
+    "terminal_identity_all_five_requests": true,
+    "output_token_ids_sha256": {
+      "first_and_replay": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+      "second": "8ca9065d6d525a2c82dd8b841f36d0e65b1889b995338d4eedc826a4975e96ae",
+      "third": "76f301426485f5f2af2c72ff2c0efd00a69e204e5e9d0a823ea947382e7c1de2",
+      "fourth": "f58b595e554e858b19db3fbbc7075da9cd7208c1b1c5749f1e7133b872efc304"
+    },
+    "zero_running_waiting_pending_after_both_rows": true,
+    "candidate_within_final_explicit_budget": true,
+    "candidate_final_retained_byte_delta": 396525568,
+    "candidate_preserves_predeclared_useful_replay": false,
+    "host_global_swap_used_for_selection": false
+  },
+  "observed_capacity_boundary": {
+    "engine_behavior": "Before cloning a snapshot, _reserve_snapshot_capacity estimates its bytes, reserves twice that amount, and calls PrefixStore.evict_until_below(max(effective_snapshot_budget - reserved_bytes, 0)).",
+    "source": "aster/inference/engine.py:_reserve_snapshot_capacity",
+    "interpretation": "Final PrefixStore bytes below the configured cap do not prove that an earlier entry survived the clone-reserve eviction. I076 has final counters but no per-reservation decision trace."
+  },
+  "decision": {
+    "status": "rejected-2-gib-budget-default",
+    "production_change": "none",
+    "reason": "The 2 GiB candidate remains within its final explicit budget but performs two capacity evictions and loses the first-record replay. Its replay changes from an exact 0-prefill-step hit at 0.226819 seconds to an 8-step miss at 27.859819 seconds. The useful-replay gate fails.",
+    "rollback": "The configured 8 GiB default remains unchanged; 2 GiB existed only in the experiment process."
+  },
+  "next_iteration": {
+    "objective": "Add non-timed per-reservation capacity-decision telemetry so a wider-budget candidate can be selected from explicit reserve, eviction, and replay evidence rather than final counters alone.",
+    "non_goal": "Do not change clone-reserve semantics, eviction policy, or defaults while adding the observability boundary."
+  }
+}

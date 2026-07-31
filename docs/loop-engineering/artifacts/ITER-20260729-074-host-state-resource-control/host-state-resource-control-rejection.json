@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "kind": "host-state-resource-control-rejection",
+  "iteration": "ITER-20260729-074-host-state-resource-control",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    },
+    "shared_prefix_record": "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606"
+  },
+  "execution_contract": {
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "timeout_seconds": 120.0,
+    "decode_active_prefill_token_budget": 512,
+    "warm_cache_persistence": false,
+    "arrival_harness_sha256": "f4a114e58ed04147c8a7f3c944364217f5dca8ad0fca1d33bde6eb0dad5ece05",
+    "arrival_harness_tests_sha256": "ca1ad034bdd2bfbb043f2cd20275edc2531e2afeccc6df8bab60e4c172dab367",
+    "focused_tests": "9 passed",
+    "config_sha256": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3"
+  },
+  "raw_results": {
+    "idle_cache_off": {
+      "path": "run/loop-engineering/ITER-20260729-074-host-state-resource-control/idle-lifecycle-cache-off.json",
+      "sha256": "e6d54536bb7e4ecf7a037bd15d0bf6ea8812ccf485e71b680b39c9644d44abac",
+      "requests_submitted": 0,
+      "snapshot_entries": 0,
+      "workload_swap_delta_bytes": 0
+    },
+    "idle_cache_on": {
+      "path": "run/loop-engineering/ITER-20260729-074-host-state-resource-control/idle-lifecycle-cache-on.json",
+      "sha256": "a53b448fafdedc2fa70e9fd836a8f8fd5f13561db09449612846b739210cf934",
+      "requests_submitted": 0,
+      "snapshot_entries": 0,
+      "workload_swap_delta_bytes": 0
+    },
+    "shared_prefix_pair_1_cache_off": {
+      "path": "run/loop-engineering/ITER-20260729-074-host-state-resource-control/shared-prefix-pair-1-cache-off.json",
+      "sha256": "78f489d3847dc2f7d42d9ed3a2f480f44b030e84b4ffa41f33aad77bf1248666",
+      "snapshot_entries": 0,
+      "reuse_hits": 0,
+      "workload_swap_delta_bytes": 0
+    },
+    "shared_prefix_pair_1_cache_on": {
+      "path": "run/loop-engineering/ITER-20260729-074-host-state-resource-control/shared-prefix-pair-1-cache-on.json",
+      "sha256": "8c318705add5d55e3b5596c214e7f215a000828be62212a11baa3b17d30323a1",
+      "snapshot_entries": 1,
+      "snapshot_bytes": 390103040,
+      "reuse_hits": 1,
+      "reused_tokens": 10333,
+      "workload_swap_delta_bytes": 0
+    },
+    "shared_prefix_pair_2_cache_on": {
+      "path": "run/loop-engineering/ITER-20260729-074-host-state-resource-control/shared-prefix-pair-2-cache-on.json",
+      "sha256": "be76244b1f704e19d6e6ed1a6f7e751b28f4934f92560ac0b07a578993c09e17",
+      "snapshot_entries": 1,
+      "snapshot_bytes": 390103040,
+      "reuse_hits": 1,
+      "reused_tokens": 10333,
+      "workload_swap_delta_bytes": 0
+    },
+    "shared_prefix_pair_2_cache_off": {
+      "path": "run/loop-engineering/ITER-20260729-074-host-state-resource-control/shared-prefix-pair-2-cache-off.json",
+      "sha256": "05642867272fdd644ce2f1ae20d51a3520246070dab06dfe56a9500503154564",
+      "snapshot_entries": 0,
+      "reuse_hits": 0,
+      "workload_swap_delta_bytes": 78577664
+    }
+  },
+  "gates": {
+    "same_source_generation_execution_contract": true,
+    "all_rows_zero_running_waiting_pending": true,
+    "idle_rows_submit_no_requests_and_retain_no_snapshots": true,
+    "shared_prefix_terminal_identity_all_four_rows": true,
+    "shared_prefix_output_token_ids_sha256": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+    "cache_on_exact_reuse": {
+      "hits": [1, 1],
+      "reused_tokens": [10333, 10333],
+      "passed": true
+    },
+    "resource_attribution": {
+      "meter": "psutil.swap_memory().used sampled outside timed request steps; host-global only.",
+      "workload_stage_swap_delta_bytes": {
+        "idle_cache_off": 0,
+        "idle_cache_on": 0,
+        "shared_prefix_pair_1_cache_off": 0,
+        "shared_prefix_pair_1_cache_on": 0,
+        "shared_prefix_pair_2_cache_on": 0,
+        "shared_prefix_pair_2_cache_off": 78577664
+      },
+      "repeatable_cache_state_direction": false,
+      "differs_from_idle_in_both_orders": false,
+      "passed_for_policy_selection": false
+    }
+  },
+  "decision": {
+    "status": "rejected-cache-policy-selection",
+    "production_change": "none",
+    "reason": "Idle controls are flat and the only positive global-swap value occurs in one cache-off row, while the other cache-off row and both cache-on rows are zero. This neither repeats by cache state nor establishes a process-owned cache resource direction.",
+    "retained_tooling": "idle-lifecycle is retained as a source-bound no-request lifecycle control; empty plans return max_output_tokens=null and submit no request."
+  },
+  "next_iteration": {
+    "objective": "Measure the cache-budget utility frontier using distinct locked QMSUM keys followed by exact-reuse replay before considering a lower snapshot budget.",
+    "non_goal": "Do not change cache defaults until retention/reuse loss and explicit snapshot bytes are measured under a predeclared capacity condition."
+  }
+}

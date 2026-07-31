@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-07-18
+Updated: 2026-07-29
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -23,6 +23,14 @@ coverage, and a rollback path.
 6. Treat closed cores, missing licenses, missing code, and hardware-specific
    CUDA/RDMA paths as evidence or watch items, not code sources.
 
+## Latest Source Refresh
+
+On 2026-07-29, the configured Web search endpoint returned HTTP 404 and
+read-only GitHub API queries returned HTTP 403. No remote version, release, or
+claim was added from that failed refresh. The current update therefore uses only
+the pinned local sources already listed below; a later successful read-only
+lookup must record its date and exact source before it changes this radar.
+
 ## Current candidates
 
 | Priority | Work | What is useful | Local status | Decision / next gate |
@@ -32,6 +40,7 @@ coverage, and a rollback path.
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
 | P0 | [OMLX](https://github.com/jundot/omlx) TurboQuant at `e3a4fe4`, pinned mlx-vlm `78b96eb`, and [Open-TQ-Metal](https://arxiv.org/abs/2604.16957) | Compressed-domain K/V attention, hybrid-cache conversion, long-context capacity, two-pass decode | `51/51` reference tests plus 5-process kernel and 20-process Qwen3.5 matrices complete | Reject measured 4-bit path: cache shrinks, but default MLX speed and model quality fail. Preserve as a capacity reference only. |
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
+| P1 | [Gigatoken](https://github.com/marcelroed/gigatoken), commit `34a1599`, MIT | Rust SIMD pretokenization, cache-aware BPE encoding, and HuggingFace compatibility API; upstream lists Qwen3.5 support | Remote source/license reviewed; not installed or routed by Aster | Treat as CPU ingress-only reference. First prove exact Qwen3.5 IDs for public/chat/special-token cases and measure queue-aware TTFT/e2e; it cannot substitute for MLX GPU prefill/decode optimization. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
 | P1 | [SSSD](https://github.com/huawei-csl/sssd_speculator), ACL 2026, BSD-3-Clause-Clear | Training-free suffix-array/prompt/self-output speculation | Source/license verified remotely; not cloned | Later candidate after core: compare against prompt lookup and DFlash without a draft model. |
 | P1 | [CONCUR](https://arxiv.org/abs/2601.22705) | Agent-level cache-pressure feedback and proactive admission | Paper found; no author code located in first pass | Reproduce only after a sustained Agent KV-thrashing workload exists. |

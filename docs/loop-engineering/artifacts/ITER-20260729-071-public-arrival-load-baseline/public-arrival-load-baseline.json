@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "kind": "public-arrival-load-baseline-summary",
+  "iteration": "ITER-20260729-071-public-arrival-load-baseline",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0,
+      "max_output_tokens": 8
+    }
+  },
+  "execution": {
+    "engine": "aster-manual",
+    "model": "Qwen3.5-9B",
+    "config_sha256": "352fd623b420b6d1f82862acab7d871107a59020b31f12f10a69477343fc947e",
+    "harness_sha256": "4bb0a2697e56e0db5773a8367d618b97b6f001b0aafc94645fb4523e6d513c39",
+    "prefix_cache_enabled": true,
+    "max_active_requests": 16,
+    "max_decode_batch": 4,
+    "prefill_token_budget": 1024
+  },
+  "raw_results": {
+    "simultaneous_b1": "85899d35ea82d1694cc2df467106a62df4cf27f12ad1e7b1a8fb40d5d329a08d",
+    "simultaneous_b4": "424cd550e7378a733a38ae78527eaedc59f569c9aba73b6c54f4e9bd571094fc",
+    "simultaneous_b8": "9e40533911eccd7cebf3ba9bcebf9a6453993ca0f0da52c96a946aefe445c0ec",
+    "shared_prefix_b2": "7fedbfd6bf3c086cc584f7a09f7d982f40ef0f0283fbdd00861a7167896a6345",
+    "cancel_during_prefill_b2": "633e9d95d408baf7ab32502604223ec860698dad437a39946bb8d1ebc759e222",
+    "staggered_long_prefill_b2_r1": "bd3cc80bf8cf983b3276f26d632fa64fd68118af0a30a6408c6cdbd722fea163",
+    "staggered_long_prefill_b2_r2": "edb11cf199f9d111715612e7fe8e0c7081545fd10d0a71555c3a795f10af7451"
+  },
+  "cases": {
+    "simultaneous_b1": {
+      "workload_ids": ["mt-bench:81:turn-1"],
+      "elapsed_seconds": 1.284121,
+      "aggregate_generation_tps": 16.985,
+      "request_ttft_seconds": 0.954743,
+      "peak_rss_bytes": 1402241024,
+      "swap_delta_bytes": 0,
+      "finish_reason": "length",
+      "text_sha256": "82141670e758a750bce0b0ba4018f9338492327e31c77e017bf009ec61ba6272",
+      "output_token_ids_sha256": "d7e09d2e28fa4702572b4156db0f0bd365e71e555a610a265ab7d9697deaa6e3"
+    },
+    "simultaneous_b4": {
+      "workload_ids": [
+        "mt-bench:81:turn-1",
+        "mt-bench:82:turn-1",
+        "mt-bench:83:turn-1",
+        "mt-bench:84:turn-1"
+      ],
+      "elapsed_seconds": 2.027509,
+      "aggregate_generation_tps": 51.247,
+      "average_decode_batch_size": 2.909,
+      "max_ttft_seconds": 1.648311,
+      "peak_rss_bytes": 1366114304,
+      "swap_delta_bytes": 0,
+      "completed_requests": 4,
+      "decode_batch_fallbacks": 0
+    },
+    "simultaneous_b8": {
+      "workload_ids": [
+        "mt-bench:81:turn-1",
+        "mt-bench:82:turn-1",
+        "mt-bench:83:turn-1",
+        "mt-bench:84:turn-1",
+        "mt-bench:85:turn-1",
+        "mt-bench:86:turn-1",
+        "mt-bench:87:turn-1",
+        "mt-bench:88:turn-1"
+      ],
+      "elapsed_seconds": 3.539481,
+      "aggregate_generation_tps": 53.41,
+      "average_decode_batch_size": 3.368,
+      "max_ttft_seconds": 2.856182,
+      "peak_rss_bytes": 2183249920,
+      "swap_delta_bytes": 430440448,
+      "completed_requests": 8,
+      "decode_batch_fallbacks": 0
+    },
+    "shared_prefix_b2": {
+      "workload_id": "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "primary_ttft_seconds": 14.596928,
+      "replay_ttft_seconds": 0.169065,
+      "primary_prefill_model_seconds": 14.094335,
+      "replay_prefill_model_seconds": 0.0,
+      "prefix_tokens_reused": 10333,
+      "exact_prefix_hits": 1,
+      "primary_and_replay_text_sha256": "6893ba973bddf438b6d847f413228728e822b3378ca4d77f93199d2ce4f7cd70",
+      "primary_and_replay_output_token_ids_sha256": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+      "peak_rss_bytes": 1439875072,
+      "swap_delta_bytes": 933429248
+    },
+    "cancel_during_prefill_b2": {
+      "workload_id": "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "cancel_accepted": true,
+      "cancelled_requests": 1,
+      "cancelled_prefill_checkpoints": 1,
+      "cancelled_snapshot_bytes": 85065728,
+      "follow_up_workload_id": "mt-bench:81:turn-1",
+      "follow_up_finish_reason": "length",
+      "follow_up_text_sha256": "82141670e758a750bce0b0ba4018f9338492327e31c77e017bf009ec61ba6272",
+      "final_active_estimated_bytes": 0,
+      "final_pending_requests": 0,
+      "swap_delta_bytes": 0
+    },
+    "staggered_long_prefill_b2": {
+      "long_workload_id": "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "short_workload_id": "mt-bench:81:turn-1",
+      "short_release_delay_seconds": 0.05,
+      "replicates": [
+        {
+          "short_queue_wait_seconds": 1.255011,
+          "short_ttft_seconds": 1.583004,
+          "short_decode_duration_seconds": 9.346481,
+          "short_total_latency_seconds": 10.829059,
+          "long_total_latency_seconds": 14.560598,
+          "prefill_yield_rotations": 1,
+          "swap_delta_bytes": 0
+        },
+        {
+          "short_queue_wait_seconds": 1.189607,
+          "short_ttft_seconds": 1.520416,
+          "short_decode_duration_seconds": 9.614404,
+          "short_total_latency_seconds": 11.033888,
+          "long_total_latency_seconds": 15.072072,
+          "prefill_yield_rotations": 1,
+          "swap_delta_bytes": 528089088
+        }
+      ]
+    }
+  },
+  "decision": "baseline-only; no production behavior was enabled",
+  "next_hypothesis": "An opt-in smaller prefill chunk while decode work is active may reduce the repeatable 9.35-9.61 second short-request decode interval without changing deterministic output or destabilizing long-prefill resource behavior."
+}

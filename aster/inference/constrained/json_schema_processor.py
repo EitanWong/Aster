@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from typing import Any
 
 import numpy as np
@@ -43,15 +44,123 @@ def clear_constrained_caches() -> None:
     clear_tokenizer_cache()
 
 
+def _new_token_enforcer(
+    tokenizer_data: Any,
+    parser: Any,
+    *,
+    reuse_freetext_token_lists: bool,
+) -> Any:
+    from lmformatenforcer import TokenEnforcer
+
+    if not reuse_freetext_token_lists:
+        return TokenEnforcer(tokenizer_data, parser)
+
+    from lmformatenforcer.exceptions import LMFormatEnforcerException
+    from lmformatenforcer.tokenlist import TokenList
+
+    class ReusingFreetextTokenEnforcer(TokenEnforcer):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self._aster_working_freetext_lists: dict[int, tuple[Any, int]] = {}
+            self._aster_working_freetext_ids: set[int] = set()
+
+        def _aster_prepare_for_next_state(self) -> None:
+            for token_list, static_length in self._aster_working_freetext_lists.values():
+                del token_list.allowed_tokens[static_length:]
+
+        def _working_freetext_list(self, static_tokens: Any) -> Any:
+            key = id(static_tokens.allowed_tokens)
+            cached = self._aster_working_freetext_lists.get(key)
+            if cached is not None:
+                return cached[0]
+            working = TokenList(self.use_bitmask, self.vocab_size)
+            working.extend(static_tokens.allowed_tokens)
+            self._aster_working_freetext_lists[key] = (working, len(working.allowed_tokens))
+            self._aster_working_freetext_ids.add(id(working))
+            return working
+
+        def _compute_allowed_tokens(self, state_tokens: tuple[int, ...], state: Any) -> None:
+            try:
+                allowed_tokens = TokenList(self.use_bitmask, self.vocab_size)
+                cache_key = state.parser.cache_key()
+                if cache_key is not None and cache_key in self.allowed_token_cache:
+                    state.allowed_tokens = self.allowed_token_cache[cache_key]
+                    return
+                shortcut_key = state.parser.shortcut_key()
+                allowed_tokens = self._collect_allowed_tokens(
+                    state.parser,
+                    self.tokenizer_tree.root,
+                    allowed_tokens,
+                    shortcut_key,
+                )
+                if state.parser.can_end():
+                    if isinstance(self.eos_token_id, list):
+                        allowed_tokens.extend(self.eos_token_id)
+                    else:
+                        allowed_tokens.append(self.eos_token_id)
+                if not allowed_tokens:
+                    raise ValueError("Parser reached state with no allowed tokens")
+                state.allowed_tokens = allowed_tokens
+                if cache_key is not None and id(allowed_tokens) not in self._aster_working_freetext_ids:
+                    self.allowed_token_cache[cache_key] = allowed_tokens
+            except LMFormatEnforcerException:
+                raise
+            except Exception:
+                logging.basicConfig(level=logging.ERROR)
+                prefix = self.decoder(list(state_tokens))
+                logging.exception("Unknown LMFormatEnforcer Problem. Prefix: '%s'", prefix)
+                state.allowed_tokens = TokenList(self.use_bitmask, self.vocab_size)
+                if isinstance(self.eos_token_id, list):
+                    state.allowed_tokens.extend(self.eos_token_id)
+                else:
+                    state.allowed_tokens.append(self.eos_token_id)
+
+        def _collect_allowed_tokens(
+            self,
+            parser: Any,
+            tree_node: Any,
+            allowed_tokens: Any,
+            shortcut_key: Any,
+        ) -> Any:
+            allowed_characters = parser.get_allowed_characters()
+            characters_to_explore = set(tree_node.children.keys()).intersection(allowed_characters)
+            if isinstance(shortcut_key, tuple) and shortcut_key[0] == "json_freetext":
+                _, cur_len, min_len, max_len = shortcut_key
+                cache = self.tokenizer_tree.json_freetext_tokens
+                min_remaining = min(cache.max_token_len, max(0, min_len - cur_len))
+                max_allowed_len = min(cache.max_token_len, max_len - cur_len)
+                static_tokens = cache.lookup_allowed_tokens(
+                    min_remaining,
+                    max_allowed_len,
+                )
+                if self.use_bitmask:
+                    allowed_tokens.extend(static_tokens.allowed_tokens)
+                else:
+                    allowed_tokens = self._working_freetext_list(static_tokens)
+                allowed_tokens.extend(tree_node.tokens)
+                characters_to_explore = characters_to_explore.intersection(['"'])
+            else:
+                allowed_tokens.extend(tree_node.tokens)
+            for character in characters_to_explore:
+                allowed_tokens = self._collect_allowed_tokens(
+                    parser.add_character(character),
+                    tree_node.children[character],
+                    allowed_tokens,
+                    None,
+                )
+            return allowed_tokens
+
+    return ReusingFreetextTokenEnforcer(tokenizer_data, parser)
+
+
 class JSONSchemaLogitsProcessor:
     name = "json_schema"
     batch_sampling_mode = "eager_rows"
+    _DECODE_PREFIX_STATE_WINDOW = 1
 
     def __init__(self, *, schema: dict[str, Any] | None, tokenizer: Any) -> None:
         if not is_available():
             raise LMFormatEnforcerNotAvailableError("lm-format-enforcer is not installed")
-
-        from lmformatenforcer import TokenEnforcer
 
         tokenizer_data = get_tokenizer_data(tokenizer)
         if tokenizer_data is None:
@@ -61,7 +170,15 @@ class JSONSchemaLogitsProcessor:
         self.schema = parser_schema
         self._tokenizer = tokenizer
         self._tokenizer_data = tokenizer_data
-        self._enforcer = TokenEnforcer(tokenizer_data, parser)
+        self._reuse_freetext_token_lists = True
+        self._enforcer = _new_token_enforcer(
+            tokenizer_data,
+            parser,
+            reuse_freetext_token_lists=self._reuse_freetext_token_lists,
+        )
+        self._bounded_prefix_states = True
+        self._enforcer_last_suffix: tuple[int, ...] | None = ()
+        self._decode_step_hint: tuple[int, int] | None = None
         self._prompt_len: int | None = None
         self._disabled = False
         self._eos_token_ids = _eos_token_ids(tokenizer_data)
@@ -108,9 +225,89 @@ class JSONSchemaLogitsProcessor:
             self._prompt_len = len(token_ids)
         return token_ids[self._prompt_len :]
 
+    def _prepare_aster_decode_step(self, *, input_token: int, completion_tokens: int) -> None:
+        self._decode_step_hint = (int(input_token), int(completion_tokens))
+
+    def _enforcer_allowed_tokens(self, suffix: list[int]) -> Any:
+        if not getattr(self, "_bounded_prefix_states", False):
+            return self._enforcer.get_allowed_tokens(suffix)
+
+        decode_step_hint = getattr(self, "_decode_step_hint", None)
+        self._decode_step_hint = None
+        if decode_step_hint is not None:
+            input_token, completion_tokens = decode_step_hint
+            previous_suffix = getattr(self, "_enforcer_last_suffix", None)
+            if completion_tokens == 0 and not suffix:
+                return self._enforcer_allowed_tokens_for_decode_step(suffix)
+            if (
+                previous_suffix is not None
+                and completion_tokens == len(previous_suffix) + 1
+                and len(suffix) == completion_tokens
+                and suffix[-1] == input_token
+            ):
+                return self._enforcer_allowed_tokens_for_decode_step(suffix)
+
+        suffix_key = tuple(suffix)
+        previous_suffix = getattr(self, "_enforcer_last_suffix", None)
+        is_new_suffix = suffix_key != previous_suffix
+        if (
+            previous_suffix is not None
+            and is_new_suffix
+            and (
+                len(suffix_key) != len(previous_suffix) + 1
+                or suffix_key[:-1] != previous_suffix
+            )
+        ):
+            return self._rebuild_enforcer_at_suffix(suffix_key)
+
+        if is_new_suffix:
+            self._prepare_enforcer_for_next_state()
+        allowed = self._enforcer.get_allowed_tokens(suffix_key)
+        self._enforcer_last_suffix = suffix_key
+        self._retain_current_enforcer_state(suffix_key)
+        return allowed
+
+    def _enforcer_allowed_tokens_for_decode_step(self, suffix: list[int]) -> Any:
+        # ModelRunner supplies a strictly append-only request sequence. Let LMFE
+        # advance its current state directly, then discard the predecessor state.
+        self._prepare_enforcer_for_next_state()
+        allowed = self._enforcer.get_allowed_tokens(suffix)
+        prefix_states = self._enforcer.prefix_states
+        if len(prefix_states) > self._DECODE_PREFIX_STATE_WINDOW:
+            current_suffix = next(reversed(prefix_states))
+            current_state = prefix_states[current_suffix]
+            prefix_states.clear()
+            prefix_states[current_suffix] = current_state
+        self._enforcer_last_suffix = next(reversed(prefix_states))
+        return allowed
+
+    def _prepare_enforcer_for_next_state(self) -> None:
+        prepare_next_state = getattr(self._enforcer, "_aster_prepare_for_next_state", None)
+        if callable(prepare_next_state):
+            prepare_next_state()
+
+    def _rebuild_enforcer_at_suffix(self, suffix: tuple[int, ...]) -> Any:
+        self._enforcer = _new_token_enforcer(
+            self._tokenizer_data,
+            self._enforcer.root_parser,
+            reuse_freetext_token_lists=getattr(self, "_reuse_freetext_token_lists", False),
+        )
+        allowed = self._enforcer.get_allowed_tokens(())
+        for length in range(1, len(suffix) + 1):
+            self._prepare_enforcer_for_next_state()
+            allowed = self._enforcer.get_allowed_tokens(suffix[:length])
+        self._enforcer_last_suffix = suffix
+        self._retain_current_enforcer_state(suffix)
+        return allowed
+
+    def _retain_current_enforcer_state(self, suffix: tuple[int, ...]) -> None:
+        state = self._enforcer.prefix_states.get(suffix)
+        if state is not None:
+            self._enforcer.prefix_states = {suffix: state}
+
     def _allowed_tokens(self, suffix: list[int]) -> list[int]:
         self._pending_mask_allowed = None
-        allowed_result = self._enforcer.get_allowed_tokens(suffix)
+        allowed_result = self._enforcer_allowed_tokens(suffix)
         allowed = getattr(allowed_result, "allowed_tokens", allowed_result)
         if allowed is None:
             return []

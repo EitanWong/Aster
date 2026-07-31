@@ -134,6 +134,12 @@ Step 5：实现最小改动
 - 只修改本轮问题所需的模块和文件。
 - 保持清晰的数据结构、类型、生命周期和错误传播。
 - 对热路径避免不必要的 Python 对象创建、拷贝、同步等待、锁竞争和重复 tokenization。
+- SIMD 优化必须先区分 CPU 输入阶段与 GPU 推理核：CPU SIMD tokenizer 仅在输入编码已被
+  profile 证明为瓶颈时评估；Metal simdgroup/MLX kernel 只按模型 prefill/decode 的独立
+  正确性与端到端门禁评估，不能互相替代或混合宣称收益。
+- 外部 tokenizer（当前参考 `marcelroed/gigatoken` 的固定提交）只能作为可选输入编码器。
+  在逐 token 验证 chat template、BOS/EOS、stop/thinking/structured 片段、截断和 Unicode
+  之前，必须保留原 tokenizer 作为权威模板与流式 detokenizer，不能直接进入默认推理路径。
 - 任何缓存必须明确 key、生命周期、容量、淘汰策略、一致性和失效条件。
 - 任何并发优化必须说明线程/任务安全、取消传播和资源回收。
 - 任何 Metal、C++、Swift、MLX 或编译器级改动必须保留可用 fallback。
@@ -247,7 +253,38 @@ Step 11：进入下一轮
 - 不要因为一轮失败就结束任务。
 
 ====================
-四、评测工作负载矩阵
+四、公开数据与跨引擎门禁
+====================
+
+- 性能结论必须使用公开、专业、可下载且版本固定的测试数据；不得把手工构造 prompt、
+  随机填充文本或仅为本机编写的样例作为引擎性能证据。
+- 当前公共数据锁定在
+  `docs/loop-engineering/benchmarks/public-dataset-lock.json`。下载、校验、工作负载
+  manifest、引擎清单和结果完整性检查统一通过
+  `scripts/dev/public_benchmark.py` 执行。
+- 公开 workload 的实际执行统一通过 `scripts/dev/public_engine_matrix.py`：适配器必须从
+  已锁定的原始来源重建 prompt，验证官方模板/记录哈希，并在结果中保存 source、输入 token 和
+  输出 token 哈希而不是复制 prompt。跨引擎时必须显式固定相同的 prefill 分块、截断策略、
+  生成合同、warmup 和进程隔离方式。
+- 下载的数据、运行结果和派生工作负载存放在已忽略的
+  `run/loop-engineering/public-benchmarks/`；Git 只保存来源 URL、固定 revision、
+  SHA-256、许可证说明、脚本和最小结论，避免数据和重复结果污染工作区。
+- 每次产生跨引擎性能结论前，先生成引擎可用性 inventory。所有本机可兼容引擎必须
+  进入同一份 workload；未安装、模型格式不兼容或无法满足同模型/Tokenizer 条件的引擎
+  必须显式记录排除原因，不能静默省略。
+- 结果 gate 必须验证：相同模型和 Tokenizer 指纹、相同生成参数、相同公开 prompt hash、
+  每个 workload 记录完整覆盖、确定性场景 token hash 一致、TTFT/prefill/decode/端到端
+  延迟/RSS/swap 字段完整。任一 gate 失败时只记录不可比，不选择优化方向。
+- `cross-engine-core` 仅用于快速定位场景瓶颈，结论必须标明 scope；只有
+  `full-public` 的完整 MT-Bench 加 LongBench 主集工作负载才可以支持该明确公共基准
+  范围内的全引擎表述。小型单元测试 fixture 仅验证下载器和 gate 自身，不得作为性能
+  数据。
+- 单次 `cross-engine-core` 即使所有 gate 通过，也只是一轮有序 screen。任何需要选择生产
+  优化的场景差异必须在相同公开记录的反向引擎顺序完整复跑中保持方向一致，并按 workload 和
+  输入长度分层报告 bootstrap 区间、RSS 与 swap；方向不一致即拒绝该瓶颈归因。
+
+====================
+五、评测工作负载矩阵
 ====================
 
 至少持续维护以下 workload：

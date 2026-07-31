@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "kind": "prefix-cache-resource-boundary-rejection",
+  "iteration": "ITER-20260729-073-prefix-cache-resource-boundary",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    },
+    "records": {
+      "qmsum_primary": "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "qmsum_distinct": "longbench:qmsum:ff770653bb3cc4fd9b0921c77d356e3769d01ed91292299e",
+      "cancel_follow_up": "mt-bench:81:turn-1"
+    }
+  },
+  "execution_contract": {
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "timeout_seconds": 120.0,
+    "decode_active_prefill_token_budget": 512,
+    "warm_cache_persistence": false,
+    "arrival_harness_sha256": "f076456536f59ff3219a718ee9af587264f2392a39be541db0afdcdcbf88c01b",
+    "arrival_harness_tests_sha256": "cc4956aef43089efdb250d854f7b20867062ba26d01877c7ee1e831379ed5b9a",
+    "focused_tests": "8 passed",
+    "config_sha256": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3"
+  },
+  "raw_results": {
+    "shared_prefix_cache_off": {
+      "path": "run/loop-engineering/ITER-20260729-073-prefix-cache-resource-boundary/shared-prefix-cache-off.json",
+      "sha256": "2edfc2a0a09f291e1cb9fdd28eb127a53b1f405ed1ffd56c1306c26608ee6793",
+      "snapshot_entries": 0,
+      "snapshot_bytes": 0,
+      "workload_swap_delta_bytes": 883752960
+    },
+    "shared_prefix_cache_on": {
+      "path": "run/loop-engineering/ITER-20260729-073-prefix-cache-resource-boundary/shared-prefix-cache-on.json",
+      "sha256": "9da9b92ff31924ed8ab13d9135f4a98c7137f991aec2cf9bb0be1062f6512be6",
+      "snapshot_entries": 1,
+      "snapshot_bytes": 390103040,
+      "workload_swap_delta_bytes": 364576768
+    },
+    "distinct_prefix_cache_off_one_entry": {
+      "path": "run/loop-engineering/ITER-20260729-073-prefix-cache-resource-boundary/distinct-prefix-cache-off-max-entries-1.json",
+      "sha256": "8cb03fcea9de12c80e64691d6913bb5e329e7a501ea665e0b0437750eddb9312",
+      "snapshot_entries": 0,
+      "evictions": 0,
+      "workload_swap_delta_bytes": 0
+    },
+    "distinct_prefix_cache_on_one_entry": {
+      "path": "run/loop-engineering/ITER-20260729-073-prefix-cache-resource-boundary/distinct-prefix-cache-on-max-entries-1.json",
+      "sha256": "e0ccef20504e133ca9638d3d6b981c98eeaf585682563aa774d2ffc95a1c24da",
+      "snapshot_entries": 1,
+      "snapshot_bytes": 396525568,
+      "evictions": 1,
+      "evicted_bytes": 390103040,
+      "workload_swap_delta_bytes": 0
+    },
+    "cancel_cache_off": {
+      "path": "run/loop-engineering/ITER-20260729-073-prefix-cache-resource-boundary/cancel-during-prefill-cache-off.json",
+      "sha256": "ab896a2e1ca5358b10e5bd4db0253d525b64fba7b7ceb1214a21f9013e9ea170",
+      "cancelled_prefill_checkpoints": 0,
+      "snapshot_entries": 0,
+      "workload_swap_delta_bytes": 0
+    },
+    "cancel_cache_on": {
+      "path": "run/loop-engineering/ITER-20260729-073-prefix-cache-resource-boundary/cancel-during-prefill-cache-on.json",
+      "sha256": "ebf5ed0b4f4e071bb33f01c1677dd980a47237acb09c79be5e130f0f9fba5899",
+      "cancelled_prefill_checkpoints": 1,
+      "snapshot_entries": 1,
+      "snapshot_bytes": 85065728,
+      "workload_swap_delta_bytes": 0
+    }
+  },
+  "gates": {
+    "same_source_generation_and_execution_contract": true,
+    "exact_terminal_identity": {
+      "shared_prefix_cache_off_on": true,
+      "distinct_prefix_cache_off_on": true,
+      "cancellation_code_and_follow_up_cache_off_on": true,
+      "shared_qmsum_output_token_ids_sha256": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+      "distinct_qmsum_output_token_ids_sha256": "8ca9065d6d525a2c82dd8b841f36d0e65b1889b995338d4eedc826a4975e96ae",
+      "cancel_follow_up_output_token_ids_sha256": "d7e09d2e28fa4702572b4156db0f0bd365e71e555a610a265ab7d9697deaa6e3"
+    },
+    "zero_running_waiting_pending_after_every_row": true,
+    "exact_reuse": {
+      "cache_off_hits": 0,
+      "cache_on_exact_hits": 1,
+      "cache_on_tokens_reused": 10333,
+      "passed": true
+    },
+    "one_entry_distinct_key": {
+      "cache_off_evictions": 0,
+      "cache_on_evictions": 1,
+      "cache_on_evicted_bytes": 390103040,
+      "passed": true
+    },
+    "cancellation": {
+      "cache_off_accepted": true,
+      "cache_on_accepted": true,
+      "cache_off_primary_code": "request_cancelled",
+      "cache_on_primary_code": "request_cancelled",
+      "follow_up_terminal_identity": true,
+      "passed": true
+    },
+    "resource_attribution": {
+      "meter": "psutil.swap_memory().used sampled outside timed request steps; this is a host-global counter, not a process-owned swap measurement.",
+      "workload_stage_swap_delta_bytes": {
+        "shared_prefix_cache_off": 883752960,
+        "shared_prefix_cache_on": 364576768,
+        "distinct_prefix_cache_off": 0,
+        "distinct_prefix_cache_on": 0,
+        "cancel_cache_off": 0,
+        "cancel_cache_on": 0
+      },
+      "repeatable_cache_specific_owner": false,
+      "passed_for_policy_selection": false
+    }
+  },
+  "decision": {
+    "status": "rejected-cache-policy-selection",
+    "production_change": "none",
+    "reason": "The cache behavior gates pass, but a shared-prefix workload swap change appears in both cache states and no cache-specific lifecycle stage or repeated ownership result exists. The host-global swap meter cannot attribute that movement to an Aster prefix-cache policy.",
+    "rollback": "No cache default or eviction policy was changed. The temporary one-entry limit exists only in the recorded experiment process."
+  },
+  "next_iteration": {
+    "objective": "Add an outside-timed host-state control that distinguishes the global swap counter from Aster process RSS and cache ownership before another cache-policy candidate.",
+    "non_goal": "Do not change snapshot budget, max entries, eviction policy, or cache representation until that control is source-bound and repeatable."
+  }
+}

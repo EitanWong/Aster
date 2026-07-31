@@ -730,6 +730,47 @@ def test_initialize_decode_merges_single_token_parser_stop_sequences() -> None:
     assert decode_init.stop_token_ids == frozenset({123, 777})
 
 
+def test_apply_logits_processors_prepares_aster_decode_step() -> None:
+    class FakeMX:
+        uint32 = "uint32"
+
+        @staticmethod
+        def array(values, *, dtype):
+            del dtype
+            return list(values)
+
+    class IncrementalProcessor:
+        def __init__(self) -> None:
+            self.hints: list[tuple[int, int]] = []
+            self.calls: list[tuple[list[int], object]] = []
+
+        def _prepare_aster_decode_step(self, *, input_token: int, completion_tokens: int) -> None:
+            self.hints.append((input_token, completion_tokens))
+
+        def __call__(self, tokens, logits):
+            self.calls.append((tokens, logits))
+            return logits
+
+    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner._mx = FakeMX()
+    processor = IncrementalProcessor()
+    item = DecodeWorkItem(
+        prompt_cache=None,
+        input_token=12,
+        sampler=lambda logits: logits,
+        detokenizer=object(),
+        stop_token_ids=frozenset(),
+        logits_processors=(processor,),
+        logits_processor_tokens=[10, 11],
+        completion_tokens=2,
+        max_tokens=4,
+    )
+
+    assert runner._apply_logits_processors("logits", item=item) == "logits"
+    assert processor.hints == [(12, 2)]
+    assert processor.calls == [([10, 11, 12], "logits")]
+
+
 def test_decode_batch_fallback_preserves_per_item_failures() -> None:
     runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
 

@@ -54,6 +54,7 @@ class EngineSettings(BaseModel):
     prefill_token_budget: int = 1024
     idle_prefill_token_limit: int = 4096
     pressure_prefill_token_budget: int = 512
+    decode_active_prefill_token_budget: int | None = Field(default=None, ge=1)
     admission_retry_limit: int = 16
     snapshot_budget_bytes: int = 8 * 1024 * 1024 * 1024
     snapshot_min_prefix_tokens: int = 32

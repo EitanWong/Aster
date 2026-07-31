@@ -967,3 +967,402 @@
 - Constraint: the baseline must never move upward to absorb new files. Lower it
   only after owner-attributed consolidation, and continue reporting foreign
   iterations, reference updates, mixed index paths, and generated caches.
+
+## 2026-07-28: Reuse request-local LMFE freetext lists
+
+- Decision: retain a request-local reusable LMFE freetext `TokenList` and one
+  active sequential prefix state in `JSONSchemaLogitsProcessor`.
+- Root cause: native LMFE retained a new copy of the same 246,881-token JSON
+  freetext allowlist for every prefix state. Source-bound profiles observed
+  1,024 short B4 and 256 long B2 lists even though the measured sequences were
+  append-only.
+- Design: the working list is keyed by LMFE's static allowlist identity, only
+  its dynamic tail is cleared before the next state, and it is excluded from
+  `allowed_token_cache`. Non-monotonic callers rebuild from the root parser.
+- Evidence: 18 fresh processes / nine runner-balanced replicates per cell gave
+  short/long balanced lower bounds of `+16.01%/+12.52%`; every output/cache
+  hash matched and swap did not grow. Two independent ownership pairs reduced
+  median RSS growth by `98.68%/97.61%`. Stop-aware B4 was 4/4 schema-valid and
+  released every request list after lane cleanup.
+- Rejected alternatives: aggressive predecessor pruning was about 3% slower,
+  a 32-state window regressed short B4 by 22.9%, and Python composite-list
+  screens regressed by 15% to 59%.
+- Boundary: this is an LMFE 0.11.3 private-method adaptation, not a general
+  structured-output performance claim. An LMFE upgrade, broader schema/tool
+  workload, or non-monotonic production caller requires a fresh review.
+- Rollback: restore native `TokenEnforcer` construction, remove the active
+  prefix/decode-step helpers and their tests, and retain the prior direct
+  `get_allowed_tokens` path. No configuration or data migration is needed.
+
+## 2026-07-28: Admit a scenario-scoped local MLX-LM baseline
+
+- Decision: retain the I061 Aster/direct-MLX-LM comparison protocol and compact
+  evidence as a baseline, without changing production runtime behavior.
+- Equivalence: both engines used the same local Qwen3.5-0.8B 4-bit files, raw
+  prompt IDs, greedy sampler, warmup, fixed completion cap, and isolated
+  process boundary. All 12 pairs matched completion IDs, text, and finish
+  reason with non-growing swap.
+- Result: Aster is 5.743% lower at paired p50 in the 128-word/256-token case
+  and 10.431% higher in the 2,048-word/64-token case. The signs differ, so the
+  evidence is a workload baseline rather than a general engine ranking.
+- Retention: the 31,783-byte, 38-member archive recomputes the aggregate
+  without scratch; its final admission and source hashes are covered by two
+  artifact tests.
+- Next decision: profile short-context per-token overhead before considering a
+  production change; do not transfer the long-context result into a short
+  decode claim.
+
+## 2026-07-28: Reject short-decode host-allocation and pipeline screens
+
+- Decision: retain no I062 production change. The engine-equivalent empty
+  logits-processor context removes only 0.052%/0.246% in two exact paired
+  records; the full-history allocation is below the 3% floor.
+- Pipeline evidence: a six-process balanced same-model MLX-LM serial/pipeline
+  screen retained exact 256-token output and zero swap, but its 9.013% p50 had
+  a 95% interval `[-27.195%, +38.942%]`. Serial-first and pipeline-first
+  medians reversed at `-27.123%` and `+30.879%`.
+- Reason: the measured effect is inseparable from order/state interaction, so
+  adopting a lookahead host/graph contract would be speculative.
+- Retention: 13 raw records are compressed into a 5,996-byte archive and an
+  archive-only test recomputes the inconclusive aggregate.
+- Next decision: improve benchmark state classification before retrying any
+  asynchronous decode design.
+
+## 2026-07-28: Reject fixed terminal-prewarm explanation for short decode
+
+- Decision: retain no I063 production change. Clearing MLX allocator cache and
+  collecting Python objects preserved the serial-first/pipeline-first timing
+  reversal, and a crossed prewarm screen ruled out the fixed `serial ->
+  pipeline` terminal graph as a sufficient explanation.
+- Evidence: eight independent 2x2 crossed-prewarm records had exact 256-token
+  output, `length` finish, identical source/model fingerprints, and non-growing
+  swap. Pipeline-first p50 was +16.746%, serial-first p50 was -14.022%, and all
+  four matched pipeline-first-minus-serial-first contrasts were positive
+  (+12.085% to +89.357%).
+- Boundary: coarse host load/frequency/thread values were retained, but MLX did
+  not expose stream counts in this environment. The result rules out a specific
+  warmup explanation; it does not establish a pipeline speedup or a hardware
+  root cause.
+- Retention: 14 raw records are compressed into a 19,498-byte archive with
+  source hashes and an archive-only recomputation test.
+- Next decision: measure serial/serial and pipeline/pipeline fresh-cache pairs
+  to classify call-position state before reconsidering asynchronous decode.
+
+## 2026-07-28: Reject adjacent same-process short-decode comparison
+
+- Decision: retain no I064 production change. In a crossed eight-process
+  same-variant screen, both serial and pipeline were materially slower on their
+  second fresh-cache call: p50 `-25.955%` and `-28.110%`; seven of eight second
+  calls regressed.
+- Interpretation: I062/I063's mixed serial/pipeline sign reversal is consistent
+  with call position. This rejects the lookahead pipeline as a deployable
+  performance conclusion, but does not identify the underlying allocator,
+  stream, thermal, or hardware mechanism.
+- Boundary: serial's bootstrap interval stayed below zero; pipeline's included
+  one +4.869% record. The finding is therefore a robust protocol warning, not
+  a precise universal slowdown estimate.
+- Retention: eight raw records are compressed into a 23,097-byte archive with
+  source hashes and an archive-only recomputation test.
+- Next decision: verify that I061's process-isolated Aster/direct comparison
+  contains one timed decode per process after its declared prewarm, and keep all
+  same-process diagnostics out of engine-ranking statistics.
+
+## 2026-07-28: Admit the I061 isolated timed-call boundary
+
+- Decision: retain I061 as a scenario-scoped Aster/direct baseline. An I065 AST
+  and archive audit found exactly two generation calls per engine process: one
+  discarded warmup and the second assigned to the sole timed result.
+- Evidence: all 24 archived record PIDs are unique; both scenarios retain 3/3
+  Aster-first/MLX-LM-first process balance; all pairs remain comparable; the
+  38-member archive and current I061 source hashes match its admission record.
+- Boundary: this validates the retained I061 comparison protocol, not a general
+  engine ranking and not a claim about same-process adjacent calls.
+- Next decision: attribute Aster's isolated timed decode to a measured component
+  before choosing another production runtime candidate.
+
+## 2026-07-28: Require public data and complete cross-engine coverage
+
+- Decision: replace the unstarted I066 Aster-only attribution plan with a
+  version-pinned public-data and cross-engine completeness gate. A locally
+  constructed prompt may remain a unit-test fixture or historical diagnostic,
+  but it cannot select a production optimization or support a general engine
+  comparison.
+- Sources: the tracked lock pins FastChat MT-Bench at
+  `587d5cfa1609a43d192cedb8441cac3c17db105d` and LongBench data at
+  `5e628be450b7e67fb7ae6e201bd6d8f7056f7672`, including SHA-256, byte size,
+  license notes, and structural checks. The downloaded LongBench archive is
+  `cb45b11a...857f7f64`: 34 JSONL members / 8,418 rows, of which the primary
+  corpus is 21 tasks / 4,750 rows; its official 21 prompt templates and output
+  limits are separately pinned.
+- Workload rule: MT-Bench uses its verbatim first turn. LongBench uses only its
+  official templates and output limits. Manifests carry source-record identity
+  and prompt hash, not copied prompts. `cross-engine-core` has 1,380 public
+  records for scoped diagnosis; `full-public` has 4,830 records and is the only
+  profile eligible for a complete engine statement within its named MT-Bench
+  plus LongBench-primary scope.
+- Comparability rule: `validate-results` rejects missing required engines or
+  workload rows, different model/Tokenizer fingerprints, generation-setting or
+  prompt drift, deterministic token drift, and missing TTFT/prefill/decode/
+  end-to-end/RSS/swap metrics. The source lock, download manifest, inventory,
+  and results stay under ignored `run/`; only their contract and conclusions are
+  tracked.
+- Current availability: the 12-runtime inventory finds Aster and direct MLX-LM
+  available. Exo, Ollama, llama.cpp, vLLM, SGLang, vLLM-MLX, MLC-LLM,
+  mistral.rs, LM Studio MLX Engine, and OMLX are unavailable by local probes and
+  remain explicit exclusions rather than omitted comparison rows.
+- Next decision: implement source-bound Aster and direct-MLX-LM result adapters,
+  run independent-process public-data records, and inspect the complete matrix
+  before changing production runtime code.
+
+## 2026-07-28: Admit the public core-matrix adapter, defer attribution
+
+- Result: I066 implemented source-bound Aster and direct-MLX-LM result adapters
+  and completed all 1,380 `cross-engine-core` records on both engines (2,760
+  engine-records). The source lock, source-rendered input token IDs, model and
+  Tokenizer hashes, greedy contract, output token IDs, metrics, and zero-swap
+  results all passed the validator's eight gates.
+- Adapter correction: source-bound long prompts initially exposed deterministic
+  output drift because direct MLX-LM used its default 2,048-token prefill step
+  while Aster used 1,024. Pinning both adapters to 2,048 restored exact output
+  token parity; this is a measurement-contract correction, not a production
+  runtime optimization.
+- Descriptive scoped screen: paired medians are Aster/direct +15.762% decode
+  throughput, -8.509% prefill throughput, -5.112% TTFT, +0.975% end-to-end
+  time, and -3.304% peak RSS, with zero swap. By input length, prefill is lower
+  for Aster below 8,192 tokens and higher in the 8,192-32,768 bin; directions
+  also vary by workload.
+- Decision: admit the public adapter and comparable scoped matrix as I066's
+  foundation. Reject any global engine ranking and reject a production bottleneck
+  selection: each engine/task shard was measured only once, and the scope is not
+  `full-public`.
+- Next decision: I067 must rerun the complete same-source core matrix with each
+  shard's engine order reversed, then require matched workload/length-bin
+  direction and a bootstrap interval outside the 3% no-op band before profiling
+  or changing a runtime component.
+
+## 2026-07-28: SIMD and Gigatoken reference intake
+
+- Source reviewed: `marcelroed/gigatoken` at
+  `34a1599f0c0ae7d7cd0d1c530e6522320158b360`, MIT, version `0.10.0`. Its
+  Rust implementation targets CPU tokenization through SIMD pretokenization,
+  cache-aware BPE encoding, and a HuggingFace-compatible API; it is not a
+  model-forward, MLX, or Metal decode kernel.
+- Boundary: Aster currently depends on its model tokenizer for prompt/chat
+  encoding, special-token fragments, and streaming detokenization. Replacing
+  it blindly would risk token, template, truncation, and streaming drift, while
+  an input-only improvement cannot be reported as GPU inference acceleration.
+- Decision: retain Gigatoken as a remote P1 reference for a future opt-in CPU
+  ingress experiment. Do not install it as a production dependency or change
+  the default tokenizer path now. I067 remains limited to the reversed public
+  cross-engine matrix.
+- Admission gate for a later experiment: exact Qwen3.5 token IDs over public
+  prompts plus chat/BOS/EOS/stop/thinking/structured/Unicode cases; original
+  streaming detokenizer retained; queue-aware TTFT and end-to-end benefit with
+  no decode, RSS, swap, cancellation, or output-token regression. CPU SIMD and
+  Metal simdgroup candidates remain separate measured layers.
+
+## 2026-07-28: Reject I067 public crossed matrix as a production attribution
+
+- Decision: retain no I067 production change and reject a global Aster/direct
+  MLX-LM ranking. The second, fully reversed 1,380-record public matrix added
+  2,760 engine-records; both matrices pass all eight public comparability
+  gates, the crossed join passes all nine gates, each engine is first for 1,380
+  records, and swap remains flat.
+- Evidence: aggregate Aster/direct prefill is lower in both strata: `-10.504%`
+  with Aster first (95% bootstrap `[-10.951%, -9.868%]`) and `-7.681%` with
+  MLX-LM first (`[-8.455%, -7.037%]`). But the `[8192,32769)` decode result
+  reverses from `-10.515%` to `+27.532%`. Public QMSUM has material sign
+  reversals: decode `-11.423%/+35.203%`, end-to-end
+  `+10.308%/-36.111%`, and prefill `-6.087%/+81.979%`.
+- Boundary: the matrix proves source/model/input/output comparability and an
+  order-sensitive measurement state, not why the state differs. Aggregate
+  prefill remains a candidate hypothesis only; it does not authorize prompt
+  batching, cache, SIMD, scheduler, or native-kernel changes.
+- Next decision: I068 repeats all 200 public QMSUM records in four independent
+  ABBA-ordered blocks and records outside-timing process/host state. It can
+  classify the measurement interaction but cannot itself admit a production
+  candidate.
+
+## 2026-07-29: Classify the public QMSUM gap as decode-bound
+
+- Decision: retain no I068 production change, but replace I067's QMSUM
+  measurement-state warning with a bounded, reproducible public result.
+- Evidence: four fresh ABBA blocks completed all 200 locked QMSUM records on
+  both engines (1,600 engine-records). Source, model/tokenizer, execution,
+  deterministic cross-block output-token parity, metrics, state trace, ABBA
+  balance, and zero-swap gates pass. Aster/direct decode throughput is
+  `-7.775%` with Aster first (95% `[-8.042%, -7.682%]`) and `-8.216%` with
+  MLX-LM first (`[-8.408%, -8.008%]`). End-to-end time is `+5.452%` / `+5.352%`.
+  Both directions repeat in both blocks per order stratum.
+- Boundary: prefill (`-1.982%` / `-1.514%`) and TTFT (`-1.457%` / `-1.928%`)
+  stay inside the 3% no-op band; peak RSS is not reproducible. Outside-timing
+  host/process telemetry is context only and does not attribute the decode
+  deficit to a specific cache, model, sampling, or delivery operation.
+- Next decision: I069 adds source-bound decode component instrumentation before
+  selecting a runtime candidate. Do not enable prefill microbatching,
+  Gigatoken, SIMD/Metal, paged KV, compressed KV, or speculation from I068.
+
+## 2026-07-29: Rule out high-level B1 decode candidates before optimization
+
+- Decision: retain no I069 production change. The public QMSUM decode-driver
+  gap is reproducible, but the trace does not identify a semantically comparable
+  implementation-level operation that justifies a runtime rewrite.
+- Evidence: four fresh ABBA blocks completed all 200 locked QMSUM records on
+  both engines (1,600 engine-records / 800 paired records). Component metadata,
+  source/model/execution, deterministic output tokens, state trace, ABBA, and
+  zero-swap gates pass. Common decode-driver seconds per output token are
+  `+8.791%` with Aster first (95% `[+8.660%, +8.964%]`) and `+8.655%` with
+  MLX-LM first (`[+8.522%, +8.773%]`). Aggregate decode throughput remains
+  `-8.177%` / `-8.025%`; end-to-end is `+5.906%` / `+5.504%`.
+- Boundary: the single-request matrix reports zero Aster batch-cache merges and
+  rebuilds. Cache resolution (`0.004%`), processor dispatch (`0.004%`), and
+  result delivery (`0.082%`) are immaterial shares of Aster's driver. The
+  `92.550%` sampling-completion field contains the lazy MLX completion barrier,
+  so comparing it to an absent direct-MLX-LM private substep would be invalid.
+- Next decision: I070 instruments only source-aligned submit and mandatory
+  materialization boundaries, first through a public traced/untraced smoke and
+  then through QMSUM ABBA if the smoke is exact and within the no-op band. Do
+  not enable prefill microbatching, Gigatoken, SIMD/Metal, paged KV, compressed
+  KV, speculation, or a native backend from I069.
+
+## 2026-07-29: Reject the lower-level decode observer as a QMSUM attribution tool
+
+- Decision: retain no I070 production change and do not run the planned QMSUM
+  ABBA trace. The source-bound observer is not measurement-neutral on the
+  locked public workload.
+- Evidence: V2 ran four fresh isolated MT-Bench shards in opposite first-status
+  order, covering 80 records per engine/condition. Workload/source lock,
+  model/tokenizer, generation, execution outside the observer, exact
+  token/text/finish parity, complete trace coverage, and zero-swap gates pass.
+  Median traced/untraced movement is Aster decode `-3.635%`, end-to-end
+  `+3.818%`, TTFT `+7.432%`, RSS `-7.558%`; direct MLX-LM decode `-7.277%`,
+  end-to-end `+7.717%`, TTFT `+11.477%`, RSS `-13.299%`. The formal result is
+  `trace-no-op-rejected-metric-movement` in I070's 7,519-byte artifact.
+- Tooling correction: source fingerprints are now compared within each
+  traced/untraced engine pair. This retains the common harness fingerprint while
+  permitting direct MLX-LM's engine-specific installed-package fingerprint; a
+  focused regression rejects a drift in that engine-local source.
+- Boundary: source-call proxies preserve outputs but add material Python work to
+  the timed path. A direct MLX-LM private closure cannot be split without
+  modifying or duplicating reference implementation code, so its lower-level
+  label is not a valid production-performance evidence boundary.
+- Next decision: I071 establishes a public-source arrival/load baseline for
+  Aster's actual scheduler with controlled concurrency, staggered long-prefill,
+  shared-prefix, and cancellation cases. It selects a future candidate from
+  measured queue, TTFT, end-to-end, memory, and lifecycle behavior rather than
+  from a private decode label.
+
+## 2026-07-29: Keep decode-aware prefill cap disabled pending resource attribution
+
+- Decision: retain `engine.decode_active_prefill_token_budget` only as a
+  nullable opt-in experiment. `configs/config.yaml` stays on its null default;
+  no normal serving path changes.
+- Evidence: four independently started, order-balanced locked-source staggered
+  QMSUM/MT-Bench pairs preserved exact token/text/finish parity. At value 512,
+  paired median short decode and end-to-end time improved `55.204%` and
+  `48.276%`; paired long end-to-end and prefill time also improved `9.320%`
+  and `7.986%`. Candidate cancellation accepted at a prefill checkpoint and
+  cleaned up active state with zero swap growth.
+- Boundary: process-level swap is non-monotonic. Candidate samples include
+  `+1,043,791,872` bytes while controls peak at `+585,236,480` bytes. This
+  means latency and deterministic correctness are insufficient for a default
+  admission. A follow-up must attribute model/process lifecycle memory before
+  rerunning the candidate under a resource gate.
+
+## 2026-07-29: Admit decode-aware prefill cap after lifecycle attribution
+
+- Decision: set engine.decode_active_prefill_token_budget to 512 in the
+  production configuration. The runtime only applies the cap when decode work
+  is queued, and null remains the direct rollback value.
+- Evidence: the predeclared locked-source lifecycle screen ran four fresh
+  processes in cache-on/cache-off and candidate/control order. All long and
+  short outputs retained exact token IDs, text hashes, and length finishes.
+  Candidate swap was zero for both cache states except for one -8,388,608-byte
+  cache-off workload delta; controls were zero. Cache-on retained one
+  390,103,040-byte snapshot in both variants without swap growth.
+- Interpretation: the earlier +1,043,791,872-byte candidate sample did not
+  recur as a candidate-only workload or lifecycle effect. This clears the
+  scheduler-policy resource gate, while leaving global OS compression and
+  prefix-cache lifetime attribution explicitly open.
+- Compatibility: a fresh current-source Aster/direct-MLX-LM two-record 9B
+  smoke matched public source lock, model/tokenizer fingerprint, greedy
+  generation, common harness sources, token IDs, text hashes, finishes, and
+  zero swap. It is output-compatibility evidence, not a heterogeneous timing
+  claim or a replacement for I066/I067 complete public matrices.
+- Next decision: I073 measures prefix-cache resource ownership before selecting
+  a cache-size, eviction, or representation change.
+
+## 2026-07-29: Reject I073 cache-policy selection
+
+- Decision: retain no I073 cache-policy change. The arrival/load harness now
+  supports a distinct locked-QMSUM plan and temporary experiment-only snapshot
+  capacity overrides, but production snapshot budget, entry limit, eviction,
+  checkpoint behavior, and representation remain unchanged.
+- Evidence: six fresh source-bound rows retained exact terminal output identity
+  across cache states and zero running/waiting/pending state. Cache-on shared
+  prefix produced one exact hit and reused 10,333 tokens; the one-entry
+  distinct-QMSUM row produced one existing 390,103,040-byte eviction; cache-on
+  cancellation retained one 85,065,728-byte checkpoint and a deterministic
+  follow-up. The compact artifact binds all raw rows by SHA-256.
+- Boundary: workload-stage `psutil.swap_memory().used` changed
+  +883,752,960 bytes cache-off and +364,576,768 bytes cache-on for shared
+  prefix, while four distinct/cancellation rows were zero. This is a
+  host-global meter and one row per state, so it is neither a process-owned nor
+  repeatable cache-specific resource direction.
+- Next decision: I074 adds a no-request lifecycle control and two
+  order-balanced shared-prefix pairs. A cache policy remains blocked until a
+  direction repeats and differs from the idle control.
+
+## 2026-07-29: Reject I074 host-state cache attribution
+
+- Decision: retain no I074 cache-policy change. `idle-lifecycle` is retained
+  as a harness control, but no snapshot budget, entry limit, eviction policy,
+  or representation default changes.
+- Evidence: the empty-plan result metadata bug was corrected with a focused
+  regression; nine arrival/load tests pass. Both idle cache states submitted no
+  requests, retained no snapshots, and had zero workload-stage global swap.
+  Two opposite-order shared-prefix pairs retained exact output identity and
+  zero active state; both cache-on rows had one exact reuse of 10,333 tokens.
+- Boundary: workload-stage global swap in `off,on,on,off` order was
+  `0, 0, 0, +78,577,664` bytes. The only positive value was a cache-off row;
+  it does not repeat by cache state or distinguish itself from idle in both
+  orders. The host-global meter remains context, not cache ownership.
+- Next decision: I075 measures explicit snapshot bytes and exact replay utility
+  for three distinct locked QMSUM keys plus a first-record replay at 8 GiB and
+  a temporary 1 GiB budget. A lower default remains blocked until it preserves
+  useful replay under a predeclared tradeoff.
+
+## 2026-07-29: Reject I075 1 GiB snapshot budget
+
+- Decision: retain the configured 8 GiB snapshot-budget default. The temporary
+  1 GiB value is rejected and has no production effect.
+- Evidence: both source-bound capacity-replay rows retained exact output
+  identity and zero active state. The 8 GiB control retained three snapshots
+  totaling 1,415,217,152 bytes and replayed the first record as an exact hit
+  with zero prefill steps and `0.279007s` TTFT. The 1 GiB candidate retained
+  390,103,040 bytes after two evictions, but replay missed, needed eight
+  prefill steps, and had `19.219282s` TTFT.
+- Boundary: the candidate's 1,025,114,112-byte explicit retention reduction is
+  real, but it loses the predeclared useful replay. Its differing host-global
+  swap result is not used for the decision.
+- Next decision: I076 deepens the source-bound sequence to four distinct QMSUM
+  records and tests a temporary 2 GiB budget. Any replay loss remains a
+  rejection; no cache default is changed before that evidence exists.
+
+## 2026-07-29: Reject I076 2 GiB snapshot budget
+
+- Decision: retain the configured 8 GiB snapshot-budget default. The temporary
+  2 GiB candidate is rejected and has no production effect.
+- Evidence: all five locked-source outputs retained exact terminal identity and
+  zero active state. The 8 GiB control retained four snapshots (1,988,067,328
+  bytes) and replayed the first record as a zero-prefill-step hit at `0.226819s`
+  TTFT. The 2 GiB candidate finished under its final budget (1,591,541,760
+  bytes), yet performed two evictions and replayed as an eight-step miss at
+  `27.859819s`.
+- Boundary: existing source shows clone-reserve behavior: it reserves twice the
+  candidate snapshot bytes and evicts below the resulting target before clone.
+  Final counters lack the per-reservation target and eviction context, so they
+  cannot select a wider budget safely.
+- Next decision: I077 adds bounded prompt-free per-reservation telemetry and
+  first proves that observer is neutral on source-bound replay. It changes no
+  clone-reserve or eviction behavior.

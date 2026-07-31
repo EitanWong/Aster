@@ -1125,6 +1125,12 @@ class ModelRunner:
             ]
         tokens = mx.array(processor_tokens, dtype=mx.uint32)
         for processor in item.logits_processors:
+            prepare_decode_step = getattr(processor, "_prepare_aster_decode_step", None)
+            if callable(prepare_decode_step):
+                prepare_decode_step(
+                    input_token=item.input_token,
+                    completion_tokens=item.completion_tokens,
+                )
             logits = processor(tokens, logits)
         return logits
 

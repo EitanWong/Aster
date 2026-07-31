@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "iteration": "ITER-20260729-069-public-qmsum-decode-component-trace",
+  "source": {
+    "workload": "longbench-qmsum",
+    "public_records_per_block": 200,
+    "engines": ["aster", "mlx-lm"],
+    "abba_blocks": 4,
+    "engine_records": 1600,
+    "paired_records": 800
+  },
+  "execution": {
+    "generation_mode": "greedy",
+    "max_input_tokens": 32768,
+    "prefill_step_tokens": 2048,
+    "process_isolation": "fresh-process-per-engine-task-shard",
+    "component_trace": {
+      "mode": "source-bound-observer",
+      "timing_boundary": "inside-timed-public-request-decode-driver"
+    }
+  },
+  "gates": {
+    "state_trace_gates_pass": true,
+    "component_trace_complete": true,
+    "same_component_trace_contract": true,
+    "common_decode_driver_boundary": true,
+    "single_request_batch_shape": true,
+    "aster_single_request_has_no_batch_cache_merge": true,
+    "zero_swap_growth": true
+  },
+  "overall": {
+    "common_decode_driver_seconds_per_output_token": {
+      "aster_first_percent": 8.790554325375144,
+      "aster_first_bootstrap_95_percent": [8.660154152990064, 8.963660096561078],
+      "mlx_lm_first_percent": 8.655074269664752,
+      "mlx_lm_first_bootstrap_95_percent": [8.521835770507113, 8.773155646219898]
+    },
+    "decode_throughput_percent": {
+      "aster_first": -8.17677256944988,
+      "mlx_lm_first": -8.024835129809887
+    },
+    "end_to_end_seconds_percent": {
+      "aster_first": 5.905966910470006,
+      "mlx_lm_first": 5.503696669146018
+    },
+    "prefill_throughput_percent": {
+      "aster_first": -2.4380801889160253,
+      "mlx_lm_first": -2.0206618008143384
+    },
+    "ttft_seconds_percent": {
+      "aster_first": -0.9359953575850399,
+      "mlx_lm_first": -1.2908053649210827
+    }
+  },
+  "aster_internal_diagnostic": {
+    "components_median_decode_driver_share_percent": {
+      "cache_resolution": 0.004162644611798329,
+      "model_graph_dispatch": 7.172568799291023,
+      "processor_graph_dispatch": 0.0036980581682759823,
+      "sampling_completion": 92.54971958540256,
+      "result_delivery": 0.08231231909205805,
+      "unattributed": 0.19344542908087378
+    },
+    "cache_totals": {
+      "batch_cache_rebuilds": 0,
+      "batch_cache_reuses": 0,
+      "single_steps": 192208,
+      "cache_clears": 370,
+      "cache_clear_failures": 0
+    },
+    "comparability_note": "sampling_completion includes the lazy MLX completion barrier and is not a direct-MLX-LM private substep comparison"
+  },
+  "decision": "stable-decode-driver-gap-requires-lower-level-boundary",
+  "next_iteration": "ITER-20260729-070-public-qmsum-lower-level-decode-boundary",
+  "raw_artifacts": {
+    "state_trace_manifest_sha256": "d6469dc4310c323ad1f28a41b8756df83660ad02fd5fa69daa68e765c5446865",
+    "state_trace_comparison_sha256": "ad598a1bd8bd01a3a584a796f039e6371ba580c073c4c1cc338da17ebad5dfd2",
+    "decode_component_comparison_sha256": "7c2ee1e42d8a7d3cd7c2cdc717daa190b8fc55bed07985b908ea4552ed160e48"
+  }
+}

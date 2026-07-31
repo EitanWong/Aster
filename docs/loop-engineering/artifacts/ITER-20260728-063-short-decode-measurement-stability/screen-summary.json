@@ -1,0 +1,176 @@
+{
+  "archive": {
+    "bytes": 19498,
+    "members": 14,
+    "path": "docs/loop-engineering/artifacts/ITER-20260728-063-short-decode-measurement-stability/measurement-stability-evidence.tar.gz",
+    "sha256": "2c7f437b992f539656ccd919453f1d9e01c4e4f6f41108c58fbc2cb8bc20a038"
+  },
+  "decision": "reject",
+  "reason": "Crossing the terminal prewarm variant did not remove the measurement-order interaction: every matched pipeline-first minus serial-first contrast was positive. The fixed serial-to-pipeline prewarm sequence is therefore not a sufficient explanation, and the asynchronous candidate remains rejected.",
+  "schema_version": 1,
+  "screen": {
+    "by_cell": {
+      "warmup_ps_measure_ps": {
+        "count": 2,
+        "max": 63.18339476532717,
+        "mean": 39.42994171147157,
+        "min": 15.676488657615973,
+        "p50": 39.42994171147157,
+        "p95": 60.808049459941614
+      },
+      "warmup_ps_measure_sp": {
+        "count": 2,
+        "max": -1.9863900218558217,
+        "mean": -14.080171653056755,
+        "min": -26.17395328425769,
+        "p50": -14.080171653056755,
+        "p95": -3.1957681849759183
+      },
+      "warmup_sp_measure_ps": {
+        "count": 2,
+        "max": 17.81619850941749,
+        "mean": 9.801283457128106,
+        "min": 1.786368404838723,
+        "p50": 9.801283457128106,
+        "p95": 17.01470700418855
+      },
+      "warmup_sp_measure_sp": {
+        "count": 2,
+        "max": 5.731042940942221,
+        "mean": -10.163690345573402,
+        "min": -26.058423632089024,
+        "p50": -10.163690345573402,
+        "p95": 4.141569612290656
+      }
+    },
+    "by_measurement_order": {
+      "pipeline_first": {
+        "count": 4,
+        "max": 63.18339476532717,
+        "mean": 24.61561258429984,
+        "min": 1.786368404838723,
+        "p50": 16.746343583516733,
+        "p95": 56.3783153269407
+      },
+      "serial_first": {
+        "count": 4,
+        "max": 5.731042940942221,
+        "mean": -12.121930999315078,
+        "min": -26.17395328425769,
+        "p50": -14.022406826972423,
+        "p95": 4.573427996522511
+      }
+    },
+    "by_warmup_terminal": {
+      "pipeline": {
+        "count": 4,
+        "max": 17.81619850941749,
+        "mean": -0.18120344422264756,
+        "min": -26.058423632089024,
+        "p50": 3.758705672890472,
+        "p95": 16.003425174146194
+      },
+      "serial": {
+        "count": 4,
+        "max": 63.18339476532717,
+        "mean": 12.67488502920741,
+        "min": -26.17395328425769,
+        "p50": 6.8450493178800755,
+        "p95": 56.057358849170484
+      }
+    },
+    "gates": {
+      "all_matched_measurement_order_contrasts_positive": true,
+      "crossed_two_repeat_design": true,
+      "eight_records": true,
+      "exactness_and_swap": true,
+      "four_matched_measurement_order_pairs": true,
+      "independent_processes": true,
+      "stable_fingerprint": true
+    },
+    "host_observability": {
+      "cpu_frequency_current_mhz": {
+        "count": 8,
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0,
+        "p50": 4.0,
+        "p95": 4.0
+      },
+      "host_load_average_1m": {
+        "count": 8,
+        "max": 2.322265625,
+        "mean": 1.7689208984375,
+        "min": 1.26416015625,
+        "p50": 1.71240234375,
+        "p95": 2.316796875
+      },
+      "mlx_stream_count_available_records": 0,
+      "mlx_stream_count_values": [],
+      "process_thread_count": {
+        "count": 8,
+        "max": 23.0,
+        "mean": 23.0,
+        "min": 23.0,
+        "p50": 23.0,
+        "p95": 23.0
+      }
+    },
+    "matched_measurement_order_contrasts": [
+      {
+        "pipeline_first_gain_percent": 15.676488657615973,
+        "pipeline_first_minus_serial_first_percent": 17.662878679471795,
+        "replicate": 1,
+        "serial_first_gain_percent": -1.9863900218558217,
+        "warmup_order": [
+          "pipeline",
+          "serial"
+        ]
+      },
+      {
+        "pipeline_first_gain_percent": 17.81619850941749,
+        "pipeline_first_minus_serial_first_percent": 12.085155568475269,
+        "replicate": 1,
+        "serial_first_gain_percent": 5.731042940942221,
+        "warmup_order": [
+          "serial",
+          "pipeline"
+        ]
+      },
+      {
+        "pipeline_first_gain_percent": 63.18339476532717,
+        "pipeline_first_minus_serial_first_percent": 89.35734804958486,
+        "replicate": 2,
+        "serial_first_gain_percent": -26.17395328425769,
+        "warmup_order": [
+          "pipeline",
+          "serial"
+        ]
+      },
+      {
+        "pipeline_first_gain_percent": 1.786368404838723,
+        "pipeline_first_minus_serial_first_percent": 27.844792036927746,
+        "replicate": 2,
+        "serial_first_gain_percent": -26.058423632089024,
+        "warmup_order": [
+          "serial",
+          "pipeline"
+        ]
+      }
+    ],
+    "pipeline_elapsed_gain_percent": {
+      "count": 8,
+      "max": 63.18339476532717,
+      "mean": 6.246840792492381,
+      "min": -26.17395328425769,
+      "p50": 3.758705672890472,
+      "p95": 47.304876075758756
+    }
+  },
+  "source_sha256": {
+    "package_stability_screen.py": "9345e80d1cabec8efd7b486a4b1395e4a7e6985f0bcc05b8568990be623936c6",
+    "state_probe.py": "437f8f5666cec778a97832e0e8ae3a26bc01d8f36fe90bedc5418f4454325cb1",
+    "warmup_order_aggregate.py": "fa4bfa3ed614fb8425cbb55831c791e05a93f3a1141703e5357cb478b1ec7026",
+    "warmup_order_probe.py": "0cc2226aca6731de7021feaa8de59d3b304ffb8b780a9f91d3faafc94fa1b827"
+  }
+}

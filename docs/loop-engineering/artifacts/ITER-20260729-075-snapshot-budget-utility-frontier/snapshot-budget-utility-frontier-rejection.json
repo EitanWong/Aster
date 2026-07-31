@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "kind": "snapshot-budget-utility-frontier-rejection",
+  "iteration": "ITER-20260729-075-snapshot-budget-utility-frontier",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "source": {
+    "workload": "run/loop-engineering/public-benchmarks/cross-engine-core.json",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    },
+    "ordered_records": [
+      "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606",
+      "longbench:qmsum:ff770653bb3cc4fd9b0921c77d356e3769d01ed91292299e",
+      "longbench:qmsum:fb7891826fb3f47e3750d45365e8c0c97e23613752335cc0",
+      "longbench:qmsum:fdd371de2668a6f1e7914fe9a67aef33927ecc392fdc2606"
+    ]
+  },
+  "execution_contract": {
+    "engine": "aster-manual",
+    "concurrency": 2,
+    "max_output_tokens": 8,
+    "timeout_seconds": 120.0,
+    "decode_active_prefill_token_budget": 512,
+    "warm_cache_persistence": false,
+    "arrival_harness_sha256": "883f8ef861549a3d33f21b0c48f0b506645eb3e293be42de1787e0bb8a0f4357",
+    "arrival_harness_tests_sha256": "eb0e13d88318262183438de4bb93e6bdb7cb0fd84814af063a8aaf622f9e8580",
+    "focused_tests": "10 passed",
+    "config_sha256": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3"
+  },
+  "raw_results": {
+    "control_8_gib": {
+      "path": "run/loop-engineering/ITER-20260729-075-snapshot-budget-utility-frontier/capacity-replay-control-8gib.json",
+      "sha256": "20f414381f94ecc31d3ec76d15452f8315cbad7df419ba56b7a6a3d7d5b72ab2",
+      "budget_bytes": 8589934592,
+      "snapshot_entries": 3,
+      "snapshot_bytes": 1415217152,
+      "evictions": 0,
+      "replay_cache_hit": true,
+      "replay_ttft_s": 0.279007,
+      "replay_prefill_steps": 0,
+      "workload_global_swap_delta_bytes": 1701642240
+    },
+    "candidate_1_gib": {
+      "path": "run/loop-engineering/ITER-20260729-075-snapshot-budget-utility-frontier/capacity-replay-candidate-1gib.json",
+      "sha256": "57be604b696510d82c855cd4c6f51e68140e28df164ba78f8834b47d5aa24826",
+      "budget_bytes": 1073741824,
+      "snapshot_entries": 1,
+      "snapshot_bytes": 390103040,
+      "evictions": 2,
+      "evicted_bytes": 786628608,
+      "replay_cache_hit": false,
+      "replay_ttft_s": 19.219282,
+      "replay_prefill_steps": 8,
+      "workload_global_swap_delta_bytes": -25231360
+    }
+  },
+  "gates": {
+    "same_source_generation_execution_contract": true,
+    "terminal_identity_all_four_requests": true,
+    "output_token_ids_sha256": {
+      "first_and_replay": "9bfc5326fb6c663175035d592e2c603c8dd6e9658b3139cd39d6dc6ad0f8b9fe",
+      "second": "8ca9065d6d525a2c82dd8b841f36d0e65b1889b995338d4eedc826a4975e96ae",
+      "third": "76f301426485f5f2af2c72ff2c0efd00a69e204e5e9d0a823ea947382e7c1de2"
+    },
+    "zero_running_waiting_pending_after_both_rows": true,
+    "control_first_record_replay_exact_hit": true,
+    "candidate_retained_byte_reduction": 1025114112,
+    "candidate_preserves_predeclared_useful_replay": false,
+    "host_global_swap_used_for_selection": false
+  },
+  "decision": {
+    "status": "rejected-1-gib-budget-default",
+    "production_change": "none",
+    "reason": "The candidate bounds explicit retained bytes by 1,025,114,112 but evicts the first record before replay. Its replay changes from an exact 0-prefill-step hit at 0.279007 seconds to an 8-step miss at 19.219282 seconds. The documented utility gate therefore fails despite exact output identity.",
+    "rollback": "The configured 8 GiB default remains unchanged; the 1 GiB value existed only in the experiment process."
+  },
+  "next_iteration": {
+    "objective": "Test a wider bounded budget against a deeper distinct-key replay plan to identify the smallest budget that retains a predeclared useful replay.",
+    "non_goal": "Do not infer a lower default from global swap or from the rejected 1 GiB result."
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "kind": "decode-aware-prefill-budget-screen",
+  "iteration": "ITER-20260729-072-decode-aware-prefill-budget",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "source": {
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "scenario": "staggered-long-prefill",
+    "concurrency": 2,
+    "stagger_delay_seconds": 0.05,
+    "max_output_tokens": 8,
+    "generation": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 0,
+      "min_p": 0.0,
+      "seed": 0
+    }
+  },
+  "candidate": {
+    "setting": "engine.decode_active_prefill_token_budget",
+    "default": null,
+    "screen_value": 512,
+    "semantics": "When a decode request is queued, the next prefill chunk is capped at the minimum of the ordinary/pressure budget and this opt-in value."
+  },
+  "source_hashes": {
+    "config": "01ad8c177850f2b667bfe61fd357f1d6ec412c10b8c51509792870ba43b6bf04",
+    "engine": "8ba127d48c9a5b75b8f2e07ae2a4f1763f128716fa0fb4168289d1a98277d898",
+    "arrival_harness": "f8213abeaf6a5be01fa576596813b827bfe8693e2ed5620d0d3f447408893a49",
+    "engine_tests": "fb28a0f4481ea548cf3e5b1ab8e8dcc93e23a0d17b67d3a061e95bcdd5a0ac3c",
+    "arrival_tests": "1deab3236ce726c674f9d8b53c6148ad2989db0f0337f8779d4911ddce993453"
+  },
+  "raw_results": {
+    "candidate_first_1": "1c80cb1b6f3e832e6c006a1e50b1396ea5330ed0ea117f52af162293212fe01a",
+    "control_after_candidate_1": "359b0f6c3917a357b21227ff8acd3bba3615ea9ac1fb511dd1772c24f3f5e3b9",
+    "candidate_first_2": "ca894ca58f570638da04b31c3ba948378fe2c4708576fff23cf928f41e2e1e95",
+    "control_after_candidate_2": "fb83336c6dca0845dee6e2c3a021cbb35a3e312edac305d29338c43b57ec9be6",
+    "control_first_1": "6d56fe3bffe4bfc5bc2730e6a1c1d2a50fcbfe7ee59a98fb1362161b13a40a48",
+    "candidate_after_control_1": "85d3134d3a1cfe6a8b24e856f206b520d654106c6232675d5862fe03e4961bf0",
+    "control_first_2": "5102d1976912788183a408b456e2b50add8681e6e44f13ded6bd60eed46e1c63",
+    "candidate_after_control_2": "ed8a387e47e1b982993ece188c23df39dddf0753428fcce0fc3dc982b5aff260",
+    "candidate_cancellation": "6294e3276d7cf6e35d339bdabedc2af0b2767c5af045f451660b26a67b65bf34"
+  },
+  "paired_results": [
+    {
+      "order": "candidate-first",
+      "short_decode_delta_percent": -58.288253,
+      "short_end_to_end_delta_percent": -51.223924,
+      "long_end_to_end_delta_percent": -15.174456,
+      "long_prefill_delta_percent": -13.675043,
+      "candidate_swap_delta_bytes": 1043791872,
+      "control_swap_delta_bytes": 585236480,
+      "exact_token_text_finish_parity": true
+    },
+    {
+      "order": "candidate-first",
+      "short_decode_delta_percent": -62.19236,
+      "short_end_to_end_delta_percent": -57.443095,
+      "long_end_to_end_delta_percent": -22.904182,
+      "long_prefill_delta_percent": -22.654903,
+      "candidate_swap_delta_bytes": 273743872,
+      "control_swap_delta_bytes": 0,
+      "exact_token_text_finish_parity": true
+    },
+    {
+      "order": "control-first",
+      "short_decode_delta_percent": -49.504067,
+      "short_end_to_end_delta_percent": -43.006824,
+      "long_end_to_end_delta_percent": -1.087445,
+      "long_prefill_delta_percent": 2.180442,
+      "candidate_swap_delta_bytes": 0,
+      "control_swap_delta_bytes": 311296000,
+      "exact_token_text_finish_parity": true
+    },
+    {
+      "order": "control-first",
+      "short_decode_delta_percent": -52.119383,
+      "short_end_to_end_delta_percent": -45.327388,
+      "long_end_to_end_delta_percent": -3.465658,
+      "long_prefill_delta_percent": -2.296645,
+      "candidate_swap_delta_bytes": -25165824,
+      "control_swap_delta_bytes": 0,
+      "exact_token_text_finish_parity": true
+    }
+  ],
+  "paired_medians": {
+    "short_decode_delta_percent": -55.203818,
+    "short_end_to_end_delta_percent": -48.275656,
+    "long_end_to_end_delta_percent": -9.320057,
+    "long_prefill_delta_percent": -7.985844,
+    "exact_token_text_finish_parity": true
+  },
+  "candidate_cancellation": {
+    "cancel_accepted": true,
+    "cancelled_requests": 1,
+    "cancelled_prefill_checkpoints": 1,
+    "final_active_estimated_bytes": 0,
+    "final_pending_requests": 0,
+    "swap_delta_bytes": 0,
+    "follow_up_finish_reason": "length",
+    "follow_up_text_sha256": "82141670e758a750bce0b0ba4018f9338492327e31c77e017bf009ec61ba6272"
+  },
+  "decision": "resource-gated; retain the setting only as a null-default experimental control and do not enable it in configs/config.yaml",
+  "blocking_observation": "Process-level swap is non-monotonic across independent processes. The candidate has one +1,043,791,872-byte sample, versus a +585,236,480-byte maximum control sample. This prevents a default-policy admission despite repeatable latency and parity gains."
+}

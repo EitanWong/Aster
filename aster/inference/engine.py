@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import time
 import uuid
 from collections import deque
@@ -318,6 +319,21 @@ class InferenceEngine:
 
         queue_start = state.enqueued_at or state.created_at
         queue_end = state.admission_started_at or state.admitted_at
+        terminal = state.phase in {
+            RequestPhase.COMPLETED,
+            RequestPhase.CANCELLED,
+            RequestPhase.FAILED,
+        }
+        text = "".join(state.output_parts)
+        token_ids_sha256 = None
+        text_sha256 = None
+        if terminal:
+            digest = hashlib.sha256()
+            for token_id in state.output_token_ids:
+                digest.update(str(token_id).encode("ascii"))
+                digest.update(b"\0")
+            token_ids_sha256 = digest.hexdigest()
+            text_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
         return {
             "request_id": state.request_id,
             "status": self._public_request_status(state),
@@ -325,6 +341,9 @@ class InferenceEngine:
             "prompt_tokens": state.prompt_token_count,
             "completion_tokens": state.completion_tokens,
             "max_tokens": state.request.max_tokens,
+            "finish_reason": state.finish_reason,
+            "output_token_ids_sha256": token_ids_sha256,
+            "text_sha256": text_sha256,
             "prefill_steps": state.prefill_steps,
             "decode_steps": state.decode_steps,
             "cached_tokens": state.matched_prefix_tokens,
@@ -1276,6 +1295,7 @@ class InferenceEngine:
             state,
             index=max(state.completion_tokens - 1, 0),
         )
+        state.finish_reason = finish_reason
 
         prompt_tps = (state.prompt_token_count / state.prefill_seconds) if state.prefill_seconds > 0 else 0.0
         response = InferenceResponse(
@@ -1550,8 +1570,13 @@ class InferenceEngine:
         budget = int(available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1))
         in_use = self._active_estimated_bytes + self.prefix_store.current_bytes
         if in_use >= budget:
-            return self.settings.engine.pressure_prefill_token_budget
-        return self.settings.engine.prefill_token_budget
+            prefill_budget = self.settings.engine.pressure_prefill_token_budget
+        else:
+            prefill_budget = self.settings.engine.prefill_token_budget
+        decode_active_budget = self.settings.engine.decode_active_prefill_token_budget
+        if self._decode_queue and decode_active_budget is not None:
+            return min(prefill_budget, decode_active_budget)
+        return prefill_budget
 
     def _engine_timing_status(self) -> dict[str, object]:
         prefill_tps = (

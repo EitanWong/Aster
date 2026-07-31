@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "iteration": "ITER-20260728-067-public-crossed-confirmation",
+  "kind": "public-crossed-order-summary",
+  "decision": "reject-directional-disagreement",
+  "performance_selection": "rejected-pending-order-state-diagnosis",
+  "scope": "scoped cross-engine-core diagnostic; not a global engine ranking",
+  "source": {
+    "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "model_fingerprint": {
+      "model_sha256": "54c8e23411da936d6fde086cbd189ffa8c647b52ade0b9b751e67ade235fa0cf",
+      "tokenizer_sha256": "50e396ca431330a955f0c11c13d4b1ebc65f9119cc5fc360ba53f0b681f2cf0c"
+    },
+    "execution": {
+      "generation_mode": "greedy",
+      "input_mode": "pinned-public-source-rendered-token-ids",
+      "input_truncation_policy": "official-longbench-half-head-half-tail",
+      "max_input_tokens": 32768,
+      "prefill_step_tokens": 2048,
+      "process_isolation": "fresh-process-per-engine-task-shard",
+      "warmup_tokens": 8,
+      "memory_peak": "psutil-rss-sampled",
+      "memory_sample_interval_seconds": 0.05
+    }
+  },
+  "matrices": {
+    "original": {
+      "iteration": "ITER-20260728-066-public-cross-engine-foundation",
+      "engine_order_mode": "alternating-legacy",
+      "workload_records": 1380,
+      "engine_records": 2760,
+      "raw_root": "run/loop-engineering/ITER-20260728-066-public-cross-engine-foundation/core-matrix",
+      "comparison_sha256": "9bf3265218243451ddf05e1e1639f03c84e0bec2ce46a0815734f29b1ddfe051"
+    },
+    "reversed": {
+      "engine_order_mode": "reversed",
+      "workload_records": 1380,
+      "engine_records": 2760,
+      "raw_root": "run/loop-engineering/ITER-20260728-067-public-crossed-confirmation/core-matrix-reversed",
+      "aster_sha256": "c90fa1b27c63efbb96a8bc1fc1a2e5726a2a0af59e2c0a92afaad8e02fcb6ed9",
+      "mlx_lm_sha256": "f4c8cf6eed464de8e490648c1b57efa4ca372e89920cda0dc0dd035afc5b8986",
+      "comparison_sha256": "e789055c1a2bedf8a902a4bac5641a31f600c66503f2a5a4d71d909b221dd49e",
+      "independent_validation_sha256": "2723eeeaf0ce0739bd44b27c8981190455a20ee6a536a7b6e261d62114a2664b"
+    },
+    "crossed_analysis_sha256": "f090868c79d4ed2f5dfb873bcde9dcc1c340fc0e27ed9fedb33c6fee55418468"
+  },
+  "validation": {
+    "per_matrix_gates": {
+      "complete_public_workload": true,
+      "deterministic_token_parity": true,
+      "metrics_complete": true,
+      "required_engines_present": true,
+      "same_effective_input_tokens": true,
+      "same_execution_contract": true,
+      "same_model_and_tokenizer": true,
+      "same_public_prompts": true
+    },
+    "crossed_gates": {
+      "balanced_first_engine_records": true,
+      "both_matrices_comparable": true,
+      "deterministic_cross_matrix_parity": true,
+      "opposite_engine_order_per_shard": true,
+      "same_execution_contract": true,
+      "same_model_and_tokenizer": true,
+      "same_source_lock": true,
+      "same_workload": true,
+      "zero_swap_growth": true
+    },
+    "order_balance": {
+      "aster_first_records": 1380,
+      "mlx_lm_first_records": 1380,
+      "records_per_matrix": 1380
+    }
+  },
+  "overall_paired_median_aster_vs_mlx_lm_percent": {
+    "prefill_tokens_per_second": {
+      "aster_first": -10.504,
+      "aster_first_bootstrap_95_percent": [-10.951, -9.868],
+      "mlx_lm_first": -7.681,
+      "mlx_lm_first_bootstrap_95_percent": [-8.455, -7.037],
+      "order_agreement": "material-agreement"
+    },
+    "decode_tokens_per_second": {
+      "aster_first": 8.322,
+      "aster_first_bootstrap_95_percent": [2.649, 10.127],
+      "mlx_lm_first": 15.928,
+      "mlx_lm_first_bootstrap_95_percent": [14.486, 17.482],
+      "order_agreement": "inconclusive"
+    },
+    "ttft_seconds": {
+      "aster_first": -1.223,
+      "aster_first_bootstrap_95_percent": [-1.541, -0.823],
+      "mlx_lm_first": -5.362,
+      "mlx_lm_first_bootstrap_95_percent": [-5.989, -4.571],
+      "order_agreement": "inconclusive"
+    },
+    "end_to_end_seconds": {
+      "aster_first": 4.641,
+      "aster_first_bootstrap_95_percent": [4.323, 5.103],
+      "mlx_lm_first": 0.475,
+      "mlx_lm_first_bootstrap_95_percent": [-0.131, 0.798],
+      "order_agreement": "inconclusive"
+    },
+    "peak_rss_bytes": {
+      "aster_first": -0.239,
+      "aster_first_bootstrap_95_percent": [-0.252, -0.226],
+      "mlx_lm_first": -3.396,
+      "mlx_lm_first_bootstrap_95_percent": [-4.612, -2.961],
+      "order_agreement": "inconclusive"
+    }
+  },
+  "notable_predeclared_strata": {
+    "input_length": [
+      {
+        "input_tokens": "[0,512)",
+        "records_per_order": 80,
+        "prefill": [-74.005, -71.417],
+        "decode": [-7.46, -8.72],
+        "order_agreement": "material-agreement"
+      },
+      {
+        "input_tokens": "[512,2048)",
+        "records_per_order": 163,
+        "prefill": [-21.017, -18.311],
+        "decode": [13.45, 18.508],
+        "order_agreement": "material-agreement"
+      },
+      {
+        "input_tokens": "[2048,8192)",
+        "records_per_order": 751,
+        "prefill": [-11.416, -8.882],
+        "decode": [11.714, 15.391],
+        "order_agreement": "material-agreement"
+      },
+      {
+        "input_tokens": "[8192,32769)",
+        "records_per_order": 386,
+        "prefill": [-5.23, 3.55],
+        "decode": [-10.515, 27.532],
+        "order_agreement": "decode-directional-disagreement"
+      }
+    ],
+    "qmsum": {
+      "records_per_order": 200,
+      "decode": [-11.423, 35.203],
+      "end_to_end": [10.308, -36.111],
+      "prefill": [-6.087, 81.979],
+      "order_agreement": "directional-disagreement"
+    }
+  },
+  "interpretation": {
+    "observed": "Prefill is lower for Aster in the aggregate and in all three sub-8192-token input bins, but the long-context decode direction and the qmsum workload reverse across engine-order strata.",
+    "not_claimed": "The evidence does not establish a global Aster/direct-MLX-LM ranking, a component-level bottleneck, or a causal explanation for the block-state interaction.",
+    "next_action": "Run the I068 four-block ABBA public qmsum repeat with an outside-timing process/host-state trace before selecting a production optimization."
+  }
+}

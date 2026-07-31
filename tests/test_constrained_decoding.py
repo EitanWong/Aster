@@ -46,6 +46,40 @@ class ContainsCountingList(list[int]):
         return super().__contains__(value)
 
 
+class PrefixStateEnforcer:
+    instances: list[PrefixStateEnforcer] = []
+
+    def __init__(self, _tokenizer_data: object, root_parser: object) -> None:
+        self.root_parser = root_parser
+        self.prefix_states: dict[tuple[int, ...], SimpleNamespace] = {}
+        self.allowed_token_cache: dict[object, object] = {}
+        self.calls: list[tuple[int, ...]] = []
+        self.call_argument_types: list[type] = []
+        self.instances.append(self)
+
+    def get_allowed_tokens(self, suffix: list[int] | tuple[int, ...]) -> list[int]:
+        key = tuple(suffix)
+        self.calls.append(key)
+        self.call_argument_types.append(type(suffix))
+        cached = self.prefix_states.get(key)
+        if cached is not None:
+            return cached.allowed_tokens
+        if key and key[:-1] not in self.prefix_states:
+            raise AssertionError("LMFE replay must rebuild each predecessor state")
+        allowed = [len(key)]
+        self.prefix_states[key] = SimpleNamespace(allowed_tokens=allowed)
+        return allowed
+
+
+def bounded_prefix_processor(enforcer: PrefixStateEnforcer) -> JSONSchemaLogitsProcessor:
+    processor = object.__new__(JSONSchemaLogitsProcessor)
+    processor._enforcer = enforcer
+    processor._tokenizer_data = object()
+    processor._bounded_prefix_states = True
+    processor._enforcer_last_suffix = ()
+    return processor
+
+
 def processor_with_allowed_tokens(allowed_tokens: Any) -> JSONSchemaLogitsProcessor:
     processor = object.__new__(JSONSchemaLogitsProcessor)
     processor._enforcer = StaticAllowedTokenEnforcer(allowed_tokens)
@@ -106,6 +140,117 @@ def test_json_schema_logits_processor_normalizes_non_native_allowed_tokens() -> 
 
     assert allowed == [1, 2]
     assert all(type(token_id) is int for token_id in allowed)
+
+
+def test_json_schema_logits_processor_bounds_monotonic_lmfe_prefix_states() -> None:
+    PrefixStateEnforcer.instances.clear()
+    enforcer = PrefixStateEnforcer(object(), object())
+    enforcer.get_allowed_tokens(())
+    processor = bounded_prefix_processor(enforcer)
+
+    assert processor._enforcer_allowed_tokens([1]) == [1]
+    assert processor._enforcer_allowed_tokens([1, 2]) == [2]
+    assert processor._enforcer_allowed_tokens([1, 2]) == [2]
+    assert set(enforcer.prefix_states) == {(1, 2)}
+    assert len(PrefixStateEnforcer.instances) == 1
+
+
+def test_json_schema_logits_processor_uses_decode_step_hint_for_monotonic_lmfe_states() -> None:
+    PrefixStateEnforcer.instances.clear()
+    enforcer = PrefixStateEnforcer(object(), object())
+    enforcer.get_allowed_tokens(())
+    processor = bounded_prefix_processor(enforcer)
+
+    processor._prepare_aster_decode_step(input_token=1, completion_tokens=1)
+    assert processor._enforcer_allowed_tokens([1]) == [1]
+    processor._prepare_aster_decode_step(input_token=2, completion_tokens=2)
+    assert processor._enforcer_allowed_tokens([1, 2]) == [2]
+
+    assert enforcer.call_argument_types[-2:] == [list, list]
+    assert set(enforcer.prefix_states) == {(1, 2)}
+
+
+def test_json_schema_logits_processor_bounds_hinted_lmfe_prefix_state_window() -> None:
+    PrefixStateEnforcer.instances.clear()
+    enforcer = PrefixStateEnforcer(object(), object())
+    enforcer.get_allowed_tokens(())
+    processor = bounded_prefix_processor(enforcer)
+
+    generated: list[int] = []
+    for token_id in range(1, processor._DECODE_PREFIX_STATE_WINDOW + 1):
+        generated.append(token_id)
+        processor._prepare_aster_decode_step(
+            input_token=token_id,
+            completion_tokens=len(generated),
+        )
+        processor._enforcer_allowed_tokens(generated)
+
+    assert enforcer.call_argument_types[1:] == [list] * processor._DECODE_PREFIX_STATE_WINDOW
+    assert set(enforcer.prefix_states) == {tuple(generated)}
+
+
+def test_json_schema_logits_processor_reuses_freetext_token_list_for_monotonic_decode() -> None:
+    processor = build_json_logits_processor(
+        {
+            "type": "object",
+            "properties": {"answer": {"type": "string"}},
+            "required": ["answer"],
+        },
+        AsciiTokenizer(),
+    )
+    assert processor is not None
+    suffix = AsciiTokenizer().encode('{"answer":"a')
+
+    for length in range(1, len(suffix) + 1):
+        processor._enforcer_allowed_tokens(suffix[:length])
+
+    enforcer = processor._enforcer
+    working_lists = list(enforcer._aster_working_freetext_lists.values())
+    assert len(working_lists) == 1
+    working_list, static_length = working_lists[0]
+    assert static_length > 0
+
+    next_suffix = [*suffix, ord("b")]
+    processor._enforcer_allowed_tokens(next_suffix)
+
+    assert next(iter(enforcer._aster_working_freetext_lists.values()))[0] is working_list
+    assert len(working_list.allowed_tokens) >= static_length
+    assert set(enforcer.prefix_states) == {tuple(next_suffix)}
+    assert all(value is not working_list for value in enforcer.allowed_token_cache.values())
+
+
+def test_json_schema_logits_processor_replays_non_monotonic_lmfe_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import lmformatenforcer
+
+    PrefixStateEnforcer.instances.clear()
+    root_parser = object()
+    enforcer = PrefixStateEnforcer(object(), root_parser)
+    enforcer.get_allowed_tokens(())
+    processor = bounded_prefix_processor(enforcer)
+    processor._enforcer_allowed_tokens([1])
+    processor._enforcer_allowed_tokens([1, 2])
+    monkeypatch.setattr(lmformatenforcer, "TokenEnforcer", PrefixStateEnforcer)
+
+    assert processor._enforcer_allowed_tokens([1, 3]) == [2]
+    rebuilt = processor._enforcer
+    assert rebuilt is not enforcer
+    assert rebuilt.calls == [(), (1,), (1, 3)]
+    assert set(rebuilt.prefix_states) == {(1, 3)}
+
+
+def test_json_schema_logits_processor_keeps_full_lmfe_history_when_bounding_disabled() -> None:
+    PrefixStateEnforcer.instances.clear()
+    enforcer = PrefixStateEnforcer(object(), object())
+    enforcer.get_allowed_tokens(())
+    processor = bounded_prefix_processor(enforcer)
+    processor._bounded_prefix_states = False
+
+    processor._enforcer_allowed_tokens([1])
+    processor._enforcer_allowed_tokens([1, 2])
+
+    assert set(enforcer.prefix_states) == {(), (1,), (1, 2)}
 
 
 def test_json_schema_logits_processor_filters_eos_without_mutating_cached_list() -> None:

@@ -1,0 +1,163 @@
+{
+  "archive": {
+    "bytes": 23097,
+    "members": 8,
+    "path": "docs/loop-engineering/artifacts/ITER-20260728-064-short-decode-call-position/call-position-evidence.tar.gz",
+    "sha256": "efa181f3bf7c1f84b5a4d48f8e0ac460f44033e2f4abcce2a72f3ba4ba9e0738"
+  },
+  "decision": "reject",
+  "reason": "Same-variant fresh-cache calls show a material second-call slowdown for both serial and pipeline paths. Adjacent mixed serial/pipeline pairs are therefore position-confounded and cannot authorize an asynchronous candidate.",
+  "schema_version": 1,
+  "screen": {
+    "by_cell": {
+      "pipeline_warmup_ps": {
+        "count": 2,
+        "max": 4.868721643092155,
+        "mean": -11.139604053764884,
+        "min": -27.147929750621923,
+        "p50": -11.139604053764884,
+        "p95": 3.2678890734064474
+      },
+      "pipeline_warmup_sp": {
+        "count": 2,
+        "max": -29.071111458847522,
+        "mean": -37.44769186394848,
+        "min": -45.82427226904944,
+        "p50": -37.44769186394848,
+        "p95": -29.908769499357618
+      },
+      "serial_warmup_ps": {
+        "count": 2,
+        "max": -17.93123091565758,
+        "mean": -22.1748613353475,
+        "min": -26.418491755037422,
+        "p50": -22.1748613353475,
+        "p95": -18.355593957626574
+      },
+      "serial_warmup_sp": {
+        "count": 2,
+        "max": -25.491786663834226,
+        "mean": -31.89256866299011,
+        "min": -38.293350662146,
+        "p50": -31.89256866299011,
+        "p95": -26.131864863749815
+      }
+    },
+    "by_variant": {
+      "pipeline": {
+        "count": 4,
+        "max": 4.868721643092155,
+        "mean": -24.29364795885668,
+        "min": -45.82427226904944,
+        "p50": -28.109520604734723,
+        "p95": 0.06622393403502969
+      },
+      "serial": {
+        "count": 4,
+        "max": -17.93123091565758,
+        "mean": -27.033714999168808,
+        "min": -38.293350662146,
+        "p50": -25.955139209435824,
+        "p95": -19.065314277884077
+      }
+    },
+    "by_variant_bootstrap_median_interval": {
+      "pipeline": {
+        "confidence": 0.95,
+        "lower": -45.82427226904944,
+        "samples": 20000,
+        "upper": 4.868721643092155
+      },
+      "serial": {
+        "confidence": 0.95,
+        "lower": -38.293350662146,
+        "samples": 20000,
+        "upper": -17.93123091565758
+      }
+    },
+    "by_warmup_terminal": {
+      "pipeline": {
+        "count": 4,
+        "max": -25.491786663834226,
+        "mean": -34.6701302634693,
+        "min": -45.82427226904944,
+        "p50": -33.68223106049676,
+        "p95": -26.02868538308622
+      },
+      "serial": {
+        "count": 4,
+        "max": 4.868721643092155,
+        "mean": -16.657232694556193,
+        "min": -27.147929750621923,
+        "p50": -22.1748613353475,
+        "p95": 1.4487287592796854
+      }
+    },
+    "gates": {
+      "at_least_seven_second_calls_slower": true,
+      "both_variant_medians_below_minus_3_percent": true,
+      "crossed_two_repeat_design": true,
+      "eight_records": true,
+      "exactness_and_swap": true,
+      "four_matched_variant_pairs": true,
+      "independent_processes": true,
+      "stable_fingerprint": true
+    },
+    "paired_variant_deltas": [
+      {
+        "pipeline_minus_serial_percent": -9.216698834964344,
+        "pipeline_second_vs_first_percent": -27.147929750621923,
+        "replicate": 1,
+        "serial_second_vs_first_percent": -17.93123091565758,
+        "warmup_order": [
+          "pipeline",
+          "serial"
+        ]
+      },
+      {
+        "pipeline_minus_serial_percent": -20.33248560521521,
+        "pipeline_second_vs_first_percent": -45.82427226904944,
+        "replicate": 1,
+        "serial_second_vs_first_percent": -25.491786663834226,
+        "warmup_order": [
+          "serial",
+          "pipeline"
+        ]
+      },
+      {
+        "pipeline_minus_serial_percent": 31.287213398129577,
+        "pipeline_second_vs_first_percent": 4.868721643092155,
+        "replicate": 2,
+        "serial_second_vs_first_percent": -26.418491755037422,
+        "warmup_order": [
+          "pipeline",
+          "serial"
+        ]
+      },
+      {
+        "pipeline_minus_serial_percent": 9.222239203298475,
+        "pipeline_second_vs_first_percent": -29.071111458847522,
+        "replicate": 2,
+        "serial_second_vs_first_percent": -38.293350662146,
+        "warmup_order": [
+          "serial",
+          "pipeline"
+        ]
+      }
+    ],
+    "second_call_slower_count": 7,
+    "second_vs_first_elapsed_gain_percent": {
+      "count": 8,
+      "max": 4.868721643092155,
+      "mean": -25.663681479012745,
+      "min": -45.82427226904944,
+      "p50": -26.783210752829675,
+      "p95": -3.1112617524702646
+    }
+  },
+  "source_sha256": {
+    "call_position_aggregate.py": "4c872c66df097ae32e5483317f46d61875a56bdca2d97d7d3d1cf518410321ab",
+    "call_position_probe.py": "801a461444662bbba74e09b7aafeec49cdd43185364ed8a0b17d3be365446b19",
+    "package_call_position_screen.py": "72d3cee4fccbfe4262ac9ec17fb82e1c928b4f407bdd5d677cdbf6b1a8cbde2b"
+  }
+}

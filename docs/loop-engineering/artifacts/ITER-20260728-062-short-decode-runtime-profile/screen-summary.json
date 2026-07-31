@@ -1,0 +1,76 @@
+{
+  "archive": {
+    "bytes": 5996,
+    "members": 13,
+    "path": "docs/loop-engineering/artifacts/ITER-20260728-062-short-decode-runtime-profile/rejected-screen-evidence.tar.gz",
+    "sha256": "056e3e05bac49ab5dfb482d271fd60f22afa178e5844ba1f6487a3611f58dd80"
+  },
+  "decision": "reject",
+  "pipeline_screen": {
+    "bootstrap_median_interval": {
+      "confidence": 0.95,
+      "lower": -27.194803003271357,
+      "samples": 20000,
+      "upper": 38.94159835748676
+    },
+    "by_order": {
+      "pipeline_first": {
+        "count": 3,
+        "max": 47.004598384442886,
+        "mean": 30.425333749546326,
+        "min": 13.392804533665448,
+        "p50": 30.878598330530636,
+        "p95": 45.39199837905166
+      },
+      "serial_first": {
+        "count": 3,
+        "max": 4.633273992895237,
+        "mean": -16.58544400454916,
+        "min": -27.26623946900746,
+        "p50": -27.123366537535254,
+        "p95": 1.457609939852187
+      }
+    },
+    "decision": "inconclusive",
+    "gates": {
+      "balanced_order": true,
+      "both_order_medians_above_3_percent": false,
+      "exactness_and_swap": true,
+      "independent_processes": true,
+      "median_interval_above_3_percent": false,
+      "no_pair_regression": false,
+      "six_records": true,
+      "stable_fingerprint": true
+    },
+    "pipeline_elapsed_gain_percent": {
+      "count": 6,
+      "max": 47.004598384442886,
+      "mean": 6.919944872498583,
+      "min": -27.26623946900746,
+      "p50": 9.013039263280342,
+      "p95": 42.97309837096482
+    }
+  },
+  "reason": "The token-list branch was below the 3% screen floor and the lookahead-pipeline branch had order-reversing paired results.",
+  "schema_version": 1,
+  "source_sha256": {
+    "mlx_pipeline_profile.py": "be707b2376bde658a6b0f25e9797fcb5fec0c2025a7fd2972769bd2be6927fda",
+    "package_screen.py": "c48dc6c7046f2bf4acfd8b89e2d8b92636ac97b8af99e96ef1a7c3c91b489096",
+    "pipeline_pair_aggregate.py": "d829c5a7c7e55164e5803793ad7de0149943f88a7f518237c1b3259879b61863",
+    "work_item_profile.py": "eafb95364e50e9e3c662450933a5494ae77da235be67155193abe57681b1cdfc"
+  },
+  "work_item_screen": {
+    "decode_loop_change_percent": [
+      -0.05157303398638513,
+      -0.246235179072829
+    ],
+    "legacy_processor_tokens_percent": [
+      0.05689245411044778,
+      0.054527325766249614
+    ],
+    "runtime_processor_tokens_percent": [
+      0.014193631059478183,
+      0.014106284967854904
+    ]
+  }
+}

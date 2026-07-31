@@ -1,0 +1,173 @@
+{
+  "created_utc": "2026-07-29T03:43:54.094592+00:00",
+  "decision": "trace-no-op-rejected-metric-movement",
+  "engines": {
+    "aster": {
+      "metrics": {
+        "decode_tokens_per_second": {
+          "maximum_traced_vs_untraced_percent": 16.866960964591637,
+          "median_traced_vs_untraced_percent": -3.634924533919892,
+          "minimum_traced_vs_untraced_percent": -25.171369983827653,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        },
+        "end_to_end_seconds": {
+          "maximum_traced_vs_untraced_percent": 32.79917959893617,
+          "median_traced_vs_untraced_percent": 3.8182422611289013,
+          "minimum_traced_vs_untraced_percent": -13.324305922517688,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        },
+        "peak_rss_bytes": {
+          "maximum_traced_vs_untraced_percent": -1.734738691260429,
+          "median_traced_vs_untraced_percent": -7.5584778619053665,
+          "minimum_traced_vs_untraced_percent": -19.690433006392084,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        },
+        "ttft_seconds": {
+          "maximum_traced_vs_untraced_percent": 71.81008035694074,
+          "median_traced_vs_untraced_percent": 7.432383130915799,
+          "minimum_traced_vs_untraced_percent": -43.06370904539786,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        }
+      },
+      "records": 80,
+      "swap_delta_bytes": {
+        "traced_nonzero_records": 0,
+        "untraced_nonzero_records": 0
+      }
+    },
+    "mlx-lm": {
+      "metrics": {
+        "decode_tokens_per_second": {
+          "maximum_traced_vs_untraced_percent": 13.219823177678624,
+          "median_traced_vs_untraced_percent": -7.277495262748223,
+          "minimum_traced_vs_untraced_percent": -27.37913709980714,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        },
+        "end_to_end_seconds": {
+          "maximum_traced_vs_untraced_percent": 37.00682906193187,
+          "median_traced_vs_untraced_percent": 7.716536724429979,
+          "minimum_traced_vs_untraced_percent": -11.365732898834546,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        },
+        "peak_rss_bytes": {
+          "maximum_traced_vs_untraced_percent": -3.2771183251804503,
+          "median_traced_vs_untraced_percent": -13.298627330426722,
+          "minimum_traced_vs_untraced_percent": -32.57117768246142,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        },
+        "ttft_seconds": {
+          "maximum_traced_vs_untraced_percent": 67.6097019319174,
+          "median_traced_vs_untraced_percent": 11.476559624971838,
+          "minimum_traced_vs_untraced_percent": -24.175421723809254,
+          "records": 80,
+          "within_3_percent_no_op_band": false
+        }
+      },
+      "records": 80,
+      "swap_delta_bytes": {
+        "traced_nonzero_records": 0,
+        "untraced_nonzero_records": 0
+      }
+    }
+  },
+  "gates": {
+    "both_matrices_comparable": true,
+    "complete_lower_level_trace": true,
+    "deterministic_token_text_finish_parity": true,
+    "no_material_metric_movement": false,
+    "same_adapter_source": true,
+    "same_execution_except_trace": true,
+    "same_generation_settings": true,
+    "same_model_and_tokenizer": true,
+    "same_source_lock": true,
+    "same_workload": true,
+    "zero_swap_growth": true
+  },
+  "kind": "public-engine-lower-level-trace-noop-comparison",
+  "measurement": {
+    "metric_gate": "absolute median traced-versus-untraced movement <= 3 percent",
+    "scope": "engine-local public trace no-op screen",
+    "trace_contract": {
+      "initial_output_policy": "exclude-first-output-step-because-direct-first-generator-advance-includes-prefill",
+      "mode": "source-bound-observer",
+      "schema_version": 1,
+      "timing_boundary": "source-post-prefill-decode-step-submit-and-host-materialization"
+    }
+  },
+  "parity_drift_counts": {
+    "finish_reason": 0,
+    "output_token_count": 0,
+    "output_token_ids_sha256": 0,
+    "prompt_sha256": 0,
+    "prompt_token_count": 0,
+    "prompt_token_ids_sha256": 0,
+    "text_sha256": 0
+  },
+  "production_candidate": "none",
+  "schema_version": 1,
+  "source": {
+    "adapter_source_sha256": {
+      "traced": {
+        "aster": {
+          "aster/inference/model_runner.py": "9d2aa9fc52d85544d93c0abd638023ce0add7e648ac90a4e3fc5d22347f1a87c",
+          "scripts/dev/public_benchmark.py": "3f005ff5e20648060eda9722700594bc175efec6832531dc3d4a44ac83c1195a",
+          "scripts/dev/public_engine_matrix.py": "dd3c1b4be6ba1c6a2019291391b46fde93d2bc8feb3fe5bd445747f544672730"
+        },
+        "mlx-lm": {
+          ".venv/lib/python3.14/site-packages/mlx_lm/__init__.py": "f9ffa88772d26e537a98aa39ab16488a7a0d13cc1fac5d665376132c94b49608",
+          "aster/inference/model_runner.py": "9d2aa9fc52d85544d93c0abd638023ce0add7e648ac90a4e3fc5d22347f1a87c",
+          "scripts/dev/public_benchmark.py": "3f005ff5e20648060eda9722700594bc175efec6832531dc3d4a44ac83c1195a",
+          "scripts/dev/public_engine_matrix.py": "dd3c1b4be6ba1c6a2019291391b46fde93d2bc8feb3fe5bd445747f544672730"
+        }
+      },
+      "untraced": {
+        "aster": {
+          "aster/inference/model_runner.py": "9d2aa9fc52d85544d93c0abd638023ce0add7e648ac90a4e3fc5d22347f1a87c",
+          "scripts/dev/public_benchmark.py": "3f005ff5e20648060eda9722700594bc175efec6832531dc3d4a44ac83c1195a",
+          "scripts/dev/public_engine_matrix.py": "dd3c1b4be6ba1c6a2019291391b46fde93d2bc8feb3fe5bd445747f544672730"
+        },
+        "mlx-lm": {
+          ".venv/lib/python3.14/site-packages/mlx_lm/__init__.py": "f9ffa88772d26e537a98aa39ab16488a7a0d13cc1fac5d665376132c94b49608",
+          "aster/inference/model_runner.py": "9d2aa9fc52d85544d93c0abd638023ce0add7e648ac90a4e3fc5d22347f1a87c",
+          "scripts/dev/public_benchmark.py": "3f005ff5e20648060eda9722700594bc175efec6832531dc3d4a44ac83c1195a",
+          "scripts/dev/public_engine_matrix.py": "dd3c1b4be6ba1c6a2019291391b46fde93d2bc8feb3fe5bd445747f544672730"
+        }
+      }
+    },
+    "execution": {
+      "decode_cache_counter_scope": "per-public-request",
+      "generation_mode": "greedy",
+      "input_mode": "pinned-public-source-rendered-token-ids",
+      "input_truncation_policy": "official-longbench-half-head-half-tail",
+      "max_input_tokens": 32768,
+      "memory_peak": "psutil-rss-sampled",
+      "memory_sample_interval_seconds": 0.05,
+      "prefill_step_tokens": 2048,
+      "process_isolation": "fresh-process-per-engine-task-shard",
+      "record_order": "workload-manifest-order-within-shard",
+      "warmup": {
+        "max_tokens": 8,
+        "per_isolated_process": 1
+      }
+    },
+    "model_fingerprint": {
+      "model_sha256": "54c8e23411da936d6fde086cbd189ffa8c647b52ade0b9b751e67ade235fa0cf",
+      "tokenizer_sha256": "50e396ca431330a955f0c11c13d4b1ebc65f9119cc5fc360ba53f0b681f2cf0c"
+    },
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46"
+  },
+  "traced_matrix": {
+    "run_dir": "/Users/eitan/Documents/Projects/Python/Aster/run/loop-engineering/ITER-20260729-070-public-qmsum-lower-level-decode-boundary/smoke-v2"
+  },
+  "untraced_matrix": {
+    "run_dir": "/Users/eitan/Documents/Projects/Python/Aster/run/loop-engineering/ITER-20260729-070-public-qmsum-lower-level-decode-boundary/smoke-v2"
+  }
+}

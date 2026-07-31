@@ -7,6 +7,8 @@ from pydantic import ValidationError
 
 from aster.core.config import RuntimeSettings, load_settings
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_load_settings(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
@@ -22,6 +24,12 @@ def test_load_settings(tmp_path: Path) -> None:
     assert settings.audio.tts.backend == "mlx"
     assert settings.embeddings.backend == "mlx"
     assert settings.embeddings.model == "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ"
+
+
+def test_example_config_enables_decode_aware_prefill_budget() -> None:
+    settings = load_settings(str(PROJECT_ROOT / "configs" / "config.yaml.example"))
+
+    assert settings.engine.decode_active_prefill_token_budget == 512
 
 
 def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:

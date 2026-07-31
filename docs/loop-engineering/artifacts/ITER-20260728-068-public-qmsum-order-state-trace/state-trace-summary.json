@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "kind": "public-qmsum-order-state-summary",
+  "iteration": "ITER-20260728-068-public-qmsum-order-state-trace",
+  "decision": "order-stable-effect-requires-component-trace",
+  "production_candidate": "none",
+  "source": {
+    "shard": "longbench-qmsum",
+    "records_per_block": 200,
+    "blocks": 4,
+    "engine_records": 1600,
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "workload_sha256": "89e64dda57256c09b13a602e3b3307082ecf2f90adb005527049d9e9f562cc4f",
+    "model_sha256": "54c8e23411da936d6fde086cbd189ffa8c647b52ade0b9b751e67ade235fa0cf",
+    "tokenizer_sha256": "50e396ca431330a955f0c11c13d4b1ebc65f9119cc5fc360ba53f0b681f2cf0c",
+    "generation_mode": "greedy",
+    "prefill_step_tokens": 2048,
+    "process_isolation": "fresh-process-per-engine-task-shard"
+  },
+  "schedule": [
+    {"id": "01-aster-first", "order": ["aster", "mlx-lm"]},
+    {"id": "02-mlx-lm-first", "order": ["mlx-lm", "aster"]},
+    {"id": "03-mlx-lm-first", "order": ["mlx-lm", "aster"]},
+    {"id": "04-aster-first", "order": ["aster", "mlx-lm"]}
+  ],
+  "gates": {
+    "all_blocks_comparable": true,
+    "same_workload": true,
+    "same_source_lock": true,
+    "same_model_and_tokenizer": true,
+    "same_execution_contract": true,
+    "deterministic_cross_block_parity": true,
+    "abba_order": true,
+    "balanced_first_engine_blocks": true,
+    "state_trace_complete": true,
+    "zero_swap_growth": true
+  },
+  "overall": {
+    "decode_tokens_per_second": {
+      "aster_first_percent": -7.774614,
+      "aster_first_bootstrap_95_percent": [-8.041521, -7.681844],
+      "mlx_lm_first_percent": -8.215854,
+      "mlx_lm_first_bootstrap_95_percent": [-8.408047, -8.007872],
+      "order_state": "reproduced-order-stable-effect"
+    },
+    "end_to_end_seconds": {
+      "aster_first_percent": 5.452223,
+      "aster_first_bootstrap_95_percent": [5.252162, 5.716350],
+      "mlx_lm_first_percent": 5.352425,
+      "mlx_lm_first_bootstrap_95_percent": [5.140178, 5.759720],
+      "order_state": "reproduced-order-stable-effect"
+    },
+    "prefill_tokens_per_second": {
+      "aster_first_percent": -1.981503,
+      "mlx_lm_first_percent": -1.513709,
+      "order_state": "inconclusive"
+    },
+    "ttft_seconds": {
+      "aster_first_percent": -1.456527,
+      "mlx_lm_first_percent": -1.927580,
+      "order_state": "inconclusive"
+    },
+    "peak_rss_bytes": {
+      "order_state": "inconclusive"
+    }
+  },
+  "state_trace_boundary": {
+    "timing_boundary": "outside-timed-public-request-intervals",
+    "available_fields": [
+      "process_pid",
+      "started_utc",
+      "finished_utc",
+      "available_memory_bytes",
+      "system_swap_used_bytes",
+      "process_rss_bytes"
+    ],
+    "unavailable_fields": ["load_average_1m", "cpu_user_seconds", "cpu_system_seconds"],
+    "interpretation": "The host/process snapshots are retained as covariates only; they do not identify a causal decode component."
+  },
+  "conclusion": {
+    "stable_gap": "Aster has a reproducible long-QMSUM decode throughput deficit and end-to-end latency increase relative to direct MLX-LM.",
+    "not_a_gap": "Prefill throughput and TTFT remain inside the 3 percent no-op band in both first-engine strata.",
+    "next_action": "Add a source-bound decode component trace before selecting a production optimization."
+  },
+  "raw_evidence": {
+    "state_trace_manifest_sha256": "ca0a868a02d4745f6499ee5c88aafd862c22939276551050ef9a8ab443ead090",
+    "state_trace_comparison_sha256": "fa887de4440bad152dc1d7a02d5e52c7d7784e2761719508f237841ac8b985ae",
+    "block_comparison_sha256": {
+      "01-aster-first": "f8bb6cd5f388f4ddc6c9c1921b78db06664cea63614b512cd9c9fa8fc8f373f1",
+      "02-mlx-lm-first": "f0b3da67402a25ca45d481c348b573d6ec7ef05644688e29e9141d156a2a140d",
+      "03-mlx-lm-first": "8802272b410a0dc219b0800f4655c4ca75fd5af803c8887525e5f629fc328288",
+      "04-aster-first": "f0852a6ec0529860163bee50a3d23f7696f103749642e7971d355f9cb72aaddf"
+    }
+  }
+}

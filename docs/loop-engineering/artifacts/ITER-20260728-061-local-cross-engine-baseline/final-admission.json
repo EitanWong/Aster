@@ -1,0 +1,52 @@
+{
+  "aggregate_sha256": "b27c8f8b5b025448c9fe9148618c23746bdcf30b6efe1a42f76a8b956eb5c75c",
+  "archive": {
+    "bytes": 31783,
+    "members": 38,
+    "path": "docs/loop-engineering/artifacts/ITER-20260728-061-local-cross-engine-baseline/formal-evidence.tar.gz",
+    "sha256": "e554a596ff923b524ae567b038b46e042dfb9cbf8fda67105a0751a311613d0a"
+  },
+  "decision": "admit",
+  "gates": {
+    "aggregate_admit": true,
+    "aggregate_gates": true,
+    "archive_member_set": true,
+    "archive_under_5_mib": true,
+    "record_hashes_verified": true,
+    "source_hashes_match": true
+  },
+  "manifest_sha256": "2d8740bfa3fa4c1db9beed2485691c68a90b31ae918767248b62fa2bb5a2a5fd",
+  "scenarios": [
+    {
+      "aster_p50_tokens_per_second": 175.88885032087686,
+      "mlx_lm_p50_tokens_per_second": 188.48194785235665,
+      "name": "short-decode",
+      "paired_change_percent_interval": {
+        "confidence": 0.95,
+        "lower": -9.228040271188082,
+        "samples": 20000,
+        "upper": -4.499297220388759
+      },
+      "paired_change_percent_p50": -5.742603648563055
+    },
+    {
+      "aster_p50_tokens_per_second": 156.0869155378221,
+      "mlx_lm_p50_tokens_per_second": 141.36080048378767,
+      "name": "long-prefill",
+      "paired_change_percent_interval": {
+        "confidence": 0.95,
+        "lower": 5.748993625512799,
+        "samples": 20000,
+        "upper": 13.393793279927314
+      },
+      "paired_change_percent_p50": 10.431318321701344
+    }
+  ],
+  "schema_version": 1,
+  "source_sha256": {
+    "admission.py": "f4613a2b9082861894697345c51287d7b91dd50b060879830121c5594c4f3428",
+    "aggregate.py": "7051c37b4a563f685098e339dc8081c32a09f28be665158a37764d69fc48b91f",
+    "paired_matrix.py": "27346047f32daa473619dc5620ef3d05f9b77c17fc730e0b8559d0658ff8b6f3",
+    "preflight.py": "7362bf0b92e930d96e34c68d203ca81ffbeaee716db832e817065644448a46f5"
+  }
+}

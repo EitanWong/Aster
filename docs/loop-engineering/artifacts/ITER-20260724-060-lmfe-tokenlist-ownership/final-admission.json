@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "decision": "admit",
+  "production_source_sha256": "349652845b41d6e8c256aab85474e02a6a4c7c392300436b10477fc269c49be6",
+  "evidence": {
+    "path": "docs/loop-engineering/artifacts/ITER-20260724-060-lmfe-tokenlist-ownership/formal-evidence.tar.gz",
+    "sha256": "51b4475dbd3c332c85cd34ac9533fee7e30cce6f830901cee1495cf63095c603",
+    "bytes": 218232,
+    "file_members": 49
+  },
+  "formal": {
+    "short": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_recomputed_exactly": true,
+      "aggregate_passed": true,
+      "all_exact_token_text_cache": true,
+      "all_swap_non_growth": true,
+      "all_source_bound": true,
+      "all_batch_sizes_match": true,
+      "stable_replicates": 9,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 16.006349228594164,
+        "upper": 18.003629383339504,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 6.639610109544325,
+        "upper": 7.297225834358234,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "production_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 25.983635026307674,
+        "upper": 29.979551897225875,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_prefix_states": {
+        "minimum": 272,
+        "maximum": 272
+      },
+      "production_prefix_states": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "passed": true
+    },
+    "long": {
+      "records": 18,
+      "unique_pids": 18,
+      "aggregate_recomputed_exactly": true,
+      "aggregate_passed": true,
+      "all_exact_token_text_cache": true,
+      "all_swap_non_growth": true,
+      "all_source_bound": true,
+      "all_batch_sizes_match": true,
+      "stable_replicates": 9,
+      "balanced_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 12.51786491278617,
+        "upper": 13.792828459688922,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 11.668288807331418,
+        "upper": 13.546622494045724,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "production_first_interval_percent": {
+        "confidence_target": 0.95,
+        "coverage": 0.9609375,
+        "lower": 12.372032242967457,
+        "upper": 13.920223127502961,
+        "order_statistic_rank": 2,
+        "observations": 9,
+        "confidence_met": true,
+        "speed_floor_percent": 3.0,
+        "lower_meets_speed_floor": true
+      },
+      "baseline_prefix_states": {
+        "minimum": 144,
+        "maximum": 144
+      },
+      "production_prefix_states": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "passed": true
+    }
+  },
+  "memory": {
+    "short": {
+      "records": 4,
+      "unique_pids": 4,
+      "baseline_rss_delta_bytes": [
+        1878360064,
+        1923940352
+      ],
+      "production_rss_delta_bytes": [
+        24920064,
+        25198592
+      ],
+      "baseline_rss_median_bytes": 1901150208.0,
+      "production_rss_median_bytes": 25059328.0,
+      "rss_reduction_percent": 98.68188595017106,
+      "all_source_bound": true,
+      "all_output_hashes_equal": true,
+      "all_post_release_request_token_lists_gone": true,
+      "baseline_workload_matches": true,
+      "production_workload_matches": true,
+      "baseline_prefix_state_counts": [
+        1024,
+        1024
+      ],
+      "production_prefix_state_counts": [
+        4,
+        4
+      ],
+      "production_working_list_counts": [
+        4,
+        4
+      ],
+      "passed": true
+    },
+    "long": {
+      "records": 4,
+      "unique_pids": 4,
+      "baseline_rss_delta_bytes": [
+        485212160,
+        491405312
+      ],
+      "production_rss_delta_bytes": [
+        11370496,
+        11943936
+      ],
+      "baseline_rss_median_bytes": 488308736.0,
+      "production_rss_median_bytes": 11657216.0,
+      "rss_reduction_percent": 97.61273654543015,
+      "all_source_bound": true,
+      "all_output_hashes_equal": true,
+      "all_post_release_request_token_lists_gone": true,
+      "baseline_workload_matches": true,
+      "production_workload_matches": true,
+      "baseline_prefix_state_counts": [
+        256,
+        256
+      ],
+      "production_prefix_state_counts": [
+        2,
+        2
+      ],
+      "production_working_list_counts": [
+        2,
+        2
+      ],
+      "passed": true
+    }
+  },
+  "structured_validation": {
+    "lanes": 4,
+    "membership_start": 4,
+    "membership_end": 1
+  },
+  "gates": {
+    "short_formal_admission": true,
+    "long_formal_admission": true,
+    "short_memory_admission": true,
+    "long_memory_admission": true,
+    "model_signature_equal": true,
+    "structured_schema_valid": true,
+    "structured_stop_valid": true,
+    "dynamic_membership_shrinks": true,
+    "validation_source_bound": true,
+    "validation_swap_non_growth": true,
+    "compact_evidence_exact_members": true,
+    "compact_evidence_budget": true
+  },
+  "passed": true
+}

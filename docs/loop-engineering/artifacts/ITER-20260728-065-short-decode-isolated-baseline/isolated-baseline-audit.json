@@ -1,0 +1,289 @@
+{
+  "archive": {
+    "members": 38,
+    "path": "docs/loop-engineering/artifacts/ITER-20260728-061-local-cross-engine-baseline/formal-evidence.tar.gz",
+    "sha256": "e554a596ff923b524ae567b038b46e042dfb9cbf8fda67105a0751a311613d0a"
+  },
+  "decision": "admit",
+  "gates": {
+    "aggregate_remains_admitted": true,
+    "all_archived_pairs_comparable": true,
+    "archive_hash_matches_i061_admission": true,
+    "balanced_order_per_scenario": true,
+    "one_record_per_engine_process": true,
+    "process_isolation_manifest": true,
+    "source_hashes_match_i061_admission": true,
+    "timed_call_is_second_after_warmup": true,
+    "two_generation_calls_per_engine": true
+  },
+  "record_inventory": {
+    "aggregate_decision": "admit",
+    "archive_members": 38,
+    "comparisons_comparable": true,
+    "engine_counts": {
+      "aster": 12,
+      "mlx-lm": 12
+    },
+    "manifest_process_isolation": true,
+    "pair_orders": {
+      "long-prefill": {
+        "aster_first": 3,
+        "mlx_lm_first": 3
+      },
+      "short-decode": {
+        "aster_first": 3,
+        "mlx_lm_first": 3
+      }
+    },
+    "record_count": 24,
+    "records": [
+      {
+        "decode_seconds": 1.469200332998298,
+        "engine": "aster",
+        "max_tokens": 256,
+        "pair_number": 1,
+        "pid": 83280,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.3760579579684418,
+        "engine": "mlx-lm",
+        "max_tokens": 256,
+        "pair_number": 1,
+        "pid": 83287,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.459301291994052,
+        "engine": "aster",
+        "max_tokens": 256,
+        "pair_number": 2,
+        "pid": 83355,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.39724979098537,
+        "engine": "mlx-lm",
+        "max_tokens": 256,
+        "pair_number": 2,
+        "pid": 83350,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.513965125021059,
+        "engine": "aster",
+        "max_tokens": 256,
+        "pair_number": 3,
+        "pid": 83373,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.3489191679982468,
+        "engine": "mlx-lm",
+        "max_tokens": 256,
+        "pair_number": 3,
+        "pid": 83378,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.4516480839811265,
+        "engine": "aster",
+        "max_tokens": 256,
+        "pair_number": 4,
+        "pid": 83428,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.3419831660285126,
+        "engine": "mlx-lm",
+        "max_tokens": 256,
+        "pair_number": 4,
+        "pid": 83403,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.4278839159815107,
+        "engine": "aster",
+        "max_tokens": 256,
+        "pair_number": 5,
+        "pid": 83466,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.3544115409895312,
+        "engine": "mlx-lm",
+        "max_tokens": 256,
+        "pair_number": 5,
+        "pid": 83471,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.4299210410099477,
+        "engine": "aster",
+        "max_tokens": 256,
+        "pair_number": 6,
+        "pid": 83542,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 1.3620504579739645,
+        "engine": "mlx-lm",
+        "max_tokens": 256,
+        "pair_number": 6,
+        "pid": 83537,
+        "scenario": "short-decode",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.40428675001021475,
+        "engine": "aster",
+        "max_tokens": 64,
+        "pair_number": 1,
+        "pid": 83567,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.4603050409932621,
+        "engine": "mlx-lm",
+        "max_tokens": 64,
+        "pair_number": 1,
+        "pid": 83573,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.4067354580038227,
+        "engine": "aster",
+        "max_tokens": 64,
+        "pair_number": 2,
+        "pid": 83599,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.44447516699437983,
+        "engine": "mlx-lm",
+        "max_tokens": 64,
+        "pair_number": 2,
+        "pid": 83592,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.41337420800118707,
+        "engine": "aster",
+        "max_tokens": 64,
+        "pair_number": 3,
+        "pid": 83661,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.45079537501442246,
+        "engine": "mlx-lm",
+        "max_tokens": 64,
+        "pair_number": 3,
+        "pid": 83667,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.42088874999899417,
+        "engine": "aster",
+        "max_tokens": 64,
+        "pair_number": 4,
+        "pid": 83698,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.4696442919666879,
+        "engine": "mlx-lm",
+        "max_tokens": 64,
+        "pair_number": 4,
+        "pid": 83690,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.40263866598252207,
+        "engine": "aster",
+        "max_tokens": 64,
+        "pair_number": 5,
+        "pid": 83718,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.4547059159958735,
+        "engine": "mlx-lm",
+        "max_tokens": 64,
+        "pair_number": 5,
+        "pid": 83726,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.43485166601021774,
+        "engine": "aster",
+        "max_tokens": 64,
+        "pair_number": 6,
+        "pid": 83799,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      },
+      {
+        "decode_seconds": 0.4454854169744067,
+        "engine": "mlx-lm",
+        "max_tokens": 64,
+        "pair_number": 6,
+        "pid": 83793,
+        "scenario": "long-prefill",
+        "warmup_tokens": 32
+      }
+    ],
+    "scenario_counts": {
+      "long-prefill": 12,
+      "short-decode": 12
+    },
+    "unique_pid_count": 24
+  },
+  "schema_version": 1,
+  "source_sha256": {
+    "isolated_baseline_audit.py": "04abbf5799b25c278f011288424ed39f647521fd4038fad86742dcd57eb23bfa",
+    "paired_matrix.py": "27346047f32daa473619dc5620ef3d05f9b77c17fc730e0b8559d0658ff8b6f3",
+    "preflight.py": "7362bf0b92e930d96e34c68d203ca81ffbeaee716db832e817065644448a46f5"
+  },
+  "timed_call_plan": {
+    "aster": {
+      "generation_call_count": 2,
+      "generation_call_lines": [
+        249,
+        250
+      ],
+      "timed_call_position": 2,
+      "timed_result_line": 250
+    },
+    "mlx-lm": {
+      "generation_call_count": 2,
+      "generation_call_lines": [
+        255,
+        256
+      ],
+      "timed_call_position": 2,
+      "timed_result_line": 256
+    }
+  }
+}

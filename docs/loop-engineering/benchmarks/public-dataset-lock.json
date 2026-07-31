@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "updated": "2026-07-28",
+  "policy": "Only public, version-pinned benchmark sources may support a cross-engine performance claim. Downloaded data stays under ignored run/; this lock is the tracked provenance and integrity contract.",
+  "sources": [
+    {
+      "id": "mt-bench-question",
+      "suite": "MT-Bench",
+      "revision": "587d5cfa1609a43d192cedb8441cac3c17db105d",
+      "url": "https://raw.githubusercontent.com/lm-sys/FastChat/587d5cfa1609a43d192cedb8441cac3c17db105d/fastchat/llm_judge/data/mt_bench/question.jsonl",
+      "local_path": "sources/mt-bench/question.jsonl",
+      "sha256": "119565adbab82227089cefdb44c8d7e2cf04dc0a0ec233634c82e7d4e2a944f7",
+      "size_bytes": 48929,
+      "license": "Apache-2.0 (FastChat repository)",
+      "purpose": "Public multi-turn instruction-following workload; use the verbatim first turn for deterministic engine comparison.",
+      "validator": {
+        "kind": "jsonl",
+        "record_count": 80,
+        "required_keys": ["question_id", "category", "turns"],
+        "unique_key": "question_id"
+      }
+    },
+    {
+      "id": "longbench-v1-data",
+      "suite": "LongBench v1",
+      "revision": "5e628be450b7e67fb7ae6e201bd6d8f7056f7672",
+      "url": "https://huggingface.co/datasets/zai-org/LongBench/resolve/5e628be450b7e67fb7ae6e201bd6d8f7056f7672/data.zip",
+      "local_path": "sources/longbench-v1/data.zip",
+      "sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+      "size_bytes": 113932529,
+      "license": "LongBench repository MIT license; individual source datasets retain their upstream terms.",
+      "purpose": "Public LongBench archive: 21-task / 4,750-record primary corpus plus the 13-task LongBench-E extension, for prefill, decode, memory, and degradation curves.",
+      "validator": {
+        "kind": "longbench_zip",
+        "task_count": 34,
+        "record_count": 8418,
+        "primary_task_count": 21,
+        "primary_record_count": 4750
+      }
+    },
+    {
+      "id": "longbench-v1-prompts",
+      "suite": "LongBench v1 official prompt templates",
+      "revision": "2e00731f8d0bff23dc4325161044d0ed8af94c1e",
+      "url": "https://raw.githubusercontent.com/THUDM/LongBench/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/config/dataset2prompt.json",
+      "local_path": "sources/longbench-v1/dataset2prompt.json",
+      "sha256": "56d22ad4f382169c2b8a11ff4c982a4a1bea096c8152b0f0b85b64686b157c30",
+      "size_bytes": 5437,
+      "license": "MIT",
+      "purpose": "Canonical LongBench v1 rendering templates; no local prompt templates are substituted.",
+      "validator": {
+        "kind": "json_mapping",
+        "key_count": 21
+      }
+    },
+    {
+      "id": "longbench-v1-max-output",
+      "suite": "LongBench v1 official output limits",
+      "revision": "2e00731f8d0bff23dc4325161044d0ed8af94c1e",
+      "url": "https://raw.githubusercontent.com/THUDM/LongBench/2e00731f8d0bff23dc4325161044d0ed8af94c1e/LongBench/config/dataset2maxlen.json",
+      "local_path": "sources/longbench-v1/dataset2maxlen.json",
+      "sha256": "72966b3c0933e214591637fb085798c5e687ebff4ddaab5d99bbc31120532022",
+      "size_bytes": 459,
+      "license": "MIT",
+      "purpose": "Canonical LongBench v1 output caps for equal engine runs.",
+      "validator": {
+        "kind": "json_mapping",
+        "key_count": 21
+      }
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "iteration": "ITER-20260728-066-public-cross-engine-foundation",
+  "kind": "public-cross-engine-core-summary",
+  "decision": "admit-public-adapter-and-comparable-core-matrix",
+  "performance_selection": "rejected-pending-order-balanced-repeat",
+  "scope": "scoped cross-engine-core diagnostic; not a global engine ranking",
+  "source": {
+    "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "workload_sha256": "d6c7fa000ec3daca7a9756f906ab997624b678bfa9128949a7630fc4a9444e46",
+    "adapter_sha256": {
+      "public_benchmark": "3f005ff5e20648060eda9722700594bc175efec6832531dc3d4a44ac83c1195a",
+      "public_engine_matrix": "081c95420a6fa5790508bfd594fc819201f918ec0b5c44b43336e4776c5c611f"
+    }
+  },
+  "matrix": {
+    "profile": "cross-engine-core",
+    "workload_records": 1380,
+    "engine_records": 2760,
+    "required_engines": [
+      "aster",
+      "mlx-lm"
+    ],
+    "engine_versions": {
+      "aster": "aster=0.1.0;mlx=0.32.0",
+      "mlx-lm": "mlx-lm=0.31.3;mlx=0.32.0"
+    },
+    "model_fingerprint": {
+      "model_sha256": "54c8e23411da936d6fde086cbd189ffa8c647b52ade0b9b751e67ade235fa0cf",
+      "tokenizer_sha256": "50e396ca431330a955f0c11c13d4b1ebc65f9119cc5fc360ba53f0b681f2cf0c"
+    },
+    "execution": {
+      "generation_mode": "greedy",
+      "input_mode": "pinned-public-source-rendered-token-ids",
+      "input_truncation_policy": "official-longbench-half-head-half-tail",
+      "max_input_tokens": 32768,
+      "prefill_step_tokens": 2048,
+      "process_isolation": "fresh-process-per-engine-task-shard",
+      "warmup_tokens": 8,
+      "memory_peak": "psutil-rss-sampled",
+      "memory_sample_interval_seconds": 0.05
+    },
+    "raw_result": {
+      "root": "run/loop-engineering/ITER-20260728-066-public-cross-engine-foundation/core-matrix",
+      "aster_sha256": "cffa302418d1c8e814c6304afb962125f798dca1b2056d3f1e55812137effd06",
+      "mlx_lm_sha256": "7a10462841e9a317cd9b279eaff1ae4bf564b394bfcce3304b67b7c9ba8017ea",
+      "comparison_sha256": "9bf3265218243451ddf05e1e1639f03c84e0bec2ce46a0815734f29b1ddfe051"
+    }
+  },
+  "validation": {
+    "decision": "comparable",
+    "errors": [],
+    "gates": {
+      "complete_public_workload": true,
+      "deterministic_token_parity": true,
+      "metrics_complete": true,
+      "required_engines_present": true,
+      "same_effective_input_tokens": true,
+      "same_execution_contract": true,
+      "same_model_and_tokenizer": true,
+      "same_public_prompts": true
+    }
+  },
+  "overall_p50": {
+    "decode_tokens_per_second": {
+      "aster": 156.94880315287458,
+      "mlx_lm": 141.2508440827864,
+      "paired_median_aster_vs_mlx_lm_percent": 15.76182168377045
+    },
+    "prefill_tokens_per_second": {
+      "aster": 5030.4046725272365,
+      "mlx_lm": 5583.240477585565,
+      "paired_median_aster_vs_mlx_lm_percent": -8.508514125574074
+    },
+    "ttft_seconds": {
+      "aster": 1.063047125498997,
+      "mlx_lm": 1.0462943959864788,
+      "paired_median_aster_vs_mlx_lm_percent": -5.1124909662437545
+    },
+    "end_to_end_seconds": {
+      "aster": 1.7866143750143237,
+      "mlx_lm": 1.7177247085201088,
+      "paired_median_aster_vs_mlx_lm_percent": 0.9749224580853033
+    },
+    "peak_rss_bytes": {
+      "aster": 662249472.0,
+      "mlx_lm": 738623488.0,
+      "paired_median_aster_vs_mlx_lm_percent": -3.304439442555429
+    },
+    "max_swap_delta_bytes": {
+      "aster": 0,
+      "mlx_lm": 0
+    }
+  },
+  "length_bin_paired_median_aster_vs_mlx_lm_percent": [
+    {
+      "input_tokens": "[0,512)",
+      "records": 80,
+      "prefill_tokens_per_second": -74.005,
+      "decode_tokens_per_second": -7.46,
+      "ttft_seconds": -3.932,
+      "end_to_end_seconds": 14.128
+    },
+    {
+      "input_tokens": "[512,2048)",
+      "records": 163,
+      "prefill_tokens_per_second": -18.069,
+      "decode_tokens_per_second": 18.057,
+      "ttft_seconds": -9.434,
+      "end_to_end_seconds": -0.023
+    },
+    {
+      "input_tokens": "[2048,8192)",
+      "records": 751,
+      "prefill_tokens_per_second": -9.479,
+      "decode_tokens_per_second": 15.039,
+      "ttft_seconds": -2.174,
+      "end_to_end_seconds": 1.087
+    },
+    {
+      "input_tokens": "[8192,32769)",
+      "records": 386,
+      "prefill_tokens_per_second": 5.897,
+      "decode_tokens_per_second": 28.179,
+      "ttft_seconds": -8.597,
+      "end_to_end_seconds": -7.129
+    }
+  ],
+  "interpretation": {
+    "observed": "The first complete public core screen is length-dependent: Aster's paired median prefill rate is lower in the three sub-8192-token bins and higher in the 8192-to-32768 bin, while decode and end-to-end directions vary by workload.",
+    "not_claimed": "One ordered process per engine-task shard cannot establish a general engine ranking or select a production optimization.",
+    "next_action": "Run a second complete core matrix with every shard's engine order reversed and require agreement by workload and input-length bin before attributing a bottleneck."
+  }
+}

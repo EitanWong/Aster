@@ -54,6 +54,7 @@ class RequestState:
     stop_sequences: tuple[str, ...] = ()
     pending_stop_text: str = ""
     completion_tokens: int = 0
+    finish_reason: str | None = None
     enqueued_at: float | None = None
     admission_started_at: float | None = None
     admitted_at: float | None = None

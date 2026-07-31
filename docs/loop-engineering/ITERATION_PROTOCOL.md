@@ -46,6 +46,42 @@ intervals, exact output, stable memory, and no discarded observations. Scenario
 results must stay scenario-scoped; percentages from different iterations are
 never added together.
 
+## Public Data and Cross-Engine Gate
+
+- Cross-engine performance evidence begins with
+  `docs/loop-engineering/benchmarks/public-dataset-lock.json`, not a locally
+  invented prompt. Run `scripts/dev/public_benchmark.py sync` once to download
+  the pinned data under ignored `run/loop-engineering/public-benchmarks/`, then
+  run `verify` before each new matrix.
+- The current lock contains FastChat MT-Bench and LongBench v1 plus LongBench's
+  official prompt templates and output limits. The lock records immutable
+  revision, source URL, SHA-256, size, and structural validation rules.
+- Generate an engine inventory before a matrix. Every locally available,
+  compatible engine belongs to the required-engine set. An unavailable engine
+  needs a recorded reason such as absent runtime, absent model format, or failed
+  same-model/tokenizer equivalence; it must not disappear from the comparison.
+- Generate workload manifests from public source record IDs and prompt hashes.
+  `cross-engine-core` is a scoped diagnostic profile; `full-public` is the only
+  profile eligible for a complete cross-engine statement within its declared
+  MT-Bench plus LongBench-primary scope. A limited profile is always screen-only,
+  even when the source data is public.
+- `validate-results` must pass before choosing a production candidate: every
+  required engine covers every workload record exactly once, model/tokenizer
+  fingerprints and generation settings match, public prompt hashes match,
+  deterministic token hashes match, and TTFT/prefill/decode/end-to-end/RSS/swap
+  metrics are present. Tooling fixtures may be synthetic only to test the gate;
+  they are never benchmark evidence.
+- Public result adapters must reconstruct each prompt from the locked source and
+  record effective input-token and output-token hashes rather than copied prompt
+  text. Pin prefill chunk size, truncation policy, warmup, cache-maintenance
+  scope, process isolation, and memory-sampling cadence in a shared execution
+  contract; a chunk-size difference can change greedy output tokens.
+- A single complete `cross-engine-core` matrix is a scoped, order-alternated
+  screen. Before selecting a production bottleneck, rerun the same public
+  records with every shard's engine order reversed and report workload and
+  input-length-bin results by order stratum with bootstrap intervals. A
+  directional disagreement rejects the attribution.
+
 ## Workspace Contract
 
 Run this at recovery and consolidation:
@@ -87,6 +123,9 @@ An iteration closes only when all of the following are true:
 6. Scratch duplication and generated caches are removed after the retained
    evidence is verified.
 7. The next iteration has one objective, one primary metric, and a bounded file set.
+8. Any cross-engine conclusion names its public workload profile, source-lock
+   hash, required-engine inventory, excluded-engine reasons, and completeness
+   result. A scoped profile cannot be described as a global engine ranking.
 
 If a gate fails, keep the iteration active or reject the candidate. Do not hide
 the failure by widening tolerances, changing inputs, or selecting favorable runs.

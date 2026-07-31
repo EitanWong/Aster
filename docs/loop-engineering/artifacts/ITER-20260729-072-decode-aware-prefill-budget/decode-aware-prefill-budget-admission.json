@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "kind": "decode-aware-prefill-budget-admission",
+  "iteration": "ITER-20260729-072-decode-aware-prefill-budget",
+  "baseline_commit": "f3bfb01a8710033013bdf3f91cd3885c01cfe322",
+  "setting": {
+    "path": "engine.decode_active_prefill_token_budget",
+    "admitted_default": 512,
+    "rollback_value": null,
+    "semantics": "Cap continuing prefill at 512 tokens only while decode work is queued; the ordinary and pressure budgets remain upper bounds."
+  },
+  "source_bound_latency_and_correctness_screen": {
+    "artifact": "decode-aware-prefill-budget-screen.json",
+    "artifact_sha256": "15172ececd3c20bc6c4869d8e28ae98f6391abcb7cbfc511ef4d6e23ec23c817",
+    "pair_count": 4,
+    "exact_token_text_finish_parity": true,
+    "paired_median_delta_percent": {
+      "short_decode_duration": -55.203818,
+      "short_end_to_end": -48.275656,
+      "long_end_to_end": -9.320057,
+      "long_prefill_model_time": -7.985844
+    },
+    "cancellation": {
+      "accepted": true,
+      "prefill_checkpoints": 1,
+      "final_active_estimated_bytes": 0,
+      "final_pending_requests": 0,
+      "swap_delta_bytes": 0
+    }
+  },
+  "resource_attribution": {
+    "workload": "locked staggered QMSUM plus MT-Bench B2, greedy, 8 output tokens",
+    "lifecycle_snapshots": [
+      "before_engine_create",
+      "after_engine_create",
+      "after_engine_start",
+      "after_warmup",
+      "before_workload",
+      "after_workload",
+      "after_close"
+    ],
+    "exact_token_text_finish_parity_across_runs": true,
+    "runs": {
+      "prefix_off_candidate": {
+        "raw_sha256": "2f6c05a27ae3b890850ce58a806ac892de70d13a9cbc0db0d5efc13d3301f2a1",
+        "prefix_cache_enabled": false,
+        "decode_active_prefill_token_budget": 512,
+        "prefix_cache_bytes": 0,
+        "swap_delta_bytes": {
+          "engine_create": 0,
+          "engine_start": 0,
+          "warmup": 0,
+          "workload": -8388608,
+          "close": 0,
+          "total": -8388608
+        }
+      },
+      "prefix_off_control": {
+        "raw_sha256": "7adc8a1308884bdec73e087adf156265c28c3fd80c3a77971fd4f4c6afb6891b",
+        "prefix_cache_enabled": false,
+        "decode_active_prefill_token_budget": null,
+        "prefix_cache_bytes": 0,
+        "swap_delta_bytes": {
+          "engine_create": 0,
+          "engine_start": 0,
+          "warmup": 0,
+          "workload": 0,
+          "close": 0,
+          "total": 0
+        }
+      },
+      "prefix_on_candidate": {
+        "raw_sha256": "fa59014b7d2e0f00f6aa8908c62f61e71cfd02eb5a303d6897585fceb30e3ed3",
+        "prefix_cache_enabled": true,
+        "decode_active_prefill_token_budget": 512,
+        "prefix_cache_bytes": 390103040,
+        "swap_delta_bytes": {
+          "engine_create": 0,
+          "engine_start": 0,
+          "warmup": 0,
+          "workload": 0,
+          "close": 0,
+          "total": 0
+        }
+      },
+      "prefix_on_control": {
+        "raw_sha256": "55709f67f69f524095a09c837827ac10f73e4a3c300907d2ec45d5b2b3ca6e88",
+        "prefix_cache_enabled": true,
+        "decode_active_prefill_token_budget": null,
+        "prefix_cache_bytes": 390103040,
+        "swap_delta_bytes": {
+          "engine_create": 0,
+          "engine_start": 0,
+          "warmup": 0,
+          "workload": 0,
+          "close": 0,
+          "total": 0
+        }
+      }
+    },
+    "classification": "The earlier positive candidate swap sample did not recur in either cache state or any lifecycle stage. This clears the candidate-specific resource gate but does not claim a global OS-memory root cause."
+  },
+  "current_source_cross_engine_smoke": {
+    "engines": [
+      "aster",
+      "mlx-lm"
+    ],
+    "model_fingerprint": {
+      "model_sha256": "d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a",
+      "tokenizer_sha256": "94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e"
+    },
+    "derived_workload_sha256": "7e801bfc6cfe934c95c5e1fe878aa2910b6eff8c2f4c5ad688fd3fc8cc3c40f1",
+    "source_lock_sha256": "d6d0877b452ed5627bf0fd39ebc1e59ccad6284cdb4eace27a954603a5211c16",
+    "record_count_per_engine": 2,
+    "max_output_tokens": 8,
+    "aster_raw_sha256": "3f32dc5289ad76c1eaca48b273a709dc543a17e1d3180a92920ae1a1edc6ffd5",
+    "mlx_lm_raw_sha256": "87b54027af6f64d767b96b20dbe4f52a725a059a0a2af3ac23edd9a5a46d66d5",
+    "same_workload_source_model_generation_and_common_adapter_sources": true,
+    "exact_token_text_finish_parity": true,
+    "zero_swap": true,
+    "scope": "Regression smoke only. It validates current-source output compatibility and does not rank heterogeneous engine timings or replace the complete I066/I067 matrices."
+  },
+  "source_hashes": {
+    "config": "9984a1b1c48815ae707bb0e608c157dc025904b292e576cf6c73514c914907b3",
+    "config_template": "53d8f65855b4adfcbaad62c55d6908a7165b33ca2eeee0499fc2a1c2ee19baf6",
+    "engine_config": "01ad8c177850f2b667bfe61fd357f1d6ec412c10b8c51509792870ba43b6bf04",
+    "engine": "8ba127d48c9a5b75b8f2e07ae2a4f1763f128716fa0fb4168289d1a98277d898",
+    "arrival_harness": "f0bcff319ca6a30cacb8d35421cbb4b02fa662712320086be1edb5a0ed83a62b",
+    "matrix_harness": "0dc3e58f7b75f6da8cda71f5e9d1ce323bc724eacef75b6e1f6ec4c706ac068e",
+    "config_tests": "db054481eaf4762dd4fb2e5df8eef319c092ec491a24b1f59a1860182279853e"
+  },
+  "decision": "admitted-default-512"
+}

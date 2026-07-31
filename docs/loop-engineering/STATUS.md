@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-07-24
+Updated: 2026-07-29
 
 ## Current State
 
@@ -8,22 +8,181 @@ Updated: 2026-07-24
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 059. Active iteration: 060, phase `profile`.
-- The active hypothesis is that bounded ownership or lifetime of LMFE prefix
-  `TokenList` objects can reduce short B4 and long B2 RSS growth by at least
-  25% while keeping the balanced throughput lower bound at or above `-1%`.
-- The current workspace audit reports 1,172 changed paths, including 1,121
-  artifact files, 715 staged paths, 32 unstaged paths, 430 untracked paths,
-  five mixed-index paths, and 13 reference-project paths. Generated caches are
-  zero. The immutable debt baseline is 1,164/1,114 at `2cb14052d4a3`; current
-  growth is 8/7, within the 25/20 allowances, so strict checking returns WARN
-  with no blocker. Existing owner-unknown content remains inventory.
+- Last completed iteration: 076. Active iteration: 077, phase `planned`.
+- I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
+  files, locally constructed prompts, greedy sampling, fixed output caps,
+  token/text/finish parity, and zero swap growth across 12 independent pairs.
+  It remains historical isolated-process evidence only: its local input cannot
+  select a future production optimization or support an engine-ranking claim.
+- I062 rejected both short-decode screens without changing production code:
+  no-processor work-item history was sub-0.25%, while the MLX-LM lookahead
+  pipeline had exact output but sign-reversing order strata.
+- I063 rejected allocator clearing, delayed Python collection, and fixed
+  terminal prewarm order as sufficient explanations. Its 8-process crossed
+  prewarm screen retained exact output and zero swap; pipeline-first p50 was
+  +16.746% while serial-first was -14.022%, and all four matched contrasts
+  stayed positive. No asynchronous runtime candidate was authorized.
+- I064 rejected adjacent same-process comparison as performance evidence: fresh
+  same-variant calls were 25.955% slower at serial p50 and 28.110% slower at
+  pipeline p50 on the second call; 7/8 second calls regressed. This is a
+  measurement-boundary result, not a pipeline performance claim.
+- I065 admitted I061's isolated-process boundary without a new model run: all
+  24 record PIDs are unique, each source branch has one warmup plus one timed
+  second call, and each scenario has a 3/3 engine-order balance.
+- I066 superseded the unstarted isolated Aster-only attribution plan before any
+  collection. It established public source provenance and complete cross-engine
+  coverage as a hard gate before another production candidate.
+- The tracked public source lock now pins MT-Bench and LongBench v1. The local
+  download verified MT-Bench's 80 questions and LongBench's 34 JSONL members /
+  8,418 archive records, including the 21-task / 4,750-record primary corpus;
+  LongBench's official 21 prompt templates and 21 output limits also match.
+- I066 generated a 1,380-record scoped `cross-engine-core` workload and a
+  4,830-record `full-public` workload. Both retain only public record IDs and
+  prompt hashes; no local or copied prompt text becomes benchmark input. Only
+  `full-public` may support a complete engine statement within its named
+  MT-Bench plus LongBench-primary scope.
+- The 12-runtime inventory makes Aster and direct MLX-LM available. Exo,
+  Ollama, llama.cpp, vLLM, SGLang, vLLM-MLX, MLC-LLM, mistral.rs, LM Studio MLX
+  Engine, and OMLX are explicitly unavailable by local module/command probes.
+- I066 added source-bound Aster/direct-MLX-LM result adapters. They reconstruct
+  MT-Bench/LongBench prompts from the locked source, retain only input/output
+  hashes in results, and pin the direct MLX-LM 2,048-token prefill step in
+  Aster as well. This removed an earlier long-prompt output drift from unequal
+  prefill chunks.
+- The complete I066 `cross-engine-core` run covers 1,380 public records and
+  2,760 engine-records. All eight gates passed: source/public prompt identity,
+  effective input tokens, execution contract, model/Tokenizer fingerprints,
+  deterministic output tokens, coverage, metric completeness, and required
+  engines. Both engines kept zero swap delta.
+- The scoped first matrix is descriptive, not a ranking: paired median
+  Aster/direct results are +15.762% decode throughput, -8.509% prefill
+  throughput, -5.112% TTFT, +0.975% end-to-end time, and -3.304% peak RSS.
+  Directions vary by workload and input length, and each engine/task shard ran
+  once. I066 admits the adapter/matrix foundation but rejects a production
+  performance selection.
+- I067 completed the same 1,380-record public core matrix in fully reversed
+  shard order (2,760 new engine-records). Both individual matrices pass every
+  public comparability gate; their joined analysis also passed source, input,
+  model, execution-contract, output-token, reverse-order, balanced-first-engine,
+  and zero-swap gates. Each engine was first for 1,380 public records.
+- The crossed result rejects a global ranking and production bottleneck claim.
+  Aggregate Aster/direct prefill is consistently lower (`-10.504%` Aster-first,
+  `-7.681%` MLX-first), but long-context decode reverses from `-10.515%` to
+  `+27.532%`. `longbench-qmsum` reverses across decode, end-to-end, and
+  prefill, so its large effects are measurement-state evidence rather than a
+  runtime component attribution.
+- I068 completed its public-source-only four-block QMSUM ABBA trace: all 1,600
+  engine-records are comparable, token-identical across blocks, state-traced,
+  and zero-swap. The reversal did not recur. Aster decode throughput is
+  reproducibly lower by `7.775%` when Aster runs first and `8.216%` when
+  MLX-LM runs first; end-to-end time is reproducibly higher by `5.452%` and
+  `5.352%`. Prefill and TTFT remain inside the 3% no-op band, and peak RSS is
+  not reproducible.
+- I069 completed the same locked public QMSUM scope with opt-in source-bound
+  component tracing: 1,600 engine-records / 800 paired records passed all
+  state, component-contract, deterministic output, ABBA, and zero-swap gates.
+  Aster's common decode-driver seconds per output token are reproducibly higher
+  by `8.791%` (Aster first, 95% `[8.660%, 8.964%]`) and `8.655%` (MLX-LM first,
+  `[8.522%, 8.773%]`); aggregate decode throughput is `-8.177%` / `-8.025%`
+  and end-to-end time `+5.906%` / `+5.504%`. B1 has no batch-cache merge or
+  rebuild, and cache resolution, processor dispatch, and result delivery are
+  each immaterial. The dominant Aster-only sampling-completion field contains
+  the lazy MLX completion barrier, so it is not a direct private-substep
+  comparison. I070 will align a lower-level common boundary; no runtime
+  candidate is admitted.
+- I070 completed its fresh, source-frozen 80-record-per-engine MT-Bench
+  traced/untraced smoke. Source/model/execution, deterministic token/text/finish
+  parity, and zero swap all pass after correcting the comparison to match each
+  engine's traced/untraced source fingerprints rather than requiring different
+  engines to share package files. The observer itself fails every 3% no-op
+  metric gate: Aster decode is `-3.635%`, end-to-end `+3.818%`, and TTFT
+  `+7.432%`; direct MLX-LM decode is `-7.277%`, end-to-end `+7.717%`, and TTFT
+  `+11.477%`. I070 rejects the observer as a QMSUM attribution tool and makes
+  no production change or engine claim.
+- I071 admitted a source-bound Aster arrival/load harness and baseline. B4/B8
+  reached `51.247`/`53.410` aggregate tok/s without decode fallbacks; B8,
+  shared-prefix, and a staggered long-prefill repeat exposed swap pressure.
+  Exact shared-prefix replay reduced QMSUM TTFT `14.597 -> 0.169s`. Two
+  staggered QMSUM-plus-MT-Bench controls showed a short request spending
+  `9.346s`/`9.614s` in decode while long prefill continued.
+- I072 admitted the decode-aware 512-token continuing-prefill cap as the
+  production default. Four balanced public-source pairs retained exact
+  token/text/finish parity and improved median short decode/end-to-end by
+  `55.204%`/`48.276%`; cancellation left no active state. Its predeclared
+  prefix-on/off lifecycle screen retained exact outputs across four fresh
+  processes: candidate swap was zero in both cache states except for one
+  `-8MiB` prefix-off workload delta, while controls were zero. The cache-on
+  runs each retained one `390,103,040`-byte snapshot without swap growth, so
+  the earlier `+1.044GB` candidate sample is not policy-repeatable.
+- I072 also ran a current-source two-record 9B Aster/direct-MLX-LM
+  compatibility smoke. Model/tokenizer, source lock, generation, and shared
+  harness sources match; token IDs, text hashes, finishes, and zero swap match
+  for both records. This validates output compatibility only, not a timing
+  ranking or a replacement for the complete I066/I067 public matrices.
+- I073 rejected a cache-policy selection after six fresh locked-source rows.
+  Exact cache reuse (10,333 tokens), one-entry distinct-key eviction, and
+  cancellation checkpoint ownership all behaved as expected with exact terminal
+  output/cancellation parity and zero active state. Shared-prefix workload
+  global swap changed in both cache states (+883,752,960 off, +364,576,768 on),
+  while all distinct/cancellation rows were zero; `psutil.swap_memory().used`
+  is host-global, so this is not a cache-specific owner.
+- I074 rejected cache-policy selection after completing that control. Both idle
+  rows were zero-swap and submitted no requests; shared-prefix values in
+  `off,on,on,off` order were `0,0,0,+78,577,664` bytes. Cache-on exact reuse
+  repeated (one hit / 10,333 tokens in each row), while the only positive swap
+  value was cache-off. `idle-lifecycle` is retained; no cache default changed.
+- I075 rejected the temporary 1 GiB snapshot budget. It lowered explicit
+  retained bytes by 1,025,114,112 but changed the predeclared first-record
+  replay from an exact 0-prefill-step hit at `0.279007s` TTFT to an 8-step miss
+  at `19.219282s`; all terminal output identities still matched. The 8 GiB
+  default remains unchanged.
+- I076 rejected the temporary 2 GiB budget. It ended under its final cap but
+  incurred two clone-reserve evictions and changed first replay from an exact
+  0-prefill-step hit at `0.226819s` TTFT to an 8-step miss at `27.859819s`.
+  The 8 GiB default remains unchanged.
+- I077 is planned to expose bounded prompt-free reservation decisions and prove
+  the observer is output- and replay-TTFT-neutral before it profiles another
+  budget. No clone-reserve, eviction, or default behavior is in scope.
+- The current engine-gap assessment is recorded in
+  `CORE_REFERENCE_MATRIX.md`. It distinguishes confirmed Aster capabilities
+  from unmeasured reference-engine differences: the public QMSUM result now
+  points to a stable decode driver rather than prefill, but not yet to one
+  comparable low-level operation. Paged KV, compressed cache, SIMD/Metal
+  kernels, native-runtime work, and CPU tokenization remain conditional on the
+  public arrival/load evidence.
+- Gigatoken `34a1599` is pinned as a remote P1 CPU-ingress reference, not an
+  installed dependency. It may help host prompt tokenization only after I071
+  and only if Qwen3.5 public/chat/special-token parity plus queue-aware TTFT
+  and end-to-end gates pass. It does not stand in for GPU/Metal SIMD inference
+  work, which remains a separate measured kernel class.
+- The latest strict audit is `WARN` with 87 changed paths, 47 artifact files
+  (0.54 MiB), zero staged/mixed/reference paths, 24 generated caches, and no
+  blocker. Warnings cover explicit foreign evidence from closed I060-I072
+  iterations plus generated caches; historical owner-unknown files remain
+  inventory rather than being rewritten or removed.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.
+- Iteration 060 retains 9 artifact files and one 218,232-byte archive. Its 49
+  logical evidence records recompute two formal matrices and two repeated
+  source-bound memory comparisons exactly.
+- Iteration 061 retains 7 artifact files and one 31,783-byte archive. Its 38
+  logical evidence records recompute a 12-pair, two-scenario local
+  cross-engine matrix without scratch.
+- Iteration 062 retains 7 artifact files and one 5,996-byte rejected-screen
+  archive. Its 13 logical records recompute both rejected profile branches
+  without scratch.
+- Iteration 063 retains 7 artifact files and one 19,498-byte rejected-screen
+  archive. Its 14 logical records preserve allocator/GC and crossed-prewarm
+  evidence; the archive-only recomputation passes without scratch.
+- Iteration 064 retains 6 artifact files and one 23,097-byte rejected-screen
+  archive. Its 8 records recompute the same-variant call-position result
+  without scratch.
+- Iteration 065 retains 3 small audit artifacts and reuses I061's 31,783-byte
+  archive; no duplicate model evidence or scratch was created.
 
-- Current measured baseline commit: `2cb1405` (Iteration 050; production
-  attention remains native MLX).
+- Current measured baseline commit: `f3bfb01a8710` (I060-admitted manual
+  runtime; production attention remains native MLX).
 - Working tree: an uncommitted opt-in independent-MLX-stream candidate is
   present; it remains experimental and is not part of the default path.
 - Previous dependency commit: `86ed15c` (refresh compatible dependency lock).
@@ -132,10 +291,17 @@ Updated: 2026-07-24
   A missing numeric memory predeclaration was recorded as a protocol deviation;
   after explicit 4/2 GiB RSS and 16/8 MiB MLX limits were written, four fresh
   confirmations passed.
+- Iteration 060 retains request-local LMFE freetext-list reuse and active
+  prefix-state retention. The short B4 and 24,601-token B2 formal balanced
+  lower bounds were `+16.01%` and `+12.52%`; all 36 outputs matched exactly,
+  both order strata cleared 3%, and swap stayed flat. Two independent
+  ownership pairs per cell reduced median RSS growth by `98.68%` and `97.61%`.
+  Stop-aware B4 was 4/4 schema-valid with membership `4 -> 3 -> 1`; no request
+  TokenList remained after lane release.
 
 ## Evidence
 
-- Current full worktree suite: `503 passed, 9 skipped, 1 warning`.
+- Current full worktree suite: `525 passed, 9 skipped, 1 warning`.
 - Long-context snapshot preflight: `15 passed, 39 deselected`. Requests below
   65,536 prompt tokens preserve their available-memory budget; requests at or
   above that threshold cap it at 2 GiB before the configured snapshot limit is
@@ -162,6 +328,9 @@ Updated: 2026-07-24
 - Iteration 059 affected plus artifact tests pass (`142 passed`), standalone
   compact-evidence assertions pass (`2 passed`), and its source/model-bound
   composite admission recomputes both strict aggregates and passes 12/12 gates.
+- Iteration 060 focused constrained-decoding, runner, and archive tests pass
+  (`61 passed`). Its 49-file source/model-bound archive recomputes both strict
+  aggregates and passes all 12 composite gates.
 - The initial grouped 0.8B mixed A/B suggested `-13.6%` elapsed time, but randomized interleaving invalidated that as a global claim: current was `+2.86%` slower in elapsed median and `-2.78%` lower in completion throughput, with bootstrap intervals containing zero.
 - The benchmark now defaults to explicit greedy sampling (`temperature=0.0`); seven validation trials all produced 288 completion tokens and 4/4 successful requests.
 - Resource-aware validation now records platform, Python, MLX-LM, total memory, RSS peak, and swap before/after values; seven trials showed zero swap growth.
@@ -403,9 +572,9 @@ Updated: 2026-07-24
 
 ## Next Priority
 
-1. Complete the read-only Iteration 060 ownership profile: separate active from
-   accumulated LMFE `TokenList` state at short B4 and 24,601-token B2 before
-   selecting one bounded lifetime candidate.
+1. Execute Iteration 071's public-source arrival/load baseline: define fixed
+   B1/B4/B8 arrivals, staggered long-prefill, shared-prefix, and cancellation
+   cases before selecting scheduler, prefill, or cache changes.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Keep generated caches at zero and prevent growth beyond the
    recorded +25/+20 allowances.
