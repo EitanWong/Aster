@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-07-31
+Updated: 2026-08-01
 
 ## Current State
 
@@ -8,7 +8,7 @@ Updated: 2026-07-31
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 083. Active iteration: 084, phase `planned`.
+- Last completed iteration: 085. Active iteration: 086, phase `planned`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -218,6 +218,22 @@ Updated: 2026-07-31
   6.512s. This passes the gate for I085's type-specific shared-state/COW
   feasibility work, but does not authorize generic shallow copies or a default
   change. Positive B8 host-global swap remains pressure context only.
+- I085 rejects the typed shared-state fork before production implementation.
+  Qwen3.5-9B uses 24 `ArraysCache` and 8 `KVCache` layers; focused tests prove
+  retained-base, sibling, append, trim, merge/extract, and first-write
+  isolation. MLX `deepcopy` construction produced zero active-memory growth in
+  all nine B2/B4/B8 rows and took only 0.231/0.367/0.741 ms at the median.
+- The actual owner is native batch merge. Median B2/B4/B8 active deltas are
+  780,402,816 / 1,560,543,488 / 3,120,824,832 bytes and match materialized
+  state; every release returns exactly to baseline. Per request, full-attention
+  `BatchKVCache` is 338,591,744 bytes (86.80%) and linear-attention
+  `ArraysCache` is 51,511,296 bytes (13.20%). Production cloning, the 8 GiB
+  budget, eviction, persistence, and rollback behavior remain unchanged.
+- Local reference review confirms the next boundary. vLLM lets paged attention
+  consume shared refcounted block tables directly. SGLang's MLX slot pool still
+  converts the prefix to per-request contiguous caches and concatenates batch
+  rows before SDPA. I086 therefore tests only a benchmark-gated shared-prefix
+  full-attention path while keeping linear-attention state request-owned.
 - The current engine-gap assessment is recorded in
   `CORE_REFERENCE_MATRIX.md`. It distinguishes confirmed Aster capabilities
   from unmeasured reference-engine differences: the public QMSUM result now
@@ -230,12 +246,11 @@ Updated: 2026-07-31
   and only if Qwen3.5 public/chat/special-token parity plus queue-aware TTFT
   and end-to-end gates pass. It does not stand in for GPU/Metal SIMD inference
   work, which remains a separate measured kernel class.
-- The post-I084 strict audit is WARN with no blockers: 18 changed paths, four
-  compact artifacts / 33,089 bytes, zero staged/mixed/reference paths, and
-  zero active-I085 artifacts. Historical warnings cover the retained I081-I084
-  artifacts and 24 generated caches. The full suite passes (`561 passed, 9
-  skipped, 1 warning`), touched-file Ruff and diff checks pass, and full-tree
-  Ruff still reports 227 historical issues outside this iteration boundary.
+- The pre-consolidation I085 verification is green: the retained prompt-free
+  ownership artifact recomputes, focused tests pass 7/7, and the full suite is
+  `568 passed, 9 skipped, 1 warning`. Touched-file Ruff passes; full-tree Ruff
+  still reports 227 historical issues outside this iteration boundary. The
+  final strict workspace counts are recorded in `CURRENT.json`.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.
@@ -649,12 +664,13 @@ Updated: 2026-07-31
 
 ## Next Priority
 
-1. Execute I085's cache-type mutation audit and opt-in exact-hit shared-state
-   feasibility tests. Prove retained-snapshot and sibling isolation before any
-   9B B2/B4/B8 A/B or default-path proposal.
+1. Execute I086's benchmark-only shared-prefix full-attention feasibility work.
+   Prove block/refcount lifetime, private suffix writes, request-owned
+   `ArraysCache`, native fallback, and absence of B-by-prefix materialization
+   before any 9B B2/B4/B8 A/B or default-path proposal.
 2. Reduce the immutable workspace debt only through owner-attributed review
-   boundaries. Keep generated caches at zero and prevent growth beyond the
-   recorded +25/+20 allowances.
+   boundaries. Do not grow generated caches or exceed the recorded +25/+20
+   allowances.
 3. Archive a fresh automatic default-config 128K snapshot-cap reproduction.
 4. Close evidence gaps in this order: broader schemas and tool calls, 32K
    mixed-agent and cancellation pressure, 30-minute stability, then energy and

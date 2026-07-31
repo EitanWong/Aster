@@ -2,16 +2,15 @@
 
 - Historical workspace debt remains. Its immutable baseline is 1,164 changed
   paths / 1,114 artifact files at `2cb14052d4a3`; the active iteration keeps its
-  own 20-file / 5 MiB budget. The latest strict audit has 18 changed paths and
-  4 artifact files (33,089 bytes), with zero staged paths, mixed-index paths,
-  reference updates, and active-I085 artifacts, plus 24 generated caches. It
-  warns about retained I081-I084 evidence and generated caches.
+  own 20-file / 5 MiB budget. The latest strict counts and warnings are tracked
+  in `CURRENT.json`; generated Python caches remain workspace warnings rather
+  than iteration artifacts.
 - Long-context snapshot preflight is now implemented and the full suite is
-  green (`561 passed, 9 skipped, 1 warning`). The threshold and both checkpoint call paths
+  green (`568 passed, 9 skipped, 1 warning`). The threshold and both checkpoint call paths
   have automated coverage. The earlier controlled 128K comparison supports
   the 2 GiB cap, but a fresh default-8-GiB real-model run through the automatic
   policy has not yet been archived as formal evidence.
-- Ruff passes for every Python file touched by I081-I084. The broader
+- Ruff passes for every Python file touched by I081-I085. The broader
   `aster tests scripts` tree still reports 227 historical lint errors, so
   full-tree Ruff remains an explicit repository-debt boundary rather than an
   iteration admission gate.
@@ -206,8 +205,12 @@
   then measures repeatable exact-hit fanout ownership: active estimates scale
   as one/three/seven full request estimates at B2/B4/B8, B8 MLX peak rises by
   2.330 GB over B4, and replay latency reaches a 3.913s median / 6.512s p95.
-  This selects I085's shared-state/COW feasibility experiment, but the current
-  `copy.deepcopy` remains the default. Cache-layer mutation semantics, physical
-  aliasing, persistence, and sibling isolation are not yet proven; unknown or
-  in-place-mutating layer types must continue to clone eagerly. B8's positive
-  host-global swap is pressure context and not process-owned attribution.
+  I085 then proves that `copy.deepcopy` construction has zero physical growth;
+  native batch merge is the owner. At B8 it materializes 3,120,824,320 logical
+  bytes, 86.80% in eight full-attention layers and 13.20% in 24 linear-attention
+  layers. Typed forking is rejected and the current clone remains the default.
+  Aster's experimental paged bundle cannot yet combine prefix caching with B>1
+  decode, while SGLang's local MLX pool still materializes contiguous rows.
+  I086 must prove direct shared-prefix attention consumption, block lifetime,
+  native fallback, exact outputs, and clean cancellation before any production
+  path is considered. B8 host-global swap remains pressure context only.

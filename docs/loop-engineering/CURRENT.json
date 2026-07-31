@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
-  "updated": "2026-07-31",
+  "updated": "2026-08-01",
   "workflow_status": "active",
-  "last_completed_iteration": "ITER-20260731-084-concurrent-exact-fanout-ownership-screen",
-  "active_iteration": "ITER-20260731-085-exact-hit-shared-state-feasibility",
+  "last_completed_iteration": "ITER-20260731-085-exact-hit-shared-state-feasibility",
+  "active_iteration": "ITER-20260801-086-shared-prefix-batch-attention-feasibility",
   "phase": "planned",
-  "baseline_commit": "5e32228f201435d595afb03d6d73d35cbdc8eae0",
-  "objective": "Prove or reject a type-specific exact-hit shared-state or copy-on-write cache fork before changing Aster's eager-clone production path.",
-  "hypothesis": "Some evaluated Qwen3.5 cache history may be safely shared through isolated wrappers until first write, but hybrid, rotating, or state-space layers may require eager isolation; a typed fork can reduce I084's B8 ownership signal only if every mutation boundary is explicit.",
+  "baseline_commit": "cefe75359e6408aa5fd95f9662d1fc0108e4cfd2",
+  "objective": "Prove or reject a benchmark-only B>1 decode path that consumes an identical Qwen3.5 full-attention prefix from shared storage without batch-contiguous prefix copies.",
+  "hypothesis": "I085 attributes 86.80% of per-request merged state to eight full-attention layers; a split shared-prefix/private-suffix attention representation can remove at least 75% of B8 merge growth while keeping all 24 linear-attention ArraysCache states request-owned.",
   "success_gates": [
-    "Concrete Qwen3.5 cache types and their trim/update/merge/extract mutations are classified before implementation; unknown or in-place-mutating layers fall back to eager clone.",
-    "Tests prove retained-snapshot immutability, sibling-fork independence, and exact behavior across decode, strict-prefix append, trim, merge/extract, cancellation, release, and persistence boundaries.",
-    "Any shared-state implementation remains opt-in until small-model construction/first-write probes pass exact array identity and value-digest gates.",
-    "A 9B production A/B advances only if three fresh B8 repetitions reduce the clone-correlated MLX/live-state signal by at least 25%, preserve exact output and cleanup, add no swap pressure, and do not regress replay p95 latency by 3%.",
-    "The configured 8 GiB budget, reservation trace, store eviction policy, persistence schema, eager-clone default, and exact-hit rollback switch remain unchanged until all I085 gates pass."
+    "Tests prove shared block-table identity/refcounts, private first-suffix writes, retained-snapshot and sibling isolation, unequal lengths, membership changes, extraction, cancellation, release, and native fallback while ArraysCache remains request-owned.",
+    "The small-model screen rejects any candidate that materializes an equivalent B-by-prefix tensor before SDPA, changes logits, leaks a block reference, or invokes native full-prefix merge.",
+    "A locked 9B fanout A/B advances only after semantic gates and must reduce total B8 merge growth by at least 75% and full-attention growth by at least 90%.",
+    "Exact token/text/finish identity, existing numerical-logit contract, zero dangling refs/fallbacks/new swap, no peak-memory regression, and replay p95 no-regression within 3% are hard gates.",
+    "Unknown models/layouts and disabled experimental settings retain native merge; the 8 GiB budget, reservation/eviction policy, persistence schema, eager-clone default, and rollback switch remain unchanged."
   ],
   "next_actions": [
-    "Inventory concrete Qwen3.5 prompt-cache layer types and classify every mutation boundary.",
-    "Write failing base/sibling isolation tests before adding a typed opt-in fork primitive.",
-    "Run small-model construction and first-write probes; run the locked 9B fanout A/B only after semantic gates pass."
+    "Trace the current paged bundle, Qwen3.5 attention bridge, stable batch state, extraction, cancellation, and release boundary.",
+    "Write failing B2/B4/B8 shared-prefix block/refcount and native-fallback tests before a benchmark-only implementation.",
+    "Run a small-model attention-only screen and stop before the locked 9B A/B unless it avoids B-by-prefix materialization with exact logits and clean lifetime."
   ],
   "latest_verification": {
     "full_suite": "561 passed, 9 skipped, 1 warning",
@@ -33,6 +33,12 @@
     "iteration_084_fanout": "Nine fresh rotated B2/B4/B8 Qwen3.5-9B rows complete all 42 requests with exact output, expected hits, one store/entry, zero eviction/preflight/error, bounded traces, and clean terminal state. Active estimates scale as 1/3/7 * 390397952 bytes; B8 peak MLX is 10.588 GB versus 8.258 GB at B2/B4, and replay latency is 3.913s median / 6.512s p95.",
     "iteration_084_decision": "Advance a type-specific shared-state/COW feasibility experiment. Keep eager deepcopy, 8 GiB budget, eviction, persistence, and rollback behavior unchanged until cache mutation and sibling-isolation gates pass.",
     "iteration_084_verification": "Arrival harness 24 passed; full suite 561 passed, 9 skipped, 1 warning; touched-file Ruff, JSON parsing, diff check, and strict workspace audit pass without blockers.",
+    "iteration_085_inventory": "Qwen3.5-9B uses 24 ArraysCache and 8 KVCache layers. MLX deepcopy creates distinct zero-allocation descriptors; focused base/sibling/append/trim/merge/extract/first-write tests pass.",
+    "iteration_085_probe": "Three left-rotated B2/B4/B8 repetitions on the locked 10334-token public QMSUM record report zero clone active growth. Native merge active deltas are 780402816/1560543488/3120824832 bytes and all releases return exactly to baseline.",
+    "iteration_085_attribution": "Logical merged state is 390103040 bytes/request: 338591744 bytes (86.80%) full-attention BatchKVCache and 51511296 bytes (13.20%) linear-attention ArraysCache.",
+    "iteration_085_decision": "Reject a typed cache fork because current deepcopy already has zero physical construction growth. Keep production clone, 8 GiB budget, eviction, persistence, and rollback unchanged; I086 targets direct shared-prefix attention consumption.",
+    "iteration_085_verification": "Focused probe and retained-artifact tests 7 passed; full suite 568 passed, 9 skipped, 1 warning; touched-file Ruff passes.",
+    "iteration_086_plan": "Test a benchmark-only split B>1 cache representation: shared immutable full-attention prefix plus private suffix, request-owned ArraysCache, strict native fallback, and no production-default change.",
     "snapshot_checkpoint_tests": "15 passed, 39 deselected",
     "snapshot_budget_status": "The 65536-token threshold and 2 GiB cap are implemented and covered; a fresh real-model automatic-cap rerun is not yet archived.",
     "eos_membership_tests": "19 constrained-decoding tests and 80 affected tests passed.",
@@ -44,7 +50,7 @@
     "protocol_deviation": "Numeric memory ceilings were missing from CURRENT.json before the formal matrix. Its memory observations are discovery evidence only; fresh confirmation passed after recording explicit ceilings.",
     "technical_admission": "Iteration 059 admitted; all 12 composite gates pass and the 50-file formal evidence bundle recomputes exactly.",
     "iteration_059_artifacts": "13 files, 488329 bytes; repeated scratch removed after 2 archive-only tests passed.",
-    "workspace_strict": "Post-I084 strict audit is WARN with no blockers: 18 changed paths, 4 artifact files / 33089 bytes, zero staged/mixed/reference paths, and zero active-I085 artifacts. Warnings are the retained I081-I084 artifacts and 24 generated caches.",
+    "workspace_strict": "Post-I085 strict audit is WARN with no blockers: 10 changed paths, 1 artifact / 10854 bytes, zero staged/mixed/reference paths, and zero active-I086 artifacts. Warnings are the retained I085 artifact and 24 generated caches.",
     "iteration_060_screen": "Native LMFE baseline versus reusable list-backed candidate: short B4 +17.205% and 24601-token B2 +12.643%, exact token/text/cache parity and zero swap growth in source-bound paired screens.",
     "iteration_060_ownership": "Repeated source-bound profiles: short B4 median RSS growth 1901150208 -> 25059328 bytes (-98.682%); long B2 median 488308736 -> 11657216 bytes (-97.613%); each candidate lane retained one active state and released all request TokenLists.",
     "iteration_060_admission": "Admitted: two 18-process / 9 AB-BA formal matrices recompute exactly, both order strata clear 3%, stop-aware B4 is 4/4 schema-valid, zero swap growth, and all 12 compact-evidence gates pass.",
@@ -113,7 +119,7 @@
     "simd_gigatoken_reference": "Gigatoken 34a1599 (MIT, Rust 0.10.0) is a remote P1 reference for future CPU input tokenization only. It is not installed or routed by default: Aster must retain its model tokenizer for templates/detokenization and first prove exact Qwen3.5 token IDs plus queue-aware TTFT/end-to-end benefit. Metal simdgroup inference kernels remain a separate candidate class."
   },
   "workspace_policy": {
-    "scratch_root": "run/loop-engineering/ITER-20260731-085-exact-hit-shared-state-feasibility",
+    "scratch_root": "run/loop-engineering/ITER-20260801-086-shared-prefix-batch-attention-feasibility",
     "max_changed_files": 250,
     "max_tracked_artifact_files": 150,
     "max_tracked_artifact_bytes": 104857600,
@@ -129,13 +135,13 @@
   },
   "workspace_audit": {
     "health": "warn",
-    "head": "5e32228f2014",
-    "changed_files": 18,
+    "head": "cefe75359e64",
+    "changed_files": 10,
     "staged_files": 0,
-    "unstaged_files": 10,
-    "untracked_files": 8,
-    "changed_artifact_files": 4,
-    "changed_artifact_mib": 0.0316,
+    "unstaged_files": 6,
+    "untracked_files": 4,
+    "changed_artifact_files": 1,
+    "changed_artifact_mib": 0.0103,
     "mixed_index_paths": 0,
     "reference_paths": 0,
     "generated_caches": 24,
@@ -145,7 +151,7 @@
     "artifact_growth_from_debt_baseline": 0,
     "blockers": [],
     "warnings": [
-      "foreign-iteration-artifacts: ITER-20260731-081-exact-hit-checkpoint-refresh, ITER-20260731-082-exact-hit-production-budget-validation, ITER-20260731-083-exact-hit-commit-and-sustained-loop, ITER-20260731-084-concurrent-exact-fanout-ownership-screen",
+      "foreign-iteration-artifacts: ITER-20260731-085-exact-hit-shared-state-feasibility",
       "generated-caches"
     ]
   }

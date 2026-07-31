@@ -1551,3 +1551,31 @@
 - Next decision: I085 inventories concrete Qwen3.5 cache mutation semantics and
   requires base/sibling isolation before an opt-in shared-state implementation.
   Unknown or in-place-mutating layers must retain eager cloning.
+
+## 2026-08-01: Reject I085 typed cache fork; attribute B8 growth to merge
+
+- Decision: reject a type-specific replacement for production
+  `copy.deepcopy`. Keep the configured 8 GiB budget, reservation and eviction
+  policy, persistence representation, rollback switch, and native batch path
+  unchanged.
+- Mutation evidence: Qwen3.5-9B has 24 `ArraysCache` and 8 `KVCache` layers.
+  Seven focused tests prove prefill admission, base/sibling, append, trim,
+  merge/extract, first-write, unknown-type rejection, and retained-artifact
+  contracts. MLX array assignment
+  gives distinct deep-copied descriptors copy-on-write value isolation.
+- Physical evidence: three left-rotated B2/B4/B8 repetitions on the locked
+  10,334-token public QMSUM record report zero clone-construction active growth.
+  Native merge grows active memory by 780,402,816 / 1,560,543,488 /
+  3,120,824,832 bytes and releases exactly to baseline. The merged state is
+  86.80% full-attention `BatchKVCache` and 13.20% linear-attention
+  `ArraysCache`.
+- Interpretation: I084's request estimate is valid as conservative logical
+  ownership, but not as clone-time physical allocation. A typed wrapper cannot
+  clear the 25% B8 gate because the existing clone already allocates zero
+  physical bytes. Running a production A/B for that rejected mechanism would
+  add risk without a plausible effect.
+- Reference boundary: vLLM avoids prefix row copies by letting attention consume
+  refcounted block tables. SGLang's local MLX prefix pool still materializes
+  per-request contiguous K/V before batched SDPA. I086 tests a bounded
+  full-attention shared-prefix consumption interface; all auxiliary state stays
+  request-owned and native fallback remains mandatory.
