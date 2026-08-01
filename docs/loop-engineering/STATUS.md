@@ -234,6 +234,27 @@ Updated: 2026-08-01
   converts the prefix to per-request contiguous caches and concatenates batch
   rows before SDPA. I086 therefore tests only a benchmark-gated shared-prefix
   full-attention path while keeping linear-attention state request-owned.
+- I086 adds a benchmark-only singleton-pool/two-dimensional-block-table
+  boundary. Ten new tests prove B2/B4/B8 and unequal-length numerical parity,
+  absence of batch-prefix materialization/native merge, partial-block CoW,
+  independent-pool rejection, and zero-reference release. No model-runner,
+  Qwen bridge, configuration, or production-default call site changed.
+- The locked 10,334/B8 probe uses 161 common blocks plus eight private tail
+  blocks. Candidate metadata is 5,216 bytes versus 338,624,512 bytes for one
+  native dense layer. Conservatively retaining all `ArraysCache` bytes and
+  multiplying metadata across eight full-attention layers estimates 86.7941%
+  less total merge growth and 99.9985% less full-attention construction.
+- The current SIMD-group kernel fails the hard latency gate. Across five fresh
+  30-warmup/200-measurement processes, median-of-process median latency is
+  4.271 -> 5.434 ms (1.272x) and median-of-process p95 is 8.944 -> 9.671 ms
+  (1.177x). Every process p95 ratio is 1.078x or worse; max absolute error is
+  6.10e-05 and all block/pool releases are clean. The predeclared stop rule
+  therefore prevents a 9B model-runner A/B or production integration.
+- The 2026-08-01 source refresh pins MLX main `2ad0d4d3`, vllm-metal main
+  `b6e35b6c`, and vllm-metal's `32cc5fd7` once-per-forward metadata change.
+  PackInfer, Feather, and RadixMLP reinforce that kernel packing,
+  prefix-homogeneous scheduling, and position-wise prefill deduplication are
+  distinct mechanisms; none rescues this rejected kernel shape.
 - The current engine-gap assessment is recorded in
   `CORE_REFERENCE_MATRIX.md`. It distinguishes confirmed Aster capabilities
   from unmeasured reference-engine differences: the public QMSUM result now
@@ -246,11 +267,14 @@ Updated: 2026-08-01
   and only if Qwen3.5 public/chat/special-token parity plus queue-aware TTFT
   and end-to-end gates pass. It does not stand in for GPU/Metal SIMD inference
   work, which remains a separate measured kernel class.
-- The pre-consolidation I085 verification is green: the retained prompt-free
-  ownership artifact recomputes, focused tests pass 7/7, and the full suite is
-  `568 passed, 9 skipped, 1 warning`. Touched-file Ruff passes; full-tree Ruff
-  still reports 227 historical issues outside this iteration boundary. The
-  final strict workspace counts are recorded in `CURRENT.json`.
+- The pre-consolidation I086 verification is green: the hash-bound attention
+  summary records all six scratch-result hashes, recomputes the selection
+  decision, and verifies all five source hashes; the affected suite passes
+  33/33, and the full suite is
+  `578 passed, 9 skipped, 1 warning`.
+  Touched-file Ruff and formatting pass; full-tree Ruff still reports 227
+  historical issues outside this iteration boundary. Final strict workspace
+  counts are recorded in `CURRENT.json`.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.

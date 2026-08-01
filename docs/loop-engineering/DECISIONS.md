@@ -1579,3 +1579,28 @@
   per-request contiguous K/V before batched SDPA. I086 tests a bounded
   full-attention shared-prefix consumption interface; all auxiliary state stays
   request-owned and native fallback remains mandatory.
+
+## 2026-08-01: Reject I086 shared-pool SIMD kernel on latency
+
+- Decision: stop before a locked 9B model-runner A/B and do not route the
+  benchmark-only shared-pool kernel into production. Keep native batch merge,
+  eager cloning, the configured 8 GiB budget, reservation/eviction policy,
+  persistence schema, rollback switch, and all defaults unchanged.
+- Correctness/lifetime evidence: B2/B4/B8 plus unequal-length attention matches
+  row-wise native MLX within 6.10e-05. The candidate never invokes
+  `materialize()` or native full-prefix merge, preserves partial-block CoW, and
+  releases every table and pool reference. The affected suite passes 32/32.
+- Memory evidence: locked 10,334/B8 metadata is 5,216 bytes over one shared
+  pool, versus 338,624,512 dense bytes for one native layer. With all linear
+  state left unchanged, conservative eight-layer extrapolation reduces total
+  merge growth 86.7941% and full-attention construction 99.9985%, clearing
+  both memory gates.
+- Latency evidence: five fresh processes with 30 warmups and 200 interleaved
+  samples per method give median-of-process p95 8.944 ms native versus 9.671 ms
+  candidate (1.177x). Every process exceeds the 1.03 ceiling; process ratios
+  span 1.078x to 1.394x. The hard latency gate fails despite the memory win.
+- Interpretation: two-dimensional block tables are the correct ownership
+  shape, but this `Hq=16/Hkv=4/D=256` SIMD-group kernel is not the correct
+  execution shape. Retain it only as experimental benchmark scaffolding. A
+  future proposal must use a genuinely different operator or a measured
+  prefix-homogeneous scheduling policy, not launch-metadata micro-tuning.

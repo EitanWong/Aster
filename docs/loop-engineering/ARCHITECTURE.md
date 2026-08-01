@@ -51,9 +51,18 @@ contiguous storage until a block-indexed attention path can consume the pool.
 `aster.inference.metal_paged_attention` provides a block-indexed proof path and
 a tiled 32-lane SIMD path. The tiled path shares Q/K work across value lanes and
 updates online-softmax state once per SIMD group, while preserving the generic
-fallback for unsupported dimensions. It validates the ABI and causal/GQA
-semantics, but current 512/2K/8K measurements remain slower than native MLX
-attention, so the entire boundary stays outside production serving.
+fallback for unsupported dimensions. `PagedBatchAttentionView` and
+`paged_batch_block_attention` add a benchmark-only singleton-pool boundary:
+multiple request rows carry two-dimensional block tables and sequence lengths
+without constructing `[B,Hkv,K,D]` K/V. The view borrows bundle ownership and
+retains no block or pool references.
+
+I086 validates B2/B4/B8, unequal lengths, partial-block CoW, numerical parity,
+non-materialization, and release. At 10,334/B8 the metadata shape reduces
+estimated batch construction by 86.79%, but five fresh processes confirm a
+17.70% median-of-process p95 regression for the locked Qwen3.5
+`Hq=16/Hkv=4/D=256` shape. No model-runner or attention-bridge call site uses
+this batch view; the complete paged boundary stays outside production serving.
 
 ## Reference Comparison
 

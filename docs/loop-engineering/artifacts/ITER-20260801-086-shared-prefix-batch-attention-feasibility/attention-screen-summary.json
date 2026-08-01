@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "kind": "shared-prefix-batch-attention-feasibility-summary",
+  "created_utc": "2026-07-31T18:15:07Z",
+  "baseline_commit": "4daeae3e8b9fe0bf352e55aa266543c285db6052",
+  "candidate": {
+    "scope": "benchmark-only",
+    "pool_layout": "one physical [P,1,Hkv,block,D] pool",
+    "request_metadata": "two-dimensional block tables plus sequence lengths",
+    "production_routing_changed": false,
+    "native_fallback_changed": false
+  },
+  "locked_shape": {
+    "query_heads": 16,
+    "kv_heads": 4,
+    "head_dim": 256,
+    "query_tokens": 1,
+    "block_size": 64,
+    "full_attention_layers": 8
+  },
+  "primary_screen": {
+    "tokens": [2048, 8192, 10334],
+    "batch_sizes": [2, 4, 8],
+    "warmups_per_method": 5,
+    "measurements_per_method": 21,
+    "raw_sha256": "8d01baf6bbd55d195aba172026869ae97a546ff2188a344e02ff2c35ed833ce5",
+    "results": [
+      {"tokens": 2048, "batch": 2, "max_abs": 0.0, "p95_ratio": 1.1193699384553208},
+      {"tokens": 2048, "batch": 4, "max_abs": 0.0, "p95_ratio": 0.986494252642313},
+      {"tokens": 2048, "batch": 8, "max_abs": 0.0, "p95_ratio": 0.9828715173477346},
+      {"tokens": 8192, "batch": 2, "max_abs": 0.000030517578125, "p95_ratio": 0.84285600432131},
+      {"tokens": 8192, "batch": 4, "max_abs": 0.00006103515625, "p95_ratio": 1.1368187711150892},
+      {"tokens": 8192, "batch": 8, "max_abs": 0.00006103515625, "p95_ratio": 1.299856031306038},
+      {"tokens": 10334, "batch": 2, "max_abs": 0.000030517578125, "p95_ratio": 1.1676147081798411},
+      {"tokens": 10334, "batch": 4, "max_abs": 0.000030517578125, "p95_ratio": 1.1645020433971542},
+      {"tokens": 10334, "batch": 8, "max_abs": 0.000030517578125, "p95_ratio": 1.5743526463606154}
+    ]
+  },
+  "locked_b8_memory": {
+    "tokens": 10334,
+    "block_table_shape": [8, 162],
+    "common_physical_blocks": 161,
+    "unique_physical_blocks": 169,
+    "pool_capacity_bytes": 67108864,
+    "candidate_metadata_bytes": 5216,
+    "native_dense_single_layer_bytes": 338624512,
+    "estimated_native_full_attention_merge_bytes": 2708996096,
+    "estimated_candidate_full_attention_merge_bytes": 41728,
+    "estimated_arrays_cache_bytes_unchanged": 412130248,
+    "estimated_total_merge_growth_reduction_percent": 86.79412716526672,
+    "estimated_full_attention_growth_reduction_percent": 99.99845965078866
+  },
+  "confirmation": {
+    "processes": 5,
+    "tokens": 10334,
+    "batch": 8,
+    "warmups_per_method_per_process": 30,
+    "measurements_per_method_per_process": 200,
+    "median_of_process_native_median_ms": 4.270791501767235,
+    "median_of_process_candidate_median_ms": 5.434083002910484,
+    "median_of_process_median_ratio": 1.2723831169613136,
+    "median_of_process_native_p95_ms": 8.943935398201575,
+    "median_of_process_candidate_p95_ms": 9.671408000212976,
+    "median_of_process_p95_ratio": 1.1770145460172166,
+    "min_process_p95_ratio": 1.077801859663521,
+    "max_process_p95_ratio": 1.3936208809087423,
+    "max_abs_difference": 0.00006103515625,
+    "all_release_clean": true,
+    "raw_sha256": [
+      "48956d5641613f92c8d3b7b195b52aa0f25eecebe7826f2da4007999d2de9d80",
+      "73048b0361ed6b03a05d42e89dc59ada04ee4f3186dd3ec6cc8fac96b5e7fa8f",
+      "faba0b0c7fea2964de426c90066fc94744c638e927aa67f86f812aa17d05a740",
+      "057148eee2f7ebdf410d4f7a1d86c04feaa64ad8b5d7e6de251a9438131d3ac4",
+      "0a6ab356050dda1e07989055b5beb98c32a1c6326a224a336c43de91fb64986c"
+    ]
+  },
+  "gates": {
+    "numerical_contract": true,
+    "no_batch_prefix_materialization": true,
+    "b8_total_merge_growth_reduction_at_least_75_percent": true,
+    "b8_full_attention_growth_reduction_at_least_90_percent": true,
+    "p95_latency_no_regression_3_percent": false,
+    "release_clean": true
+  },
+  "decision": {
+    "status": "screen-rejected",
+    "reason": "The locked B8 confirmation regressed process-median p95 by 17.70%; every process exceeded the 3% ceiling.",
+    "run_locked_9b_ab": false,
+    "change_production_defaults": false
+  },
+  "source_sha256": {
+    "scripts/dev/benchmark_shared_prefix_batch_attention.py": "84b6b27cb7cbf3ead2dedd980b280a99bbde3a8c58459f2e4d797ebb8b8c1a1b",
+    "tests/test_shared_prefix_batch_attention.py": "93fc7d9ad40665fa0262268438859d11301b742c4cf8e383e2ce880238369ffb",
+    "tests/test_shared_prefix_batch_benchmark.py": "0ff3fe584282e730427b373be9a67f0fe436f7a045712f871936148aa28a2d26",
+    "aster/inference/metal_paged_attention.py": "d44814d969fc3455eba813b4c4e97d5e70e33cebddc54bbb6f2363d5601736f6",
+    "aster/inference/paged_kv_adapter.py": "5f7ab63f1780d91f582b5ecf0450daab5d679b618c3c4bc159be4e4e4d5f7b36"
+  }
+}

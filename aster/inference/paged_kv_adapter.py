@@ -7,7 +7,6 @@ from typing import Any
 
 from aster.inference.paged_cache import BlockTable, PagedCacheManager
 
-
 _REQUEST_IDS = count()
 
 
@@ -62,9 +61,7 @@ class _PagedKVBlockPool:
             self._shape = shape
             initial = max(8, 1 << max(block_id, 1).bit_length())
             self._capacity = min(max(initial, block_id + 1), self.manager.max_blocks)
-            self.keys = mx.zeros(
-                (self._capacity, B, H, block_size, key_dim), dtype=keys.dtype
-            )
+            self.keys = mx.zeros((self._capacity, B, H, block_size, key_dim), dtype=keys.dtype)
             self.values = mx.zeros(
                 (self._capacity, B, H, block_size, value_dim), dtype=values.dtype
             )
@@ -168,6 +165,97 @@ class PagedAttentionView:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class PagedBatchAttentionView:
+    """Borrow one physical pool through per-request logical block tables."""
+
+    views: tuple[PagedAttentionView, ...]
+    block_ids: tuple[tuple[int, ...], ...]
+    block_tables: Any
+    sequence_lengths: Any
+    block_size: int
+
+    @classmethod
+    def from_views(
+        cls, views: tuple[PagedAttentionView, ...] | list[PagedAttentionView]
+    ) -> PagedBatchAttentionView:
+        normalized = tuple(views)
+        if not normalized:
+            raise ValueError("Paged batch attention requires at least one view")
+
+        first = normalized[0]
+        pool = first.layer._pool
+        layer_index = first.layer.layer_index
+        block_size = first.block_size
+        rows: list[tuple[int, ...]] = []
+        lengths: list[int] = []
+        for view in normalized:
+            if view.layer._pool is not pool:
+                raise ValueError("Paged batch attention views must share one physical pool")
+            if view.layer.layer_index != layer_index or view.block_size != block_size:
+                raise ValueError("Paged batch attention views have incompatible layer metadata")
+            if view.sequence_length <= 0 or not view.block_ids:
+                raise ValueError("Paged batch attention views must contain cached tokens")
+            required_blocks = (view.sequence_length + block_size - 1) // block_size
+            if len(view.block_ids) != required_blocks:
+                raise ValueError("Paged batch attention block table does not cover its sequence")
+            rows.append(view.block_ids)
+            lengths.append(view.sequence_length)
+
+        max_blocks = max(len(row) for row in rows)
+        padded = [row + (0,) * (max_blocks - len(row)) for row in rows]
+        mx = _mlx()
+        return cls(
+            views=normalized,
+            block_ids=tuple(rows),
+            block_tables=mx.array(padded, dtype=mx.uint32),
+            sequence_lengths=mx.array(lengths, dtype=mx.uint32),
+            block_size=block_size,
+        )
+
+    @property
+    def metadata_nbytes(self) -> int:
+        return _nbytes(self.block_tables) + _nbytes(self.sequence_lengths)
+
+    def attention(self, queries: Any, *, scale: float) -> Any:
+        from aster.inference.metal_paged_attention import paged_batch_block_attention
+
+        query_shape = getattr(queries, "shape", None)
+        if query_shape is None or len(query_shape) != 4:
+            raise ValueError("Paged batch attention expects rank-4 queries")
+        if int(query_shape[0]) != len(self.views):
+            raise ValueError("Query batch does not match paged batch metadata")
+        query_tokens = int(query_shape[2])
+        if query_tokens <= 0 or any(length < query_tokens for length in self._lengths):
+            raise ValueError("Query length exceeds a paged sequence")
+
+        pool = self.views[0].layer._pool
+        key_pool, value_pool = pool.block_pool()
+        for view, block_ids, sequence_length in zip(
+            self.views, self.block_ids, self._lengths, strict=True
+        ):
+            if view.layer._pool is not pool:
+                raise RuntimeError("Paged batch attention pool ownership changed")
+            if (
+                tuple(view.layer.block_table.block_ids) != block_ids
+                or view.layer.offset != sequence_length
+            ):
+                raise RuntimeError("Paged batch attention metadata is stale")
+
+        return paged_batch_block_attention(
+            queries,
+            key_pool,
+            value_pool,
+            self.block_tables,
+            self.sequence_lengths,
+            scale=scale,
+        )
+
+    @property
+    def _lengths(self) -> tuple[int, ...]:
+        return tuple(view.sequence_length for view in self.views)
+
+
 class PagedKVCacheLayer:
     """Lossless block-backed cache implementing MLX-LM's KV cache contract.
 
@@ -226,9 +314,7 @@ class PagedKVCacheLayer:
             block_offset = (start + position) % self.block_size
             self._ensure_table_block(logical_index)
             old_block_id = self.block_table.block_ids[logical_index]
-            block_id = self.manager.ensure_writable_block(
-                self.block_table, logical_index
-            )
+            block_id = self.manager.ensure_writable_block(self.block_table, logical_index)
             if block_id != old_block_id:
                 self._block_indices = None
             if not self._pool_enabled:
@@ -551,7 +637,11 @@ class PagedKVCacheLayer:
 
     @property
     def nbytes(self) -> int:
-        return self._pool.nbytes + _nbytes(self._materialized_keys) + _nbytes(self._materialized_values)
+        return (
+            self._pool.nbytes
+            + _nbytes(self._materialized_keys)
+            + _nbytes(self._materialized_values)
+        )
 
     def attention_view(self) -> PagedAttentionView:
         return PagedAttentionView(
@@ -707,6 +797,7 @@ def replace_kv_cache_layers(
 
 __all__ = [
     "PagedAttentionView",
+    "PagedBatchAttentionView",
     "PagedKVCacheList",
     "PagedKVCacheBundle",
     "PagedKVCacheLayer",

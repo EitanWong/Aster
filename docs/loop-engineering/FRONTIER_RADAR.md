@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-07-31
+Updated: 2026-08-01
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -25,21 +25,29 @@ coverage, and a rollback path.
 
 ## Latest Source Refresh
 
-On 2026-07-31, the configured Web search endpoint still returned HTTP 404, so
-the refresh used read-only official Git references and raw source URLs. vLLM
-HEAD resolved to `b2fb83e7ffbc30a1aa4667b1dad7ca3e2c342bcf`; its scheduler
-statistics carry structured `KVCacheEvictionEvent` samples. SGLang HEAD
-resolved to `fd28242b683f367dbee47736a361cc694906d067`; its prefix-cache
-boundary returns structured per-call `EvictResult` data and publishes eviction
-metrics. The local reference pins are older, but I077 needed only this stable
-observability pattern and did not refresh or import reference code.
+On 2026-08-01, the configured Web search endpoint returned HTTP 404 again, so
+the refresh used read-only official GitHub APIs/Git refs and the arXiv API.
+MLX main resolved to `2ad0d4d311f54de855b06cd21ca85d3b628c1012` and still
+exposes batch-contiguous public SDPA. vllm-metal main resolved to
+`b6e35b6c642162dbf6f31009b81635426a91b64a`; commit `32cc5fd7` builds
+invariant block tables/sequence metadata once per forward instead of once per
+layer. SGLang and FlashInfer resolved to `89f4a80c` and `668a1ba1`.
+
+The matching paper refresh found PackInfer (`2602.06072`), Feather
+(`2605.06046`), and RadixMLP (`2601.15013`). They target kernel packing,
+prefix-homogeneous scheduling, and position-wise prefill deduplication,
+respectively; these are separate mechanisms and are not treated as evidence
+for Aster's rejected I086 Metal kernel.
 
 ## Current candidates
 
 | Priority | Work | What is useful | Local status | Decision / next gate |
 | --- | --- | --- | --- | --- |
 | Admitted observability | [vLLM scheduler stats](https://github.com/vllm-project/vllm/blob/b2fb83e7ffbc30a1aa4667b1dad7ca3e2c342bcf/vllm/v1/metrics/stats.py) and [SGLang prefix-cache results](https://github.com/sgl-project/sglang/blob/fd28242b683f367dbee47736a361cc694906d067/python/sglang/srt/mem_cache/base_prefix_cache.py) | Structured bounded eviction/decision evidence separated from policy | I077 adds a prompt-free max-256 reservation FIFO and passes its source-bound no-op gate; I080 uses it to reject 4 GiB after three replay-time evictions across four disjoint windows | Retain the observer and 8 GiB default. I081 tests the source-traced exact-hit duplicate checkpoint path before any broader cache structure or budget proposal. |
-| P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), commit `4c18ee0`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, unified varlen paged attention, hybrid Qwen3.5 handling | Split-KV, attention-boundary, and fused-scatter reproductions complete | Reference scatter wins in its own layout, but Aster transfer fails. Retain as evidence; stop direct operator imports. |
+| P0 | [vllm-metal](https://github.com/vllm-project/vllm-metal), current main `b6e35b6c`, local mirror `d4afdd6a`, Apache-2.0 | Fused K/V scatter, lazy MLX C++ Primitive, singleton pool plus two-dimensional block tables, once-per-forward metadata, unified varlen attention, hybrid Qwen3.5 handling | Split-KV, attention-boundary, fused-scatter, and I086 ownership reproductions complete | I086 confirms the ownership shape and 86.79% estimated B8 merge reduction, but its Aster SIMD kernel regresses confirmed p95 17.70%. Retain as architecture evidence; another operator must first win at the locked kernel boundary. |
+| P1 | [PackInfer](https://arxiv.org/abs/2602.06072) | Compute/I/O-aware grouping, packed query/KV regions, and group-contiguous shared-prefix cache layout | Primary paper reviewed; no Apple/MLX implementation reproduced | Candidate only for a new varlen operator/layout experiment. Require exact current-model Metal reproduction before scheduler integration. |
+| P1 | [Feather](https://arxiv.org/abs/2605.06046) | Learns the batch-size versus prefix-homogeneity tradeoff and avoids costly radix traversals | Primary paper reviewed; vLLM/SGLang integration is not an Apple Silicon result | Use as the next scheduling hypothesis only after a deterministic shared-prefix arrival workload and fixed-kernel baseline exist. |
+| P2 | [RadixMLP](https://arxiv.org/abs/2601.15013) | Deduplicates shared position-wise MLP/norm/projection work inside batched prefill | Primary paper and author repository identified; decode KV ownership is out of scope | Watch for shared-prefix reranking/prefill workloads. Do not use it to justify a decode-attention change. |
 | Admitted | [MLX-LM](https://github.com/ml-explore/mlx-lm), commit `15b522f`, MIT, [MLX PR 998](https://github.com/ml-explore/mlx/pull/998), and [MLX lazy evaluation](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html) | Grouped sample/logprob async evaluation, lazy decode cache provenance, periodic allocator-cache clearing | Iterations 050-051 reproduce cache and sampler graph boundaries across batch 1/2/4/8, structured output, 6K prompts, and sustained stress | Retain the 512-generated-token clear budget and one grouped sampled-token barrier. |
 | P0 | [Uzu](https://github.com/trymirai/uzu), commit `15b8e73`, MIT | Native Rust/Metal command ownership, explicit GPU timing, traceable graphs, quantized kernels, DFlash integration | Pinned under `examples/`; source audit started; Rust toolchain not yet installed | Use as native-runtime ceiling and ownership reference. Benchmark same Qwen3.5 model before considering a backend boundary. |
 | P0 | [OMLX](https://github.com/jundot/omlx) TurboQuant at `e3a4fe4`, pinned mlx-vlm `78b96eb`, and [Open-TQ-Metal](https://arxiv.org/abs/2604.16957) | Compressed-domain K/V attention, hybrid-cache conversion, long-context capacity, two-pass decode | `51/51` reference tests plus 5-process kernel and 20-process Qwen3.5 matrices complete | Reject measured 4-bit path: cache shrinks, but default MLX speed and model quality fail. Preserve as a capacity reference only. |

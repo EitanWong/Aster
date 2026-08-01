@@ -154,9 +154,14 @@
   cache to `3.05 MB`. Cancellation/replacement churn beyond existing lifecycle
   tests still needs a sustained real-model memory trace.
 - `kv_cache_step_tokens` reduces native KV growth copies but does not reduce retained KV memory; a true paged attention path remains unimplemented.
-- The experimental `PagedKVCacheLayer` is lossless and COW-capable, and its block pool no longer repacks with `mx.stack` on every view. `PagedKVCacheBundle` reclaims full-attention pools after the last fork releases, but mixed recurrent/full-attention bundles are rejected and the MLX integration still materializes contiguous K/V on every update; batch merge falls back to native contiguous caches. It remains disabled in production paths.
+- The experimental `PagedKVCacheLayer` is lossless and COW-capable, and its block pool no longer repacks with `mx.stack` on every view. `PagedKVCacheBundle` preserves deep-copied `ArraysCache` layers and reclaims full-attention pools after the last fork releases. The default storage-only integration still maintains contiguous K/V, direct attention is B1-only, and batch merge falls back to native contiguous caches. It remains disabled in production paths.
 - The opt-in hybrid list boundary is parity-clean on the Qwen3.5-0.8B greedy smoke. Contiguous-buffer reuse brings 8.4K randomized A/B to within `0.4%` median of native, but peak memory remains about `7.6%` higher (`2.471 GB` vs `2.297 GB`); the 2.2K single-run path remains about `10.6%` slower. Prefix snapshots are disabled and decode batch size is restricted to one; it is not a default path.
-- The experimental block-indexed Metal kernel is numerically correct on Qwen3.5-shaped FP16 input after the threadgroup-grid fix, but the corrected median benchmark is `1.56x/3.42x/7.44x` slower than native at 512/2K/8K in the recorded run. Pool reclamation and hybrid bundle lifecycle are incomplete, so it is not a serving path.
+- The original tiled block-indexed Metal kernel was `1.56x/3.42x/7.44x`
+  slower than native at 512/2K/8K. A later vector kernel beat native on the
+  I046 `Hq=16/Hkv=8/D=128` 8K boundary, but I086's shared-pool
+  `Hq=16/Hkv=4/D=256` confirmation regresses median-of-process p95 by 17.70%
+  at 10,334/B8. Numerical error stays <=6.10e-05 and pool lifecycle is clean;
+  execution performance, not correctness or reclamation, blocks serving.
 
 - I071's public arrival/load baseline exposes process-level swap growth in B8,
   shared-prefix, and some staggered long-prefill runs. This is evidence rather
@@ -206,11 +211,15 @@
   as one/three/seven full request estimates at B2/B4/B8, B8 MLX peak rises by
   2.330 GB over B4, and replay latency reaches a 3.913s median / 6.512s p95.
   I085 then proves that `copy.deepcopy` construction has zero physical growth;
-  native batch merge is the owner. At B8 it materializes 3,120,824,320 logical
+  native batch merge is the owner. At B8 it materializes 3,120,824,832 logical
   bytes, 86.80% in eight full-attention layers and 13.20% in 24 linear-attention
   layers. Typed forking is rejected and the current clone remains the default.
   Aster's experimental paged bundle cannot yet combine prefix caching with B>1
   decode, while SGLang's local MLX pool still materializes contiguous rows.
-  I086 must prove direct shared-prefix attention consumption, block lifetime,
-  native fallback, exact outputs, and clean cancellation before any production
-  path is considered. B8 host-global swap remains pressure context only.
+  I086 proves the direct singleton-pool/two-dimensional-table ownership shape:
+  B8 total/full construction falls 86.7941%/99.9985%, numerical parity and
+  release pass, and no native merge is invoked. It nevertheless fails latency
+  in all five 10,334/B8 confirmation processes (p95 ratios 1.078x-1.394x), so
+  the predeclared stop rule blocks model-runner membership/extraction/
+  cancellation integration and the locked 9B A/B. B8 host-global swap remains
+  pressure context only.
