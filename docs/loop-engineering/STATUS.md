@@ -8,7 +8,7 @@ Updated: 2026-08-01
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 085. Active iteration: 086, phase `planned`.
+- Last completed iteration: 088. Active iteration: 089, phase `planned`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -275,6 +275,42 @@ Updated: 2026-08-01
   Touched-file Ruff and formatting pass; full-tree Ruff still reports 227
   historical issues outside this iteration boundary. Final strict workspace
   counts are recorded in `CURRENT.json`.
+- I087 corrects the next scheduling boundary before measurement: I084 B8
+  already used `max_decode_batch=4`, so the candidate keeps that decode width
+  and changes only active lifecycle width from configured 16 to 4. The locked
+  B8 plan remains byte-identical at `2b9641ae...`; all seven replay requests
+  are still submitted together and their queue time is included.
+- Five fresh paired Qwen3.5-9B processes per lane pass all 80 output, exact-hit,
+  trace, and terminal-cleanup contracts. Candidate/baseline medians are 8.551 /
+  10.588 GB peak MLX, 20.353 / 12.804 aggregate replay tok/s, 1.911 / 2.148s
+  p95 TTFT, and 2.751 / 4.373s p95 latency. Paired median changes are -19.237%
+  / -2.037 GB memory, 1.551x throughput, 0.890x TTFT, and 0.645x p95/max
+  latency; both execution-order strata clear every hard gate.
+- A post-pass cap-4 cancellation process accepts the long-prefill cancellation,
+  completes its follow-up, and ends with zero failed/active/pending/pinned state
+  and zero swap delta. The result advances a conditional policy experiment,
+  not a global default: I088 must sweep caps 2/3/4/5/6 and add short plus
+  distinct/mixed-prefix guards before scheduler integration.
+- I088 completes that 18-process frontier without changing production. All
+  144 requests pass per-cell request/cache/configured-cap/terminal contracts.
+  Exact-long admits caps 2/3/4 on performance, short-simultaneous admits no
+  lower cap, and mixed admits caps 2/3/4/5/6 on performance, so there is no
+  cap that clears every workload even before the output gate.
+- The output gate rejects mixed caps 2/5: only `mixed-short-3` differs from cap
+  16, while exact-long, short-simultaneous, and mixed caps 3/4/6 remain stable.
+  Four fresh diagnostic processes reproduce two output groups after the same
+  six selected tokens. At completion index 6, single-row caps 2/5 select token
+  364; two-row caps 3/16 select token 421. The three retained candidate logits
+  are separated by at most 0.125, and diagnostic timing is explicitly invalid.
+- The source-bound 73,393-byte artifact retains all 18 pilot hashes, four
+  diagnostic hashes, four source hashes, the `reject-output-drift` decision,
+  and the `batch-shape-sensitive-near-tie` diagnosis. No scheduler, sampler,
+  cache, or default changed. I089 compares this boundary with direct/model-
+  native MLX-LM before considering a determinism mechanism.
+- I088 verification is green: focused I087/I088/arrival tests pass 34/34; the
+  full suite passes 588 with 9 skipped and one dependency warning. Touched
+  Ruff, new-file formatting, JSON/source hashes, diff check, and strict audit
+  pass without blockers.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.
@@ -688,10 +724,10 @@ Updated: 2026-08-01
 
 ## Next Priority
 
-1. Execute I086's benchmark-only shared-prefix full-attention feasibility work.
-   Prove block/refcount lifetime, private suffix writes, request-owned
-   `ArraysCache`, native fallback, and absence of B-by-prefix materialization
-   before any 9B B2/B4/B8 A/B or default-path proposal.
+1. Execute I089's source-bound greedy batch-shape determinism comparison.
+   Separate model batch arithmetic from Aster cache merge/extract state and
+   compare the same near-tie with direct/model-native MLX-LM before proposing
+   epsilon tie-breaking, forced single-row decode, or precision changes.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Do not grow generated caches or exceed the recorded +25/+20
    allowances.

@@ -749,6 +749,7 @@ def _apply_baseline_settings(
     snapshot_budget_bytes: int | None,
     snapshot_max_entries: int | None,
     snapshot_reservation_trace_max_events: int | None = None,
+    max_active_requests: int | None = None,
 ) -> RuntimeSettings:
     if decode_active_prefill_token_budget is not None and decode_active_prefill_token_budget < 1:
         raise ArrivalLoadError("decode_active_prefill_token_budget must be positive")
@@ -756,6 +757,8 @@ def _apply_baseline_settings(
         raise ArrivalLoadError("snapshot_budget_bytes must be positive")
     if snapshot_max_entries is not None and snapshot_max_entries < 1:
         raise ArrivalLoadError("snapshot_max_entries must be positive")
+    if max_active_requests is not None and max_active_requests < 1:
+        raise ArrivalLoadError("max_active_requests must be positive")
     if (
         snapshot_reservation_trace_max_events is not None
         and snapshot_reservation_trace_max_events < 0
@@ -769,7 +772,11 @@ def _apply_baseline_settings(
     engine_updates: dict[str, Any] = {
         "engine_type": "manual",
         "runtime_kernel": "manual",
-        "max_active_requests": max(settings.engine.max_active_requests, concurrency),
+        "max_active_requests": (
+            max(settings.engine.max_active_requests, concurrency)
+            if max_active_requests is None
+            else max_active_requests
+        ),
         "prefix_cache_enabled": prefix_cache_enabled,
         "prefix_cache_load_on_warmup": False,
         "prefix_cache_save_on_shutdown": False,
@@ -896,6 +903,7 @@ async def run_public_arrival_baseline(
     snapshot_budget_bytes: int | None = None,
     snapshot_max_entries: int | None = None,
     snapshot_reservation_trace_max_events: int | None = None,
+    max_active_requests: int | None = None,
     sample_engine_lifecycle: bool = False,
     engine_lifecycle_sample_interval_seconds: float = 0.05,
 ) -> dict[str, Any]:
@@ -912,6 +920,7 @@ async def run_public_arrival_baseline(
         snapshot_budget_bytes=snapshot_budget_bytes,
         snapshot_max_entries=snapshot_max_entries,
         snapshot_reservation_trace_max_events=snapshot_reservation_trace_max_events,
+        max_active_requests=max_active_requests,
     )
     lifecycle: dict[str, dict[str, int | str]] = {
         "before_engine_create": _resource_snapshot()
@@ -1020,6 +1029,7 @@ def main() -> None:
     parser.add_argument("--snapshot-budget-bytes", type=int)
     parser.add_argument("--snapshot-max-entries", type=int)
     parser.add_argument("--snapshot-reservation-trace-max-events", type=int)
+    parser.add_argument("--max-active-requests", type=int)
     parser.add_argument("--sample-engine-lifecycle", action="store_true")
     parser.add_argument("--engine-lifecycle-sample-interval-seconds", type=float, default=0.05)
     parser.add_argument("--timeout-seconds", type=float, default=120.0)
@@ -1051,6 +1061,7 @@ def main() -> None:
                 snapshot_reservation_trace_max_events=(
                     args.snapshot_reservation_trace_max_events
                 ),
+                max_active_requests=args.max_active_requests,
                 sample_engine_lifecycle=args.sample_engine_lifecycle,
                 engine_lifecycle_sample_interval_seconds=(
                     args.engine_lifecycle_sample_interval_seconds

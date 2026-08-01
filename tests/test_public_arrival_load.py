@@ -455,6 +455,7 @@ def test_arrival_baseline_settings_keep_decode_prefill_cap_opt_in() -> None:
         snapshot_max_entries=None,
     )
     assert default.engine.decode_active_prefill_token_budget is None
+    assert default.engine.max_active_requests >= 4
     assert default.engine.snapshot_budget_bytes == settings.engine.snapshot_budget_bytes
     assert default.engine.snapshot_max_entries == settings.engine.snapshot_max_entries
 
@@ -466,11 +467,13 @@ def test_arrival_baseline_settings_keep_decode_prefill_cap_opt_in() -> None:
         snapshot_budget_bytes=1024,
         snapshot_max_entries=1,
         snapshot_reservation_trace_max_events=0,
+        max_active_requests=4,
     )
     assert candidate.engine.decode_active_prefill_token_budget == 512
     assert candidate.engine.snapshot_budget_bytes == 1024
     assert candidate.engine.snapshot_max_entries == 1
     assert candidate.engine.snapshot_reservation_trace_max_events == 0
+    assert candidate.engine.max_active_requests == 4
 
     with pytest.raises(tool.ArrivalLoadError, match="positive"):
         tool._apply_baseline_settings(
@@ -518,6 +521,16 @@ def test_arrival_baseline_settings_keep_decode_prefill_cap_opt_in() -> None:
             snapshot_budget_bytes=None,
             snapshot_max_entries=None,
             snapshot_reservation_trace_max_events=257,
+        )
+    with pytest.raises(tool.ArrivalLoadError, match="max_active_requests must be positive"):
+        tool._apply_baseline_settings(
+            settings,
+            concurrency=8,
+            prefix_cache_enabled=True,
+            decode_active_prefill_token_budget=None,
+            snapshot_budget_bytes=None,
+            snapshot_max_entries=None,
+            max_active_requests=0,
         )
 
 

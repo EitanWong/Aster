@@ -64,6 +64,23 @@ estimated batch construction by 86.79%, but five fresh processes confirm a
 `Hq=16/Hkv=4/D=256` shape. No model-runner or attention-bridge call site uses
 this batch view; the complete paged boundary stays outside production serving.
 
+I087 isolates admission width from decode width. The public harness can now
+override `max_active_requests` for a source-bound experiment while `None`
+preserves the configured behavior. On the unchanged B8 exact-prefix plan,
+active cap 4 leaves all seven requests submitted but limits owned active-cache
+state to four equivalents. It reduces median peak MLX 10.588 -> 8.551 GB and
+improves queue-inclusive throughput and tail latency. This is harness evidence,
+not an engine policy: no production scheduler branch or default changed.
+
+I088 maps caps 2/3/4/5/6/16 across exact-long, simultaneous short, and mixed
+B8 traffic. The lower-cap intersection is empty because short traffic clears
+no candidate. Mixed caps 2/5 also expose a batch-shape-sensitive greedy near
+tie: after six shared output tokens, a single-row step selects token 364 while
+a two-row step selects 421 from logits within 0.125. The diagnostic does not
+classify model batch arithmetic versus cache merge/extract state and its forced
+evaluation invalidates timing. Production admission, merged-cache decode, and
+ordinary MLX-LM sampler semantics therefore remain unchanged.
+
 ## Reference Comparison
 
 The local `examples/vllm-mlx/vllm_mlx/scheduler.py` and

@@ -1604,3 +1604,48 @@
   execution shape. Retain it only as experimental benchmark scaffolding. A
   future proposal must use a genuinely different operator or a measured
   prefix-homogeneous scheduling policy, not launch-metadata micro-tuning.
+
+## 2026-08-01: Advance active-cohort frontier after I087
+
+- Decision: admit `max_active_requests=4` as a measured exact-prefix scheduling
+  candidate, but do not change the global default or production scheduler.
+  Advance an active-width frontier before selecting a conditional rule.
+- Corrected variable: I084 B8 already had `max_decode_batch=4`; its 7 live
+  exact replays, not a seven-row decode call, owned the pressure. I087 keeps the
+  byte-identical B8 arrival plan and decode width while comparing configured
+  active limits 16 and 4 in five rotated fresh-process pairs.
+- Evidence: all 80 matrix requests pass output/cache/cleanup contracts. The
+  candidate reduces peak MLX from 10.588 to 8.551 GB (-2.037 GB / -19.237%)
+  while paired median throughput, p95 TTFT, and p95/max latency ratios are
+  1.551x, 0.890x, and 0.645x. Both order strata pass. A post-pass cancellation
+  accepts the target, completes the follow-up, and ends clean with zero swap.
+- Boundary: this is one long exact-prefix QMSUM cell. It does not prove cap 4
+  is optimal or safe for short, distinct-prefix, or mixed-prefix traffic, and
+  Feather's heterogeneous-prefix locality gains are not assumed for Aster's
+  native contiguous MLX merge.
+- Next decision: I088 sweeps caps 2/3/4/5/6 and adds short plus distinct/mixed
+  guards. Conditional engine logic is considered only after that frontier;
+  I086's rejected shared-pool kernel remains outside production.
+
+## 2026-08-01: Reject a lower active-cap policy after I088
+
+- Decision: do not change the configured `max_active_requests`, production
+  scheduler, cache ownership, or greedy sampler. The 18-cell frontier has no
+  lower cap that clears exact-long, short-simultaneous, and mixed performance
+  gates, and mixed caps 2/5 also fail the exact output gate.
+- Performance evidence: all 144 requests pass their per-cell contracts.
+  Exact-long caps 2/3/4 are eligible and cap 3 reaches 1.595x cap-16 throughput
+  with 22.009% less peak MLX. Short traffic admits no lower cap because every
+  candidate misses throughput or tail/TTFT gates. Mixed performance alone
+  admits caps 2-6, but that cannot override the global or correctness gates.
+- Correctness evidence: only `mixed-short-3` diverges. Fresh caps 2/5 share six
+  output tokens before selecting token 364 in a single-row decode; caps 3/16
+  select token 421 in a two-row decode. Candidate logits at that step are
+  equal or separated by only 0.125, and both stable output groups reproduce.
+- Boundary: the diagnostic establishes batch-shape-sensitive near-tie behavior,
+  not whether Aster cache state or model-native BF16 batch arithmetic owns it.
+  Its forced logit evaluation invalidates timing. Epsilon tie-breaking would
+  change ordinary argmax semantics and is not admitted from one prompt.
+- Next decision: I089 runs a same-cache single/batch control and the closest
+  direct/model-native MLX-LM comparison. A determinism proposal requires a
+  classified owner plus exact output/quality and serving-performance gates.

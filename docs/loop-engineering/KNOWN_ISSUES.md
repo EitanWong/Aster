@@ -222,4 +222,18 @@
   in all five 10,334/B8 confirmation processes (p95 ratios 1.078x-1.394x), so
   the predeclared stop rule blocks model-runner membership/extraction/
   cancellation integration and the locked 9B A/B. B8 host-global swap remains
-  pressure context only.
+  pressure context only. I087 shows that an opt-in active cap of four removes
+  2.037 GB / 19.237% peak MLX memory and improves throughput/tail latency on
+  the exact-prefix B8 cell while preserving cancellation cleanup. The global
+  default remains unchanged because caps 2/3/5/6 and short/distinct/mixed
+  traffic have not yet established a conditional frontier.
+- I088 closes that frontier without admitting a policy. Short-simultaneous has
+  no eligible lower cap, so the global intersection is empty. In mixed traffic,
+  `mixed-short-3` also changes greedy output under caps 2/5 versus 3/4/6/16.
+  Fresh diagnostics locate the first difference at completion index 6 after a
+  shared six-token prefix: single-row decode selects token 364 and two-row
+  decode selects token 421 from candidates separated by at most 0.125 logits.
+  This is a retained batch-shape determinism issue, but its owner remains open:
+  model-native BF16 batch arithmetic and Aster cache merge/extract state have
+  not yet been isolated. Diagnostic timing is invalid, epsilon tie-breaking is
+  not admitted, and all production scheduler/sampler defaults remain unchanged.
