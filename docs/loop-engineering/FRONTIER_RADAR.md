@@ -27,7 +27,7 @@ coverage, and a rollback path.
 
 This intake adds current Apple-native and speculative-decoding source rather
 than treating paper abstracts as implementation evidence. The new gitlinks are
-`examples/mlx-swift-lm` at `7871b09b2eda7500bc2acad51125ebd772cbaffe` (MIT) and
+`examples/mlx-swift-lm` at `3c5805a1ecf31cf41ee7c34d5a3858439706cb2c` (MIT) and
 `examples/SpecForge` at `2590f48e3a93f69a1e9e63caa23e9f2f9e07c84a` (MIT).
 
 | Source | What was inspected | Aster implication |
@@ -49,6 +49,11 @@ than treating paper abstracts as implementation evidence. The new gitlinks are
 | [Bole](https://arxiv.org/abs/2608.01651) | Tree speculation for hybrid-attention models | CUDA/SGLang reference; defer until hybrid KV verification is proven. |
 | [TileMix](https://arxiv.org/abs/2608.17336) | Tile-centric mixed-precision attention and tile-level precision selection | Paper and claimed author repository URL identified on 2026-08-21; Git head was not pinned after transport failure. Watch for an Apple/MLX kernel reproduction; no Aster change. |
 | [CoRun](https://arxiv.org/abs/2608.14376) | Fixed-shape/padding-aware batched decode for deterministic serving | Paper watch only; no author repository was confirmed. First compare shape normalization against Aster's cohort-sensitive BF16 boundary. |
+| [QEvict](https://arxiv.org/abs/2608.05326) | Recoverable quantized KV eviction for long-context decoding | Watch-only; requires exact cache rollback, quality, long-context, and resource evidence on Apple Silicon. |
+| [QUASAR](https://arxiv.org/abs/2608.13966) | Loss-aware quantization-aware training and reconstruction | Training-side reference only; no Aster inference or weight change. |
+| [LibraSpec](https://arxiv.org/abs/2608.08721) | Diffusion-based speculative decoding with marginal-gain scheduling | Watch-only speculation research; requires a compatible draft/head, rollback, and mixed-load gates. |
+| [HYMELL](https://arxiv.org/abs/2608.06723) | Current memory/efficiency direction for language-model serving | Paper watch; no verified local implementation or transferable claim yet. |
+| [DBLAST](https://arxiv.org/abs/2608.05448) | Current decoding/serving research direction | Paper watch; mechanism and hardware assumptions require primary-source reproduction before use. |
 
 The foundation gate remains active. These references expand the research
 frontier but do not authorize MTP, DFlash, EAGLE-family, tree speculation,
@@ -66,15 +71,37 @@ attribution feature into a runtime decision. TileMix's claimed repository
 read-only Git transport could not establish a verified head; CoRun has no
 confirmed code repository in this intake.
 
+I093 implemented that reduced observer and measured a 32-row adjacent matrix.
+It retained exact state behavior and bounded samples but failed the strict
+`<1%` mixed-load no-op gate; the MLX-LM control was also unstable. The sampled
+stage shares are therefore diagnostic only. I094 will use longer windows and
+explicit control stability before assigning ownership to an Aster runtime
+boundary.
+
 ## Latest Source Refresh
 
 On 2026-08-21, read-only official Git refs and source files were refreshed.
 The newly pinned Apple-native/speculation sources are listed above; the
 configured engine heads currently include MLX `27fec909`, MLX-LM `d06c5374`,
-SGLang `82c6fc2d`, vLLM `6259572b`, vLLM-MLX `7afa61af`, vllm-metal
-`bd32be88`, llama.cpp `70aff252`, and OMLX `146d2724`. These are source
+SGLang `0f744b684`, vLLM `bfb6c134`, vLLM-MLX `8c814e30`, vllm-metal
+`67100ba7`, llama.cpp `0e1d9185`, and OMLX `fa3e94b3`. Rapid-MLX is
+`58ad7692`, mistral.rs is `d184053f`, uzu is `1fd0c461`, and
+mlx-swift-lm is `3c5805a1`. These are source
 snapshots for reproducible study, not a claim that every runtime is installed
 or benchmark-comparable on this host.
+
+The MLX-LM upstream observation at `d06c5374a12e1f9384aad5fece583d7be9d2619d`
+is dated 2026-08-19 and updates to MLX 0.32.1. The local MLX pin is
+`27fec909a3df9e572f5195607a453e273e7d80d0`. A read-only upstream llama.cpp
+observation reached `0e1d9185c5fe82e905d1f5ae6b2e5dcd607a8dfd` on 2026-08-20;
+the local reproducibility pin now matches that fetched branch tip. The prior
+`6503355d` observation remains historical metadata.
+The observed backend change explicitly gates compiler-specific workarounds
+because their measured throughput cost can outweigh the workaround. No
+Eleven submodules were advanced from fetched branch tips in I093; all
+configured branch refs were fetched and the remaining pins were already at
+their branch tips. See `docs/loop-engineering/REFERENCES.md` for the complete
+per-repository result.
 
 The prior paper refresh found PackInfer (`2602.06072`), Feather (`2605.06046`),
 and RadixMLP (`2601.15013`). The current intake adds hierarchical/variable

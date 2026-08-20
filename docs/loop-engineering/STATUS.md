@@ -8,7 +8,7 @@ Updated: 2026-08-21
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 092. Active iteration: 093, phase `baseline`.
+- Last completed iteration: 093. Active iteration: 094, phase `baseline`.
 - I090 closes the current Qwen3.5-9B foundation screen with a recomputable
   32-row, four-repetition performance ledger. Relative to direct/model-native
   MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
@@ -26,8 +26,11 @@ Updated: 2026-08-21
   The switch remains default-off and no production inference default changed.
   I092 profiled the decode-driver boundary with benchmark-only stage
   attribution. The observer is exact and no-forced-evaluation, but its own
-  overhead fails the no-op gate; no production default changed. I093 now
-  targets aggregate or sampled low-overhead attribution.
+  overhead fails the no-op gate; no production default changed. I093 replaced
+  per-step observation with bounded periodic sampling and a resettable timed
+  window. Its 32-row adjacent B4 matrix is valid for diagnostics, but mixed
+  Aster order strata and the MLX-LM control remain unstable, so no runtime
+  candidate was admitted.
 - I091 was delivered in `e492b44f60dc90ce271213571fb5a20bb9acd011`
   and pushed to `origin/main`; its rejection artifact SHA-256 is
   `979443e7549ded3b1d465ac8c2e93c33e6fee8e4f09da4167461c8bb2d14c5c9`.
@@ -39,6 +42,15 @@ Updated: 2026-08-21
   The implementation and evidence are committed in
   `9216ed592de4c187fdb9e8862f6e722e7d1e0010` and will be pushed with this
   iteration delivery.
+- I093's sampled observer artifact is
+  `docs/loop-engineering/artifacts/ITER-20260821-093-low-overhead-decode-stage-attribution/decode-stage-observer-sampled-matrix.json`
+  with SHA-256
+  `f64adc494134c63b046a4ed4606bd7bc1fbe3efd0b43eb2ca0ca25d6620f31b5`.
+  The 32-row matrix passes source/output/terminal/fallback/swap contracts and
+  records sampled events (`2` in B4-short, `3` in B4-mixed per repetition),
+  but the strict `<1%` no-op gate is false in mixed state strata and the
+  control engine is also variable. The observer remains default-disabled and
+  benchmark-only.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -732,7 +744,7 @@ Updated: 2026-08-21
   changes. Strict checking has no blocker because growth is bounded against
   the immutable debt baseline, but the underlying 1,172-path inventory remains
   an ownership and reviewability risk rather than a clean Git boundary.
-- The full suite is green (`608 passed, 9 skipped, 1 warning`). Long-context snapshot
+- The full suite is green (`621 passed, 9 skipped, 1 warning`). Long-context snapshot
   budgeting is implemented and covered, but the automatic default-config
   128K real-model reproduction remains unarchived.
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
@@ -771,9 +783,9 @@ Updated: 2026-08-21
 
 ## Next Priority
 
-1. Execute I093's low-overhead decode-stage attribution on the locked B4 short
-   and mixed cohorts. Require `<1%` observer overhead in both cells before
-   interpreting stage ownership or admitting a runtime candidate.
+1. Execute I094's longer mixed-load attribution-stability matrix. Require
+   Aster and MLX-LM control order strata within `1%` before assigning ownership
+   to the decode-driver gap or selecting a runtime candidate.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Do not grow generated caches or exceed the recorded +25/+20
    allowances.

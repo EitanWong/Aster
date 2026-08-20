@@ -78,6 +78,8 @@ class RuntimeKernel(Protocol):
 
     def decode_diagnostics(self) -> dict[str, object]: ...
 
+    def reset_decode_stage_observer_window(self) -> None: ...
+
     def finalize_detokenizer(self, detokenizer: Any | None) -> str: ...
 
     def estimate_cache_bytes(self, prompt_cache: Any | None) -> int: ...
@@ -180,6 +182,11 @@ class ManualRuntimeKernel:
             return dict(diagnostics())
         return {}
 
+    def reset_decode_stage_observer_window(self) -> None:
+        reset = getattr(self.runner, "reset_decode_stage_observer_window", None)
+        if callable(reset):
+            reset()
+
     def finalize_detokenizer(self, detokenizer: Any | None) -> str:
         return self.runner.finalize_detokenizer(detokenizer)
 
@@ -221,6 +228,9 @@ class BatchGeneratorRuntimeKernel:
             ),
             status_code=501,
         )
+
+    def reset_decode_stage_observer_window(self) -> None:
+        return None
 
     def warmup(self) -> None:
         self._not_ready()

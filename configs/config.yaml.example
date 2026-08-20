@@ -39,6 +39,7 @@ engine:
   decode_active_prefill_token_budget: 512
   decode_tensorized_logprobs_enabled: false  # experimental; processor-free batch candidate
   decode_stage_observer_max_events: 0  # benchmark-only; zero disables timing hooks
+  decode_stage_observer_sample_interval: 1  # benchmark-only; sample every N decode steps
   snapshot_budget_bytes: 8589934592   # 8 GB
   snapshot_min_prefix_tokens: 64
   snapshot_max_entries: 256

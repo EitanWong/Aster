@@ -266,3 +266,18 @@
   MLX/RSS changes `+3.650%/+7.055%`. It remains benchmark-only with a zero
   default. I093 must use aggregate or sampled counters and clear a stricter
   `<1%` overhead gate before stage data can select a runtime candidate.
+
+- I093's periodic sampled observer preserves exact output/finish/terminal
+  behavior and bounded events, but it still cannot be used as production
+  instrumentation. The 32-row adjacent B4 matrix has Aster paired median
+  decode changes of `-0.275%` (short) and `-2.032%` (mixed); mixed Aster order
+  strata are `-16.850%/+3.183%`, and the MLX-LM control also exceeds `5%` in
+  both mixed strata. The no-op gate therefore fails and the measurement is
+  explicitly marked control-variance-confounded. Keep the observer disabled by
+  default until a longer-window I094 matrix stabilizes both engines.
+- Reference refreshes are source observations, not silent benchmark changes.
+  The local llama.cpp pin is now `0e1d9185`; the prior read-only observation
+  `6503355d` is historical, while MLX-LM remains pinned at `d06c5374` after
+  its 2026-08-19 MLX 0.32.1 update. All configured reference branch refs were
+  fetched in the I093 refresh and eleven gitlinks advanced. Reproducible Aster
+  evidence must continue to name both the local pin and the refresh date.

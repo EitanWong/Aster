@@ -1,0 +1,55 @@
+I093 TOOL TRANSACTION VERIFICATION
+
+Changed field: engine.decode_stage_observer_max_events and
+engine.decode_stage_observer_sample_interval.
+Changed branch: benchmark-only periodic decode-stage sampling; production
+default remains max_events=0.
+
+BASELINE command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["engine"]=={"decode_stage_observer_max_events":0,"decode_stage_observer_sample_interval":1}' BASELINE_FILE
+Input: {"engine":{"decode_stage_observer_max_events":0,"decode_stage_observer_sample_interval":1}}
+Literal output/result: assertion passed
+Exit status: 0
+
+MODIFIED command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["engine"]=={"decode_stage_observer_max_events":64,"decode_stage_observer_sample_interval":8}' MODIFIED_FILE
+Input: {"engine":{"decode_stage_observer_max_events":64,"decode_stage_observer_sample_interval":8}}
+Literal output/result: assertion passed; MODIFIED_FILE remains at interval 8
+Exit status: 0
+
+ROLLBACK command
+Command: rtk proxy ROLLBACK.sh ROLLBACK_COPY
+Input before rollback: {"engine":{"decode_stage_observer_max_events":64,"decode_stage_observer_sample_interval":8}}
+Literal output/result after rollback: {"engine":{"decode_stage_observer_max_events":0,"decode_stage_observer_sample_interval":1}}
+Exit status: 0
+Restored behavior/status: baseline restored in ROLLBACK_COPY; MODIFIED_FILE remains changed.
+
+Hashes
+BASELINE_FILE SHA-256: 57f36348c718882417f099bc2150659f14c77490a42604ce2d01e11fe58723ec
+MODIFIED_FILE SHA-256: 401413f001675929f4070891db2f279e24f84d6b95ac23912617b704cab107b8
+ROLLBACK_COPY SHA-256: 57f36348c718882417f099bc2150659f14c77490a42604ce2d01e11fe58723ec
+
+Tests
+Command: rtk proxy .venv/bin/pytest -q tests/test_decode_observer_benchmark.py
+Literal output: 6 passed in 0.09s
+Exit status: 0
+
+Focused regression suite
+Command: rtk proxy .venv/bin/python -m pytest -q tests/test_decode_observer_benchmark.py tests/test_model_runner_sampling.py tests/test_foundation_parity_benchmark.py tests/test_config.py tests/test_model_runner.py tests/test_engine_runtime.py
+Literal output: 141 passed in 1.53s
+Exit status: 0
+
+Full suite
+Command: rtk proxy .venv/bin/pytest -q
+Literal output: 621 passed, 9 skipped, 1 warning in 13.97s
+Exit status: 0
+
+Workspace audit
+Command: rtk proxy .venv/bin/python scripts/dev/check_loop_workspace.py --strict
+Literal output: Workspace health: WARN; blockers: none; 24 generated-cache warnings and the completed I093 artifact warning
+Exit status: 0
+
+Matrix
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_observer.py ... --reuse-existing
+Literal result: 32 rows, source/output/terminal/fallback gates pass; Aster mixed-load no-op gate false; control-engine variance true.
+Decision: benchmark-only diagnostic retained, production candidate rejected.

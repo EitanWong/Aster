@@ -280,6 +280,60 @@ def test_decode_stage_observer_bounds_events_but_keeps_aggregate_totals() -> Non
     assert observer["seconds"]["observed_total"] == 0.5
 
 
+def test_decode_stage_observer_periodic_sampling_skips_hot_steps() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {
+                    "decode_stage_observer_max_events": 4,
+                    "decode_stage_observer_sample_interval": 16,
+                },
+            }
+        )
+    )
+
+    assert [runner._decode_stage_observer_should_sample() for _ in range(18)] == [
+        True,
+        *([False] * 15),
+        True,
+        False,
+    ]
+    observer = runner.decode_diagnostics()["decode_stage_observer"]
+    assert observer["sample_interval"] == 16
+    assert observer["sampled_steps"] == 2
+
+
+def test_decode_stage_observer_window_reset_restarts_sampling_without_model_state() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {
+                    "decode_stage_observer_max_events": 4,
+                    "decode_stage_observer_sample_interval": 16,
+                },
+            }
+        )
+    )
+
+    assert runner._decode_stage_observer_should_sample() is True
+    runner._record_decode_stage_event(
+        mode="single",
+        path="implicit_sample_sync",
+        items=[],
+        cache_mode="single",
+        seconds={"observed_total": 1.0},
+    )
+    runner.reset_decode_stage_observer_window()
+
+    assert runner._decode_stage_observer_should_sample() is True
+    observer = runner.decode_diagnostics()["decode_stage_observer"]
+    assert observer["sampled_steps"] == 1
+    assert observer["events"] == []
+    assert observer["seconds"]["observed_total"] == 0.0
+
+
 def test_batch_sampling_groups_lazy_rows_and_preserves_python_values() -> None:
     events: list[str] = []
 

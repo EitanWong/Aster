@@ -2,12 +2,12 @@
   "schema_version": 1,
   "updated": "2026-08-21",
   "workflow_status": "active",
-  "last_completed_iteration": "ITER-20260821-092-decode-driver-roofline-attribution",
-  "active_iteration": "ITER-20260821-093-low-overhead-decode-stage-attribution",
+  "last_completed_iteration": "ITER-20260821-093-low-overhead-decode-stage-attribution",
+  "active_iteration": "ITER-20260822-094-mixed-load-attribution-stability",
   "phase": "baseline",
   "baseline_commit": "9216ed592de4c187fdb9e8862f6e722e7d1e0010",
-  "objective": "Reduce decode-stage attribution overhead below 1% on the locked Qwen3.5-9B B4 cohorts before selecting another production optimization.",
-  "hypothesis": "I092's per-step timestamps and event dictionaries contaminate the decode boundary; aggregate or sampled counters can preserve stage ownership evidence without changing MLX lazy evaluation.",
+  "objective": "Separate host and control-engine variance from decode-stage overhead using longer mixed-load windows before selecting another production optimization.",
+  "hypothesis": "I093's sampled observer is behaviorally bounded but the short mixed window is too variable; longer adjacent windows and explicit control strata can distinguish instrumentation cost from host-state noise.",
   "success_gates": [
     "Freeze the same 9B model/tokenizer files, public source records, greedy settings, prompt chunking, output limits, cache state, runtime sources, and metric definitions for both engines.",
     "Reuse I090/I091's locked model, public records, generation settings, source hashes, and B4 cohort definitions without forced logit evaluation.",
@@ -16,9 +16,9 @@
     "Admit at most one minimal Aster-owned change only when a stage owns a reproducible >=3% primary gap and all correctness/resource/rollback gates pass; otherwise record attribution and keep defaults unchanged."
   ],
   "next_actions": [
-    "Compare aggregate-only, periodic-sampling, and external-process attribution designs against the I092 observer-off baseline.",
-    "Prove disabled mode has no timer/event work and enabled mode remains bounded without forced MLX evaluation.",
-    "Run a fresh balanced B4 low-overhead matrix; admit no runtime candidate without a reproducible 3% removable stage and the <1% observer gate."
+    "Run longer adjacent observer-off/on B4 windows with two state orders per engine and retain every raw row.",
+    "Require Aster and MLX-LM control order strata within 1% for decode TPS and declared resource ceilings.",
+    "Admit no runtime candidate without exact semantics, rollback, and a repeatable >=3% end-to-end gain."
   ],
   "performance_baseline_contract": {
     "required": true,
@@ -43,10 +43,10 @@
       "status": "deferred-foundation-gated",
       "scope": "Research only; MTP remains gated behind foundation parity and complete verify/rollback/sampler contracts.",
       "local_references": {
-        "llama.cpp": "70aff25250075bf23b533c207b55168a4f926350",
-        "vllm-mlx": "7afa61aff396254f3948b98a9a84fe26ebf77bb7",
-        "omlx": "146d27241e9b01bab08e4768fddda749f6f085fa",
-        "mlx-swift-lm": "7871b09b2eda7500bc2acad51125ebd772cbaffe",
+        "llama.cpp": "0e1d9185c5fe82e905d1f5ae6b2e5dcd607a8dfd",
+        "vllm-mlx": "8c814e30f54ee2a8e06acf768713cf0f24e22850",
+        "omlx": "fa3e94b3b93afebe7fa5f39ea195404976244f69",
+        "mlx-swift-lm": "3c5805a1ecf31cf41ee7c34d5a3858439706cb2c",
         "specforge": "2590f48e3a93f69a1e9e63caa23e9f2f9e07c84a"
       },
       "entry_gates": [
@@ -59,7 +59,7 @@
     }
   },
   "latest_verification": {
-    "full_suite": "608 passed, 9 skipped, 1 warning",
+    "full_suite": "621 passed, 9 skipped, 1 warning",
     "iteration_089_matrix": "Four independent balanced single-first/batch-first Qwen3.5-9B processes pass all 22 source, frozen-state, process, cache, reference, and cohort-shape gates.",
     "iteration_089_cache": "Serial target cache is 491b3b82...40c4b. Aster and MLX-LM paired-history target caches are byte-identical at 3d1f3322...c14bf; all canonical hashes remain unchanged after probes and merge/extract matches direct single-row execution.",
     "iteration_089_attribution": "Serial state selects 364 across single/duplicate/native controls; paired-history single selects 8574, duplicate-target B2 selects 364, and the original heterogeneous companion selects 421 in both Aster and MLX-LM. Classification is reference-shared-batched-history-cohort-arithmetic.",
@@ -87,7 +87,15 @@
     "iteration_092_verification": "Focused I092/config/model-runner tests pass 73/73; full suite passes 612 with 9 skipped and 1 dependency warning. Touched Ruff, JSON parsing, diff check, and strict workspace audit pass with only the expected completed-iteration artifact and generated-cache warnings.",
     "iteration_092_delivery": "I092 observer implementation, rejection evidence, I093 plan, and rollback verification were committed in 9216ed592de4c187fdb9e8862f6e722e7d1e0010; push to origin/main is required before starting the next matrix.",
     "iteration_093_plan": "Compare one-timestamp aggregate counters, deterministic periodic sampling, and an external-process trace. Require <1% decode/tail/resource overhead before interpreting stage ownership or admitting a runtime candidate.",
-    "frontier_2026_08_21": "Added mlx-swift-lm 7871b09b (MIT) with native MTP/staged-KV rollback telemetry and SpecForge 2590f48e (MIT) with EAGLE3/P-EAGLE/DFlash/Domino/DSpark paths as git-submodule references. Reviewed mlx-swift 97cf19ef, LookaheadDecoding eed010da, and papers 2608.15454/2608.05806/2608.03624/2608.00434/2608.02244/2608.08382/2608.01651. All MTP/speculation remains foundation-gated.",
+    "iteration_093_matrix": "A 32-row adjacent Aster/direct-MLX-LM B4-short/B4-mixed observer-off/on matrix with four repetitions and two state orders passes source/input, exact output/finish, terminal, zero fallback, zero swap, and bounded-event gates. B4-short samples 2 steps per on row; B4-mixed samples 3.",
+    "iteration_093_performance": "Aster paired median decode_driver_tps changes -0.275% in B4-short and -2.032% in B4-mixed. Mixed Aster order strata are -16.850% off-first and +3.183% on-first; MLX-LM control strata are +7.422% and +5.522%. The strict <1% no-op gate is false and the measurement is control-variance-confounded.",
+    "iteration_093_attribution": "Sampled diagnostic stage shares are evaluation-dominated at 91.476%/94.678% for short/mixed; cache/model/sampling/result shares are 6.531%/1.936%/0.013%/0.037% and 3.258%/1.993%/0.012%/0.033%. They are not private-kernel claims.",
+    "iteration_093_decision": "Reject periodic sampled observation as production instrumentation. Keep max_events=0 and the sample interval benchmark-only; do not infer a runtime optimization from the diagnostic stage shares. I094 lengthens the window and gates on control stability.",
+    "iteration_093_artifact": "decode-stage-observer-sampled-matrix.json is archived under docs/loop-engineering/artifacts/ITER-20260821-093-low-overhead-decode-stage-attribution with SHA-256 f64adc494134c63b046a4ed4606bd7bc1fbe3efd0b43eb2ca0ca25d6620f31b5.",
+    "iteration_093_verification": "Focused regression suite passes 141 tests; full suite passes 621 with 9 skipped and 1 warning. Ruff, JSON parsing, diff check, and strict workspace audit pass with no blockers. Rollback restores ROLLBACK_COPY to the baseline hash while MODIFIED_FILE remains changed.",
+    "iteration_094_plan": "Use longer generation windows and explicit adjacent control-engine strata to separate host variance from observer overhead. Require <=1% primary/order-strata variance, exact output/finish/terminal identity, zero swap/fallbacks, and no production change without >=3% repeatable end-to-end gain.",
+    "frontier_2026_08_21_refresh": "MLX-LM d06c5374 (2026-08-19 MLX 0.32.1 update observation), MLX 27fec909, llama.cpp 0e1d9185, OMLX fa3e94b3, vLLM bfb6c134, Rapid-MLX 58ad7692, mistral.rs d184053f, uzu 1fd0c461, mlx-swift-lm 3c5805a1, SGLang 0f744b684, Ollama 8f912415, vLLM-MLX 8c814e30, and vLLM-Metal 67100ba7 were fetched and recorded; all remaining pins were already at fetched branch tips. Papers 2608.05326/2608.13966/2608.08721/2608.06723/2608.05448 remain watch-only; no unverified code was transferred.",
+    "frontier_2026_08_21": "Added mlx-swift-lm 3c5805a1 (MIT) with native MTP/staged-KV rollback telemetry and SpecForge 2590f48e (MIT) with EAGLE3/P-EAGLE/DFlash/Domino/DSpark paths as git-submodule references. Reviewed mlx-swift 97cf19ef, LookaheadDecoding eed010da, and papers 2608.15454/2608.05806/2608.03624/2608.00434/2608.02244/2608.08382/2608.01651. All MTP/speculation remains foundation-gated.",
     "iteration_091_baseline_delivery": "The I091 baseline anchor is commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c; state-accounting commit 8e9403abb13833c69e3f1750ddec658915a1ef55 is also pushed to origin/main.",
     "touched_file_ruff": "Passed for the I087/I088 arrival, cap-frontier, logit-diagnostic, and focused-test files; all five new Python files also pass Ruff formatting.",
     "full_tree_ruff": "227 historical errors remain outside the iteration scope; this is an explicit verification boundary, not an I081-I084 regression.",

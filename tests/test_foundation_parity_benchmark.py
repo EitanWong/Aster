@@ -242,6 +242,15 @@ def test_execution_contract_keeps_tensorized_candidate_explicitly_off() -> None:
 
     assert contract["decode_tensorized_logprobs_enabled"] is False
     assert contract["decode_stage_observer_max_events"] == 0
+    assert contract["decode_stage_observer_sample_interval"] == 1
+
+
+def test_decode_stage_observer_sample_interval_is_recorded_in_contract() -> None:
+    tool = load_tool()
+
+    contract = tool._execution_contract()
+
+    assert contract["decode_stage_observer_sample_interval"] == 1
 
 
 def test_decode_stage_observer_delta_excludes_warmup_events() -> None:

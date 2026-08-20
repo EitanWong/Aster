@@ -369,8 +369,11 @@ def _decode_stage_observer_delta(before: dict[str, Any], after: dict[str, Any]) 
     }
     return {
         "configured_max_events": int(after.get("configured_max_events", 0)),
+        "sample_interval": int(after.get("sample_interval", 1)),
         "batch_steps": int(after.get("batch_steps", 0)) - int(before.get("batch_steps", 0)),
         "single_steps": int(after.get("single_steps", 0)) - int(before.get("single_steps", 0)),
+        "sampled_steps": int(after.get("sampled_steps", 0))
+        - int(before.get("sampled_steps", 0)),
         "dropped_events": int(after.get("dropped_events", 0))
         - int(before.get("dropped_events", 0)),
         "seconds": seconds,
@@ -412,6 +415,7 @@ def _execution_contract() -> dict[str, Any]:
         "input_mode": "pinned-public-source-resolved-token-ids",
         "decode_tensorized_logprobs_enabled": False,
         "decode_stage_observer_max_events": 0,
+        "decode_stage_observer_sample_interval": 1,
         "prefill_model_boundary": "model-prefill-call-time",
         "decode_driver_boundary": "batch-decode-driver-including-cache-sampler-and-result-work",
     }
@@ -552,6 +556,7 @@ async def _run_aster_cell(
         await engine.warmup()
         await _warm_aster(engine, workload, resolver)
         input_manifest = await _aster_input_manifest(engine, plan, workload, resolver)
+        await engine._runner_call(engine.runtime_kernel.reset_decode_stage_observer_window)
         timing_before = dict(engine.status()["engine_timing"])
         observer_before = dict(
             engine.status()["decode_batch_diagnostics"].get("decode_stage_observer", {})
@@ -660,6 +665,9 @@ async def _run_aster_cell(
         )
         envelope["execution"]["decode_stage_observer_max_events"] = int(
             settings.engine.decode_stage_observer_max_events
+        )
+        envelope["execution"]["decode_stage_observer_sample_interval"] = int(
+            settings.engine.decode_stage_observer_sample_interval
         )
         return envelope
     finally:
@@ -1314,6 +1322,12 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
         },
         "execution": {
             **_execution_contract(),
+            "decode_stage_observer_max_events": int(
+                settings.engine.decode_stage_observer_max_events
+            ),
+            "decode_stage_observer_sample_interval": int(
+                settings.engine.decode_stage_observer_sample_interval
+            ),
             "repetitions": args.repetitions,
             "direct_mlx_lm_prefill_step_size": DIRECT_PREFILL_STEP_SIZE,
             "memory_sample_interval_seconds": args.memory_sample_interval,

@@ -32,6 +32,7 @@ def test_example_config_enables_decode_aware_prefill_budget() -> None:
     assert settings.engine.decode_active_prefill_token_budget == 512
     assert settings.engine.decode_tensorized_logprobs_enabled is False
     assert settings.engine.decode_stage_observer_max_events == 0
+    assert settings.engine.decode_stage_observer_sample_interval == 1
     assert settings.engine.snapshot_reservation_trace_max_events == 64
 
 
@@ -51,16 +52,32 @@ def test_snapshot_reservation_trace_capacity_is_bounded() -> None:
 
 def test_decode_stage_observer_is_opt_in_and_bounded() -> None:
     assert RuntimeSettings().engine.decode_stage_observer_max_events == 0
+    assert RuntimeSettings().engine.decode_stage_observer_sample_interval == 1
     assert (
         RuntimeSettings.model_validate(
-            {"engine": {"decode_stage_observer_max_events": 256}}
+            {
+                "engine": {
+                    "decode_stage_observer_max_events": 256,
+                    "decode_stage_observer_sample_interval": 16,
+                }
+            }
         ).engine.decode_stage_observer_max_events
         == 256
+    )
+    assert (
+        RuntimeSettings.model_validate(
+            {"engine": {"decode_stage_observer_sample_interval": 1024}}
+        ).engine.decode_stage_observer_sample_interval
+        == 1024
     )
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate({"engine": {"decode_stage_observer_max_events": -1}})
     with pytest.raises(ValidationError):
         RuntimeSettings.model_validate({"engine": {"decode_stage_observer_max_events": 257}})
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"decode_stage_observer_sample_interval": 0}})
+    with pytest.raises(ValidationError):
+        RuntimeSettings.model_validate({"engine": {"decode_stage_observer_sample_interval": 1025}})
 
 
 def test_load_settings_reads_responses_store_capacity(tmp_path: Path) -> None:

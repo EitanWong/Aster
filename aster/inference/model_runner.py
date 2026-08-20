@@ -163,6 +163,8 @@ class ModelRunner:
         self._decode_stage_observer_dropped_events = 0
         self._decode_stage_observer_batch_steps = 0
         self._decode_stage_observer_single_steps = 0
+        self._decode_stage_observer_sampled_steps = 0
+        self._decode_stage_observer_sample_countdown = 0
         self._decode_stage_observer_seconds = {stage: 0.0 for stage in self._DECODE_STAGE_SECONDS}
         self._decode_tokens_since_cache_clear = 0
         self._decode_cache_clear_attempts = 0
@@ -523,8 +525,10 @@ class ModelRunner:
         ]
         return {
             "configured_max_events": self.settings.engine.decode_stage_observer_max_events,
+            "sample_interval": self.settings.engine.decode_stage_observer_sample_interval,
             "batch_steps": self._decode_stage_observer_batch_steps,
             "single_steps": self._decode_stage_observer_single_steps,
+            "sampled_steps": self._decode_stage_observer_sampled_steps,
             "dropped_events": self._decode_stage_observer_dropped_events,
             "seconds": dict(self._decode_stage_observer_seconds),
             "events": events,
@@ -532,6 +536,32 @@ class ModelRunner:
 
     def _decode_stage_observer_enabled(self) -> bool:
         return self.settings.engine.decode_stage_observer_max_events > 0
+
+    def reset_decode_stage_observer_window(self) -> None:
+        """Start a fresh benchmark window without retaining warmup samples."""
+        self._decode_stage_observer_events.clear()
+        self._decode_stage_observer_dropped_events = 0
+        self._decode_stage_observer_batch_steps = 0
+        self._decode_stage_observer_single_steps = 0
+        self._decode_stage_observer_sampled_steps = 0
+        self._decode_stage_observer_sample_countdown = 0
+        self._decode_stage_observer_seconds = {
+            stage: 0.0 for stage in self._DECODE_STAGE_SECONDS
+        }
+
+    def _decode_stage_observer_should_sample(self) -> bool:
+        if not self._decode_stage_observer_enabled():
+            return False
+        if len(self._decode_stage_observer_events) >= self.settings.engine.decode_stage_observer_max_events:
+            return False
+        if self._decode_stage_observer_sample_countdown:
+            self._decode_stage_observer_sample_countdown -= 1
+            return False
+        self._decode_stage_observer_sample_countdown = (
+            self.settings.engine.decode_stage_observer_sample_interval - 1
+        )
+        self._decode_stage_observer_sampled_steps += 1
+        return True
 
     def _record_decode_stage_event(
         self,
@@ -919,7 +949,7 @@ class ModelRunner:
         model = self._model
         assert mx is not None and model is not None
 
-        observe_stages = self._decode_stage_observer_enabled()
+        observe_stages = self._decode_stage_observer_should_sample()
         observed_started = time.perf_counter() if observe_stages else 0.0
         cache_reuses_before = self._decode_batch_cache_reuses
         cache_rebuilds_before = self._decode_batch_cache_rebuilds
@@ -1088,7 +1118,7 @@ class ModelRunner:
         model = self._model
         assert mx is not None and model is not None
 
-        if not self._decode_stage_observer_enabled():
+        if not self._decode_stage_observer_should_sample():
             prompt_cache = self._resolve_decode_cache(item.prompt_cache)
             logits = model(mx.array([[item.input_token]], dtype=mx.uint32), cache=prompt_cache)
             logits = logits[:, -1, :]

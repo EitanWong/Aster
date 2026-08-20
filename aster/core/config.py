@@ -59,6 +59,8 @@ class EngineSettings(BaseModel):
     decode_tensorized_logprobs_enabled: bool = False
     # Benchmark-only bounded stage trace; zero keeps the production path uninstrumented.
     decode_stage_observer_max_events: int = Field(default=0, ge=0, le=256)
+    # Sample at a fixed interval when the benchmark-only stage trace is enabled.
+    decode_stage_observer_sample_interval: int = Field(default=1, ge=1, le=1024)
     admission_retry_limit: int = 16
     snapshot_budget_bytes: int = 8 * 1024 * 1024 * 1024
     snapshot_min_prefix_tokens: int = 32

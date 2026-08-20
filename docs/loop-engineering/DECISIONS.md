@@ -1760,3 +1760,35 @@
   any stage share is used to choose a runtime change. TileMix (`2608.17336`)
   and CoRun (`2608.14376`) are watch-only frontier inputs; MTP remains
   foundation-gated.
+
+## 2026-08-21: Keep sampled decode attribution benchmark-only in I093
+
+- Decision: reject the periodic decode-stage observer as a production
+  instrumentation change. Keep `engine.decode_stage_observer_max_events=0` by
+  default; retain `decode_stage_observer_sample_interval` and the resettable
+  window only for benchmark diagnostics.
+- Implementation: disabled mode has no observer timer/event work. Enabled mode
+  samples the first decode call and then every configured Nth call until the
+  bounded event limit. The reset clears only diagnostic state after warmup;
+  it does not touch model, KV, cache, scheduler, or sampler state.
+- Evidence: the fresh adjacent matrix has 32 successful rows across Aster and
+  MLX-LM, B4-short/B4-mixed, observer off/on, four repetitions, and balanced
+  state order. Source/input, exact output/finish, terminal, zero fallback,
+  zero swap, and observer bounds pass. B4-short samples two steps per timed
+  repetition; B4-mixed samples three.
+- Performance ledger: Aster paired median decode changes are `-0.275%` in
+  B4-short and `-2.032%` in B4-mixed. Mixed Aster order strata are `-16.850%`
+  off-first and `+3.183%` on-first; mixed peak-MLX strata include `+10.816%`.
+  The MLX-LM control also varies by more than `5%` in both mixed decode order
+  strata. Thus the strict `<1%` no-op gate is false and the timing is valid
+  diagnostic evidence but confounded for attribution.
+- Interpretation: sampled stage shares remain dominated by the existing lazy
+  evaluation window (`91.476%` short, `94.678%` mixed), but that window
+  includes work released by the materialization boundary and is not a private
+  kernel claim. No runtime optimization is selected.
+- Artifact: `docs/loop-engineering/artifacts/ITER-20260821-093-low-overhead-decode-stage-attribution/decode-stage-observer-sampled-matrix.json`,
+  SHA-256 `f64adc494134c63b046a4ed4606bd7bc1fbe3efd0b43eb2ca0ca25d6620f31b5`.
+- Next gate: I094 lengthens the B4 window and requires both Aster and control
+  order strata to stabilize before any decode-stage owner is assigned. MTP,
+  DFlash, EAGLE-family, tree speculation, and multi-token prediction remain
+  foundation-gated.

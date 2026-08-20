@@ -1,0 +1,5 @@
+--- BASELINE_FILE
++++ MODIFIED_FILE
+@@ -1 +1 @@
+-{"engine":{"decode_stage_observer_max_events":0,"decode_stage_observer_sample_interval":1}}
++{"engine":{"decode_stage_observer_max_events":64,"decode_stage_observer_sample_interval":8}}
