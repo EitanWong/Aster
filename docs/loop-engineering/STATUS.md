@@ -26,6 +26,9 @@ Updated: 2026-08-21
   The switch remains default-off and no production inference default changed.
   I092 now profiles the decode-driver boundary with benchmark-only stage
   attribution.
+- I091 was delivered in `e492b44f60dc90ce271213571fb5a20bb9acd011`
+  and pushed to `origin/main`; its rejection artifact SHA-256 is
+  `979443e7549ded3b1d465ac8c2e93c33e6fee8e4f09da4167461c8bb2d14c5c9`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.

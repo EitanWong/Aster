@@ -102,3 +102,12 @@ Touched Ruff/format and JSON parsing pass. Strict workspace audit exits zero
 with no blockers; it reports expected warnings for the just-closed I091
 artifact, two new reference gitlinks, and 24 generated caches. The commit hash
 is recorded in the delivery update.
+
+## Delivery
+
+Commit `e492b44f60dc90ce271213571fb5a20bb9acd011` contains the implementation,
+tests, 16-row rejection artifact, two reference gitlinks, frontier intake, and
+I092 plan. It was pushed to `origin/main`. The artifact SHA-256 is
+`979443e7549ded3b1d465ac8c2e93c33e6fee8e4f09da4167461c8bb2d14c5c9`.
+The post-push strict audit is clean except for the existing 24 generated-cache
+warning.

@@ -5,7 +5,7 @@
   "last_completed_iteration": "ITER-20260820-091-decode-driver-attribution",
   "active_iteration": "ITER-20260821-092-decode-driver-roofline-attribution",
   "phase": "baseline",
-  "baseline_commit": "7ebd34f5db08e03bbde5462543c88ab57ab2dabd",
+  "baseline_commit": "e492b44f60dc90ce271213571fb5a20bb9acd011",
   "objective": "Attribute the locked Qwen3.5-9B B4 decode-driver boundary with benchmark-only roofline stages before admitting another production change.",
   "hypothesis": "A stage-level model/cache, normalization/sampling, grouped-evaluation, or materialization cost owns the remaining B4 gap, but only a no-forced-evaluation observer can distinguish it from MLX lazy-graph and host scheduling effects.",
   "success_gates": [
@@ -77,6 +77,7 @@
     "iteration_091_decision": "Reject decode_tensorized_logprobs_enabled for production. Keep the explicit switch false by default as rollbackable experimental scaffolding; no scheduler, cache, sampler, or production inference default changes.",
     "iteration_091_artifact": "decode-tensorized-logprobs-rejection.json stores the 16 selected rows, source/model/workload hashes, pair/order ledger, gate recomputation, and frontier references.",
     "iteration_091_verification": "Focused foundation/sampling/config/artifact tests pass 34/34; full suite passes 608 with 9 skipped and 1 dependency warning. Touched Ruff/format and JSON parsing pass. Strict workspace audit exits 0 with no blockers and expected warnings for the just-closed I091 artifact, two reference gitlinks, and 24 generated caches.",
+    "iteration_091_delivery": "I091 implementation, rejection artifact (SHA-256 979443e7549ded3b1d465ac8c2e93c33e6fee8e4f09da4167461c8bb2d14c5c9), frontier intake, and I092 plan were delivered in e492b44f60dc90ce271213571fb5a20bb9acd011 and pushed successfully to origin/main.",
     "iteration_092_plan": "Run benchmark-only roofline/stage attribution inspired by LLMVisor across the locked B4 short/mixed cohorts. Do not admit a runtime change unless one no-forced-evaluation stage owns a reproducible >=3% boundary and passes output, rollback, memory, swap, tail, and cancellation gates.",
     "frontier_2026_08_21": "Added mlx-swift-lm 7871b09b (MIT) with native MTP/staged-KV rollback telemetry and SpecForge 2590f48e (MIT) with EAGLE3/P-EAGLE/DFlash/Domino/DSpark paths as git-submodule references. Reviewed mlx-swift 97cf19ef, LookaheadDecoding eed010da, and papers 2608.15454/2608.05806/2608.03624/2608.00434/2608.02244/2608.08382/2608.01651. All MTP/speculation remains foundation-gated.",
     "iteration_091_baseline_delivery": "The I091 baseline anchor is commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c; state-accounting commit 8e9403abb13833c69e3f1750ddec658915a1ef55 is also pushed to origin/main.",
@@ -210,7 +211,7 @@
   },
   "workspace_audit": {
     "health": "warn",
-    "head": "9bf3fcf199b1",
+    "head": "e492b44f60dc",
     "changed_files": 0,
     "staged_files": 0,
     "unstaged_files": 0,
