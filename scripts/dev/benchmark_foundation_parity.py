@@ -349,6 +349,35 @@ def _timing_delta(before: dict[str, Any], after: dict[str, Any]) -> dict[str, fl
     return {field: after[field] - before[field] for field in fields}
 
 
+def _decode_stage_observer_delta(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
+    """Keep only observer events from the timed window, excluding warmup work."""
+    before_events = list(before.get("events", []))
+    after_events = list(after.get("events", []))
+    before_seconds = dict(before.get("seconds", {}))
+    after_seconds = dict(after.get("seconds", {}))
+    seconds = {
+        stage: float(after_seconds.get(stage, 0.0)) - float(before_seconds.get(stage, 0.0))
+        for stage in (
+            "cache_prepare",
+            "model_enqueue",
+            "sampling_enqueue",
+            "evaluation_window",
+            "result_delivery",
+            "eager_completion",
+            "observed_total",
+        )
+    }
+    return {
+        "configured_max_events": int(after.get("configured_max_events", 0)),
+        "batch_steps": int(after.get("batch_steps", 0)) - int(before.get("batch_steps", 0)),
+        "single_steps": int(after.get("single_steps", 0)) - int(before.get("single_steps", 0)),
+        "dropped_events": int(after.get("dropped_events", 0))
+        - int(before.get("dropped_events", 0)),
+        "seconds": seconds,
+        "events": after_events[len(before_events) :],
+    }
+
+
 async def _warm_aster(
     engine: InferenceEngine,
     workload: dict[str, Any],
@@ -382,6 +411,7 @@ def _execution_contract() -> dict[str, Any]:
         "prefix_cache": "off",
         "input_mode": "pinned-public-source-resolved-token-ids",
         "decode_tensorized_logprobs_enabled": False,
+        "decode_stage_observer_max_events": 0,
         "prefill_model_boundary": "model-prefill-call-time",
         "decode_driver_boundary": "batch-decode-driver-including-cache-sampler-and-result-work",
     }
@@ -523,6 +553,9 @@ async def _run_aster_cell(
         await _warm_aster(engine, workload, resolver)
         input_manifest = await _aster_input_manifest(engine, plan, workload, resolver)
         timing_before = dict(engine.status()["engine_timing"])
+        observer_before = dict(
+            engine.status()["decode_batch_diagnostics"].get("decode_stage_observer", {})
+        )
         mx.reset_peak_memory()
         sampler.start()
         lifecycle_task = asyncio.create_task(
@@ -599,6 +632,10 @@ async def _run_aster_cell(
             "decode_runner_batches": int(timing["decode_runner_batches"]),
             "decode_runner_items": int(timing["decode_runner_items"]),
             "decode_batch_diagnostics": dict(status.get("decode_batch_diagnostics", {})),
+            "decode_stage_observer": _decode_stage_observer_delta(
+                observer_before,
+                dict(status["decode_batch_diagnostics"].get("decode_stage_observer", {})),
+            ),
         }
         envelope = _cell_envelope(
             engine="aster",
@@ -620,6 +657,9 @@ async def _run_aster_cell(
         )
         envelope["execution"]["decode_tensorized_logprobs_enabled"] = bool(
             settings.engine.decode_tensorized_logprobs_enabled
+        )
+        envelope["execution"]["decode_stage_observer_max_events"] = int(
+            settings.engine.decode_stage_observer_max_events
         )
         return envelope
     finally:

@@ -174,11 +174,14 @@ def test_chat_reuse_points_limit_keeps_most_recent_boundaries() -> None:
     )
 
     assert len(all_points) > 2
-    assert runner._chat_reuse_points(
-        messages,
-        full_prompt_tokens=full_tokens,
-        enable_thinking=False,
-    ) == all_points[-2:]
+    assert (
+        runner._chat_reuse_points(
+            messages,
+            full_prompt_tokens=full_tokens,
+            enable_thinking=False,
+        )
+        == all_points[-2:]
+    )
 
 
 def test_chat_reuse_points_keep_sparse_older_boundaries() -> None:
@@ -278,11 +281,14 @@ def test_chat_reuse_points_skip_sparse_retention_below_long_context_threshold() 
     )
 
     assert len(full_tokens) < 2048
-    assert runner._chat_reuse_points(
-        messages,
-        full_prompt_tokens=full_tokens,
-        enable_thinking=False,
-    ) == all_points[-2:]
+    assert (
+        runner._chat_reuse_points(
+            messages,
+            full_prompt_tokens=full_tokens,
+            enable_thinking=False,
+        )
+        == all_points[-2:]
+    )
 
 
 def test_encode_request_skips_reuse_analysis_when_prefix_cache_is_disabled() -> None:
@@ -336,9 +342,7 @@ def test_encode_request_reuses_bounded_chat_prompt_cache() -> None:
     calls: list[list[dict[str, str]]] = []
     runner._encode_chat = lambda messages, **kwargs: calls.append(messages) or [1, 2, 3]  # type: ignore[method-assign]
 
-    first = runner.encode_request(
-        InferenceRequest(messages=[{"role": "user", "content": "first"}])
-    )
+    first = runner.encode_request(InferenceRequest(messages=[{"role": "user", "content": "first"}]))
     second = runner.encode_request(
         InferenceRequest(messages=[{"role": "user", "content": "first"}])
     )
@@ -454,9 +458,7 @@ def test_configure_prompt_cache_step_only_updates_matching_cache_type() -> None:
     kv_cache = FakeKVCache()
     other_cache = object()
 
-    configured = runner._configure_prompt_cache_step(
-        [kv_cache, other_cache], FakeKVCache, 2048
-    )
+    configured = runner._configure_prompt_cache_step([kv_cache, other_cache], FakeKVCache, 2048)
 
     assert configured == [kv_cache, other_cache]
     assert kv_cache.step == 2048
@@ -1000,7 +1002,9 @@ def test_decode_result_counts_stop_token_without_emitting_text() -> None:
     assert result.finish_reason == "stop"
 
 
-def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval() -> None:
+def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class FakeTensor:
         def __getitem__(self, _key):
             return self
@@ -1034,13 +1038,22 @@ def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval() -> Non
         def add_token(self, token: int) -> None:
             self.last_segment = chr(token)
 
-    runner = ModelRunner(RuntimeSettings.model_validate({"embeddings": {"enabled": False}}))
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {"decode_stage_observer_max_events": 1},
+            }
+        )
+    )
     runner._loaded = True
     runner._mx = FakeMX()
     runner._model = lambda _tokens, *, cache: FakeTensor()
     runner._eval_cache = lambda _cache: (_ for _ in ()).throw(  # type: ignore[method-assign]
         AssertionError("decode must not force cache state after sample synchronization")
     )
+    timestamps = iter((0.0, 1.0, 3.0, 6.0, 10.0, 15.0))
+    monkeypatch.setattr("aster.inference.model_runner.time.perf_counter", lambda: next(timestamps))
     item = DecodeWorkItem(
         prompt_cache=[object()],
         input_token=1,
@@ -1051,12 +1064,37 @@ def test_decode_single_relies_on_sample_sync_without_forcing_cache_eval() -> Non
         logits_processor_tokens=[],
         completion_tokens=0,
         max_tokens=2,
+        context_tokens=17,
     )
 
     result = runner._decode_single(item)
 
     assert result.token_id == 65
     assert result.text == "A"
+    observer = runner.decode_diagnostics()["decode_stage_observer"]
+    assert observer["batch_steps"] == 0
+    assert observer["single_steps"] == 1
+    assert observer["events"][0] == {
+        "mode": "single",
+        "path": "implicit_sample_sync",
+        "batch_size": 1,
+        "batch_size_squared": 1,
+        "context_token_sum": 17,
+        "context_token_min": 17,
+        "context_token_max": 17,
+        "completion_token_sum": 0,
+        "processor_rows": 0,
+        "cache_mode": "single",
+        "seconds": {
+            "cache_prepare": 1.0,
+            "model_enqueue": 2.0,
+            "sampling_enqueue": 3.0,
+            "evaluation_window": 4.0,
+            "result_delivery": 5.0,
+            "eager_completion": 0.0,
+            "observed_total": 15.0,
+        },
+    }
 
 
 def test_decode_batch_groups_sample_evaluation_without_forcing_cache_state() -> None:

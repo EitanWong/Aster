@@ -260,3 +260,9 @@
   `decode_tensorized_logprobs_enabled` switch remains false by default; it is
   not evidence for a production speedup. I092 must attribute the remaining
   decode-driver boundary without forced evaluation.
+- I092's per-step decode-stage observer is valid for attribution data but fails
+  its no-op gate as instrumentation: B4-short/B4-mixed decode changes
+  `-1.063%/-4.804%`, TTFT p95 changes `+6.980%/+3.140%`, and mixed peak
+  MLX/RSS changes `+3.650%/+7.055%`. It remains benchmark-only with a zero
+  default. I093 must use aggregate or sampled counters and clear a stricter
+  `<1%` overhead gate before stage data can select a runtime candidate.

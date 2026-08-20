@@ -20,6 +20,11 @@ I091_ARTIFACT_PATH = (
     / "docs/loop-engineering/artifacts/ITER-20260820-091-decode-driver-attribution"
     / "decode-tensorized-logprobs-rejection.json"
 )
+I092_ARTIFACT_PATH = (
+    PROJECT_ROOT
+    / "docs/loop-engineering/artifacts/ITER-20260821-092-decode-driver-roofline-attribution"
+    / "decode-stage-observer-rejection.json"
+)
 CELLS = ("b1-short", "b1-long", "b4-short", "b4-mixed")
 ENGINES = ("aster", "mlx-lm")
 
@@ -236,6 +241,66 @@ def test_execution_contract_keeps_tensorized_candidate_explicitly_off() -> None:
     contract = tool._execution_contract()
 
     assert contract["decode_tensorized_logprobs_enabled"] is False
+    assert contract["decode_stage_observer_max_events"] == 0
+
+
+def test_decode_stage_observer_delta_excludes_warmup_events() -> None:
+    tool = load_tool()
+    before = {
+        "configured_max_events": 64,
+        "batch_steps": 1,
+        "single_steps": 2,
+        "dropped_events": 0,
+        "seconds": {
+            "cache_prepare": 0.1,
+            "model_enqueue": 0.2,
+            "sampling_enqueue": 0.3,
+            "evaluation_window": 0.4,
+            "result_delivery": 0.5,
+            "eager_completion": 0.0,
+            "observed_total": 1.5,
+        },
+        "events": [{"path": "warmup-0"}, {"path": "warmup-1"}],
+    }
+    after = {
+        "configured_max_events": 64,
+        "batch_steps": 4,
+        "single_steps": 3,
+        "dropped_events": 1,
+        "seconds": {
+            "cache_prepare": 0.4,
+            "model_enqueue": 0.6,
+            "sampling_enqueue": 0.8,
+            "evaluation_window": 1.0,
+            "result_delivery": 1.2,
+            "eager_completion": 0.0,
+            "observed_total": 4.0,
+        },
+        "events": [
+            {"path": "warmup-0"},
+            {"path": "warmup-1"},
+            {"path": "timed-0"},
+            {"path": "timed-1"},
+        ],
+    }
+
+    delta = tool._decode_stage_observer_delta(before, after)
+
+    assert delta["batch_steps"] == 3
+    assert delta["single_steps"] == 1
+    assert delta["dropped_events"] == 1
+    assert delta["events"] == [{"path": "timed-0"}, {"path": "timed-1"}]
+    assert delta["seconds"] == pytest.approx(
+        {
+            "cache_prepare": 0.3,
+            "model_enqueue": 0.4,
+            "sampling_enqueue": 0.5,
+            "evaluation_window": 0.6,
+            "result_delivery": 0.7,
+            "eager_completion": 0.0,
+            "observed_total": 2.5,
+        }
+    )
 
 
 def test_sub_three_percent_noise_does_not_select_a_candidate() -> None:
@@ -378,3 +443,71 @@ def test_i091_rejection_artifact_recomputes_balanced_primary_result() -> None:
             "swap_delta_bytes": 317_587_456,
         }
     ]
+
+
+def test_i092_stage_observer_artifact_recomputes_noop_rejection() -> None:
+    payload = json.loads(I092_ARTIFACT_PATH.read_text())
+
+    assert payload["kind"] == "decode-stage-observer-rejection-evidence"
+    assert payload["iteration"] == "ITER-20260821-092-decode-driver-roofline-attribution"
+    assert payload["candidate"]["default_max_events"] == 0
+    assert payload["candidate"]["benchmark_max_events"] == 64
+    assert payload["candidate"]["no_forced_evaluation"] is True
+    assert payload["summary"]["measurement_status"] == "valid"
+    assert payload["summary"]["candidate_admitted"] is False
+    assert payload["summary"]["decision"] == (
+        "reject-observer-no-op-gate-resource-and-tail-regression"
+    )
+
+    rows = payload["rows"]
+    assert len(rows) == 16
+    assert {
+        (row["cell"], row["repetition"], row["state"])
+        for row in rows
+    } == {
+        (cell, repetition, state)
+        for cell in ("b4-short", "b4-mixed")
+        for repetition in range(1, 5)
+        for state in ("observer-off", "observer-on")
+    }
+    assert all(status == 0 for status in payload["execution"]["statuses"])
+
+    expected_primary = {
+        "b4-short": (52.37678479191009, 51.820240558396776, -0.010625780786744254),
+        "b4-mixed": (33.0196851026291, 31.43343696755776, -0.0480394688847301),
+    }
+    for cell, (expected_off, expected_on, expected_delta) in expected_primary.items():
+        by_state = {
+            state: [
+                row["result"]["metrics"]["decode_driver_tps"]
+                for row in rows
+                if row["cell"] == cell and row["state"] == state
+            ]
+            for state in ("observer-off", "observer-on")
+        }
+        off = statistics.median(by_state["observer-off"])
+        on = statistics.median(by_state["observer-on"])
+        summary = payload["summary"]["cell_summaries"][cell]
+        assert off == pytest.approx(expected_off)
+        assert on == pytest.approx(expected_on)
+        assert summary["medians"]["observer-off"]["decode_driver_tps"] == pytest.approx(off)
+        assert summary["medians"]["observer-on"]["decode_driver_tps"] == pytest.approx(on)
+        assert summary["relative_observer_on_vs_off_ratio"]["decode_driver_tps"] == pytest.approx(
+            expected_delta
+        )
+        assert summary["sample_count_per_state"] == 4
+        assert summary["observer_on_steps"]["dropped_events"] == [0]
+
+    gates = payload["summary"]["correctness_and_resource_gates"]
+    assert gates["source_comparable"] is True
+    assert gates["input_manifest_comparable"] is True
+    assert gates["exact_output_identity_off_vs_on"] is True
+    assert gates["finish_identity_off_vs_on"] is True
+    assert gates["terminal_clean"] is True
+    assert gates["zero_decode_fallbacks"] is True
+    assert gates["observer_off_has_zero_events"] is True
+    assert gates["observer_on_event_bound"] is True
+    assert gates["primary_decode_driver_no_op"] is False
+    assert gates["tail_no_op"] is False
+    assert gates["resource_no_op"] is False
+    assert gates["all_no_op_gates"] is False

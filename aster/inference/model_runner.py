@@ -62,6 +62,7 @@ class DecodeWorkItem:
     max_tokens: int
     request_id: str | None = None
     logits_processor_context_size: int | None = None
+    context_tokens: int = 0
 
 
 @dataclass(slots=True)
@@ -120,6 +121,15 @@ def _array_memory(arr: Any) -> int:
 
 class ModelRunner:
     _BUILTIN_PENALTY_CONTEXT_SIZE = 20
+    _DECODE_STAGE_SECONDS = (
+        "cache_prepare",
+        "model_enqueue",
+        "sampling_enqueue",
+        "evaluation_window",
+        "result_delivery",
+        "eager_completion",
+        "observed_total",
+    )
 
     def __init__(self, settings: RuntimeSettings) -> None:
         self.settings = settings
@@ -149,6 +159,11 @@ class ModelRunner:
         self._decode_batch_cache_reuses = 0
         self._decode_batch_cache_rebuilds = 0
         self._decode_tensorized_logprobs_steps = 0
+        self._decode_stage_observer_events: list[dict[str, object]] = []
+        self._decode_stage_observer_dropped_events = 0
+        self._decode_stage_observer_batch_steps = 0
+        self._decode_stage_observer_single_steps = 0
+        self._decode_stage_observer_seconds = {stage: 0.0 for stage in self._DECODE_STAGE_SECONDS}
         self._decode_tokens_since_cache_clear = 0
         self._decode_cache_clear_attempts = 0
         self._decode_cache_clears = 0
@@ -491,11 +506,71 @@ class ModelRunner:
             "batch_cache_reuses": self._decode_batch_cache_reuses,
             "batch_cache_rebuilds": self._decode_batch_cache_rebuilds,
             "decode_tensorized_logprobs_steps": self._decode_tensorized_logprobs_steps,
+            "decode_stage_observer": self._decode_stage_observer_diagnostics(),
             "cache_clear_token_budget": _DECODE_CACHE_CLEAR_TOKEN_BUDGET,
             "cache_clear_attempts": self._decode_cache_clear_attempts,
             "cache_clears": self._decode_cache_clears,
             "cache_clear_failures": self._decode_cache_clear_failures,
         }
+
+    def _decode_stage_observer_diagnostics(self) -> dict[str, object]:
+        events = [
+            {
+                **event,
+                "seconds": dict(event["seconds"]),
+            }
+            for event in self._decode_stage_observer_events
+        ]
+        return {
+            "configured_max_events": self.settings.engine.decode_stage_observer_max_events,
+            "batch_steps": self._decode_stage_observer_batch_steps,
+            "single_steps": self._decode_stage_observer_single_steps,
+            "dropped_events": self._decode_stage_observer_dropped_events,
+            "seconds": dict(self._decode_stage_observer_seconds),
+            "events": events,
+        }
+
+    def _decode_stage_observer_enabled(self) -> bool:
+        return self.settings.engine.decode_stage_observer_max_events > 0
+
+    def _record_decode_stage_event(
+        self,
+        *,
+        mode: str,
+        path: str,
+        items: list[DecodeWorkItem],
+        cache_mode: str,
+        seconds: dict[str, float],
+    ) -> None:
+        normalized_seconds = {
+            stage: max(float(seconds.get(stage, 0.0)), 0.0) for stage in self._DECODE_STAGE_SECONDS
+        }
+        for stage, elapsed in normalized_seconds.items():
+            self._decode_stage_observer_seconds[stage] += elapsed
+        if mode == "batch":
+            self._decode_stage_observer_batch_steps += 1
+        else:
+            self._decode_stage_observer_single_steps += 1
+
+        max_events = self.settings.engine.decode_stage_observer_max_events
+        if len(self._decode_stage_observer_events) >= max_events:
+            self._decode_stage_observer_dropped_events += 1
+            return
+        context_tokens = [max(int(item.context_tokens), 0) for item in items]
+        event: dict[str, object] = {
+            "mode": mode,
+            "path": path,
+            "batch_size": len(items),
+            "batch_size_squared": len(items) ** 2,
+            "context_token_sum": sum(context_tokens),
+            "context_token_min": min(context_tokens, default=0),
+            "context_token_max": max(context_tokens, default=0),
+            "completion_token_sum": sum(max(int(item.completion_tokens), 0) for item in items),
+            "processor_rows": sum(bool(item.logits_processors) for item in items),
+            "cache_mode": cache_mode,
+            "seconds": normalized_seconds,
+        }
+        self._decode_stage_observer_events.append(event)
 
     def estimate_request_bytes(self, prompt_tokens: int, max_tokens: int) -> int:
         config = self._config
@@ -844,17 +919,44 @@ class ModelRunner:
         model = self._model
         assert mx is not None and model is not None
 
+        observe_stages = self._decode_stage_observer_enabled()
+        observed_started = time.perf_counter() if observe_stages else 0.0
+        cache_reuses_before = self._decode_batch_cache_reuses
+        cache_rebuilds_before = self._decode_batch_cache_rebuilds
         merged_cache, batch_cache_state = self._get_decode_batch_cache(items)
+        cache_finished = time.perf_counter() if observe_stages else 0.0
+        if self._decode_batch_cache_reuses > cache_reuses_before:
+            cache_mode = "reuse"
+        elif self._decode_batch_cache_rebuilds > cache_rebuilds_before:
+            cache_mode = "rebuild"
+        else:
+            cache_mode = "uncached"
         input_tokens = mx.array([[item.input_token] for item in items], dtype=mx.uint32)
         logits = model(input_tokens, cache=merged_cache)
         logits = logits[:, -1, :]
+        model_finished = time.perf_counter() if observe_stages else 0.0
         if self._uses_eager_row_sampling(items):
-            return self._decode_batch_eager_rows(
+            results = self._decode_batch_eager_rows(
                 items,
                 logits=logits,
                 merged_cache=merged_cache,
                 batch_cache_state=batch_cache_state,
             )
+            if observe_stages:
+                eager_finished = time.perf_counter()
+                self._record_decode_stage_event(
+                    mode="batch",
+                    path="eager_rows",
+                    items=items,
+                    cache_mode=cache_mode,
+                    seconds={
+                        "cache_prepare": cache_finished - observed_started,
+                        "model_enqueue": model_finished - cache_finished,
+                        "eager_completion": eager_finished - model_finished,
+                        "observed_total": eager_finished - observed_started,
+                    },
+                )
+            return results
 
         sampled_tokens: list[Any] = []
         if self.settings.engine.decode_tensorized_logprobs_enabled and all(
@@ -875,6 +977,7 @@ class ModelRunner:
                 )
                 logprobs = row - mx.logsumexp(row, axis=-1, keepdims=True)
                 sampled_tokens.append(item.sampler(logprobs))
+        sampling_finished = time.perf_counter() if observe_stages else 0.0
 
         lazy_samples, trusted_array_type = self._mlx_sample_arrays(mx, sampled_tokens)
         if not lazy_samples:
@@ -899,6 +1002,7 @@ class ModelRunner:
             raise
         except Exception as exc:
             raise _BatchPostSampleError(exc) from exc
+        evaluation_finished = time.perf_counter() if observe_stages else 0.0
 
         try:
             results: list[DecodeResult] = []
@@ -917,6 +1021,22 @@ class ModelRunner:
             raise
         except Exception as exc:
             raise _BatchPostSampleError(exc) from exc
+        if observe_stages:
+            delivery_finished = time.perf_counter()
+            self._record_decode_stage_event(
+                mode="batch",
+                path="grouped_lazy",
+                items=items,
+                cache_mode=cache_mode,
+                seconds={
+                    "cache_prepare": cache_finished - observed_started,
+                    "model_enqueue": model_finished - cache_finished,
+                    "sampling_enqueue": sampling_finished - model_finished,
+                    "evaluation_window": evaluation_finished - sampling_finished,
+                    "result_delivery": delivery_finished - evaluation_finished,
+                    "observed_total": delivery_finished - observed_started,
+                },
+            )
         return results
 
     def _decode_batch_eager_rows(
@@ -968,18 +1088,56 @@ class ModelRunner:
         model = self._model
         assert mx is not None and model is not None
 
+        if not self._decode_stage_observer_enabled():
+            prompt_cache = self._resolve_decode_cache(item.prompt_cache)
+            logits = model(mx.array([[item.input_token]], dtype=mx.uint32), cache=prompt_cache)
+            logits = logits[:, -1, :]
+            logits = self._apply_logits_processors(logits, item=item)
+            logprobs = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
+            token = self._sample_token(logprobs, item.sampler)
+            return self._decode_result(
+                item=item,
+                token=token,
+                prompt_cache=prompt_cache,
+                peak_memory_gb=self.current_peak_memory_gb(),
+            )
+
+        observed_started = time.perf_counter()
         prompt_cache = self._resolve_decode_cache(item.prompt_cache)
+        cache_finished = time.perf_counter()
         logits = model(mx.array([[item.input_token]], dtype=mx.uint32), cache=prompt_cache)
         logits = logits[:, -1, :]
+        model_finished = time.perf_counter()
         logits = self._apply_logits_processors(logits, item=item)
         logprobs = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
-        token = self._sample_token(logprobs, item.sampler)
-        return self._decode_result(
+        sampled = item.sampler(logprobs)
+        sampling_finished = time.perf_counter()
+        token = self._materialize_sampled_token(sampled)
+        # The sampler/materialization boundary is the implicit MLX barrier for
+        # the single-row path; the observer introduces no explicit eval call.
+        evaluation_finished = time.perf_counter()
+        result = self._decode_result(
             item=item,
             token=token,
             prompt_cache=prompt_cache,
             peak_memory_gb=self.current_peak_memory_gb(),
         )
+        delivery_finished = time.perf_counter()
+        self._record_decode_stage_event(
+            mode="single",
+            path="implicit_sample_sync",
+            items=[item],
+            cache_mode="single",
+            seconds={
+                "cache_prepare": cache_finished - observed_started,
+                "model_enqueue": model_finished - cache_finished,
+                "sampling_enqueue": sampling_finished - model_finished,
+                "evaluation_window": evaluation_finished - sampling_finished,
+                "result_delivery": delivery_finished - evaluation_finished,
+                "observed_total": delivery_finished - observed_started,
+            },
+        )
+        return result
 
     def _maybe_clear_decode_cache(self, generated_tokens: int = 1) -> None:
         if generated_tokens <= 0:

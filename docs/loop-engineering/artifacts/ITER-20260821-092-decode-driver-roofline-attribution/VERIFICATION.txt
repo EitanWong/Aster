@@ -1,0 +1,46 @@
+I092 TOOL TRANSACTION VERIFICATION
+
+Changed field: engine.decode_stage_observer_max_events
+Changed branch: benchmark-only ModelRunner decode-stage observer; default-disabled branch remains unchanged.
+
+Four required artifacts:
+1. MODIFIED_FILE: docs/loop-engineering/artifacts/ITER-20260821-092-decode-driver-roofline-attribution/MODIFIED_FILE
+2. DIFF_FILE: docs/loop-engineering/artifacts/ITER-20260821-092-decode-driver-roofline-attribution/DIFF_FILE
+3. VERIFICATION.txt: docs/loop-engineering/artifacts/ITER-20260821-092-decode-driver-roofline-attribution/VERIFICATION.txt
+4. ROLLBACK.sh: docs/loop-engineering/artifacts/ITER-20260821-092-decode-driver-roofline-attribution/ROLLBACK.sh
+
+Baseline command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; print(json.load(open(sys.argv[1]))["engine"]["decode_stage_observer_max_events"]); assert json.load(open(sys.argv[1]))["engine"]["decode_stage_observer_max_events"]==0' BASELINE_FILE
+Input: {"engine":{"decode_stage_observer_max_events":0}}
+Literal output: 0
+Result: baseline assertion passed
+Exit status: 0
+
+Modified command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; print(json.load(open(sys.argv[1]))["engine"]["decode_stage_observer_max_events"]); assert json.load(open(sys.argv[1]))["engine"]["decode_stage_observer_max_events"]==64' MODIFIED_FILE
+Input: {"engine":{"decode_stage_observer_max_events":64}}
+Literal output: 64
+Result: modified assertion passed; MODIFIED_FILE remains at 64
+Exit status: 0
+
+Rollback command
+Command: rtk proxy ROLLBACK.sh ROLLBACK_COPY
+Input before rollback: {"engine":{"decode_stage_observer_max_events":64}}
+Literal output after rollback: {"engine":{"decode_stage_observer_max_events":0}}
+Result: rollback copy restored baseline behavior and status; MODIFIED_FILE was left changed at 64
+Exit status: 0
+
+Hash evidence
+BASELINE_FILE SHA-256: 41ae7372a3db7595a57935ebf10a03b23d1a1c8293e5d1a61fff8b68ef7aa24b
+MODIFIED_FILE SHA-256: 1c6cc654e85a2e76a22a57e0c60d0303a87c1f1822dd793cee0e1ce9107e5c94
+ROLLBACK_COPY SHA-256 after rollback: 41ae7372a3db7595a57935ebf10a03b23d1a1c8293e5d1a61fff8b68ef7aa24b
+
+Regression tests
+Command: rtk proxy .venv/bin/pytest -q tests/test_foundation_parity_benchmark.py tests/test_config.py tests/test_model_runner_sampling.py tests/test_model_runner.py tests/test_engine_runtime.py::test_engine_batches_decode_steps_for_concurrent_requests
+Literal output: 73 passed in 1.01s
+Exit status: 0
+
+The production/default branch is the zero-value path. The 64-event branch is
+retained only as a benchmark fixture and is explicitly rejected by the I092
+no-op gate; the rollback copy demonstrates restoration without changing the
+modified fixture.

@@ -194,7 +194,9 @@ class InferenceEngine:
 
     def status(self) -> dict[str, object]:
         now = time.monotonic()
-        requests = [self._request_status_snapshot(state, now=now) for state in self._requests.values()]
+        requests = [
+            self._request_status_snapshot(state, now=now) for state in self._requests.values()
+        ]
         num_waiting = sum(1 for state in self._requests.values() if state.phase in _WAITING_PHASES)
         num_running = sum(1 for state in self._requests.values() if state.phase in _RUNNING_PHASES)
         status = EngineStatus(
@@ -483,7 +485,9 @@ class InferenceEngine:
             "runtime": await self._runner_call(self.runtime_kernel.clear_runtime_caches),
         }
 
-    async def embeddings(self, *, model: str | None, input_data: str | list[str]) -> dict[str, object]:
+    async def embeddings(
+        self, *, model: str | None, input_data: str | list[str]
+    ) -> dict[str, object]:
         return await self.embedding_backend.embeddings(model=model, input_data=input_data)
 
     async def count_text_tokens(self, texts: tuple[str, ...]) -> int:
@@ -551,7 +555,9 @@ class InferenceEngine:
             await self.cancel(state.request_id)
             raise self._request_timeout_error(timeout_seconds) from exc
         finally:
-            if state.request_id in self._requests and self._requests[state.request_id].phase not in {
+            if state.request_id in self._requests and self._requests[
+                state.request_id
+            ].phase not in {
                 RequestPhase.COMPLETED,
                 RequestPhase.CANCELLED,
                 RequestPhase.FAILED,
@@ -667,7 +673,8 @@ class InferenceEngine:
         drained = False
         while (
             not self._submission_queue.empty()
-            and (len(self._prefill_queue) + len(self._decode_queue)) < self.settings.engine.max_active_requests
+            and (len(self._prefill_queue) + len(self._decode_queue))
+            < self.settings.engine.max_active_requests
         ):
             state = self._submission_queue.get_nowait()
             result = await self._prepare_request(state)
@@ -683,13 +690,17 @@ class InferenceEngine:
             state.mark_admission_started()
             if not state.admission_prepared:
                 state.phase = RequestPhase.PREFIX_LOOKUP
-                prepared = await self._runner_call(self.runtime_kernel.encode_request, state.request)
+                prepared = await self._runner_call(
+                    self.runtime_kernel.encode_request, state.request
+                )
                 if not self._is_live_request(state):
                     return _PREPARE_TERMINAL
                 state.prompt_tokens = prepared.prompt_tokens
                 state.reuse_points = prepared.reuse_points
                 self._validate_context_budget(state)
-                state.model_fingerprint = await self._runner_call(self.runtime_kernel.model_fingerprint)
+                state.model_fingerprint = await self._runner_call(
+                    self.runtime_kernel.model_fingerprint
+                )
                 if not self._is_live_request(state):
                     return _PREPARE_TERMINAL
                 state.estimated_bytes = await self._runner_call(
@@ -941,7 +952,9 @@ class InferenceEngine:
         self._decode_steps += 1
         self.metrics.decode_steps.inc()
         self._decode_runner_tokens += sum(
-            1 for result in results if isinstance(result, DecodeResult) and result.token_id is not None
+            1
+            for result in results
+            if isinstance(result, DecodeResult) and result.token_id is not None
         )
         for state, result in zip(batch, results, strict=False):
             try:
@@ -959,7 +972,9 @@ class InferenceEngine:
                 state.mark_decode_step()
                 await self._handle_decode_step(state, result)
                 if result.finish_reason is not None:
-                    await self._complete_request(state, finish_reason=result.finish_reason or "stop")
+                    await self._complete_request(
+                        state, finish_reason=result.finish_reason or "stop"
+                    )
                     continue
                 state.phase = RequestPhase.DECODE_READY
                 self._decode_queue.append(state.request_id)
@@ -970,7 +985,11 @@ class InferenceEngine:
         return True
 
     def _decode_work_item(self, state: RequestState) -> DecodeWorkItem:
-        if state.next_input_token is None or state.decode_sampler is None or state.decode_detokenizer is None:
+        if (
+            state.next_input_token is None
+            or state.decode_sampler is None
+            or state.decode_detokenizer is None
+        ):
             raise RuntimeError(f"Request {state.request_id} is not decode-initialized")
         logits_processor_tokens = self._logits_processor_tokens(state)
         return DecodeWorkItem(
@@ -985,6 +1004,7 @@ class InferenceEngine:
             max_tokens=state.request.max_tokens,
             request_id=state.request_id,
             logits_processor_context_size=state.decode_logits_processor_context_size,
+            context_tokens=len(state.prompt_tokens) + state.completion_tokens,
         )
 
     @staticmethod
@@ -1002,20 +1022,14 @@ class InferenceEngine:
         output_end = len(state.output_token_ids)
         if output_end and state.output_token_ids[-1] == state.next_input_token:
             output_end -= 1
-        elif (
-            not output_end
-            and prompt_end
-            and state.prompt_tokens[-1] == state.next_input_token
-        ):
+        elif not output_end and prompt_end and state.prompt_tokens[-1] == state.next_input_token:
             prompt_end -= 1
         preceding = max(context_size - 1, 0)
         output_start = max(output_end - preceding, 0)
         recent_output = state.output_token_ids[output_start:output_end]
         remaining = preceding - len(recent_output)
         prompt_start = max(prompt_end - remaining, 0)
-        recent_prompt = (
-            state.prompt_tokens[prompt_start:prompt_end] if remaining else []
-        )
+        recent_prompt = state.prompt_tokens[prompt_start:prompt_end] if remaining else []
         return [*recent_prompt, *recent_output]
 
     def _validate_context_budget(self, state: RequestState) -> None:
@@ -1160,9 +1174,7 @@ class InferenceEngine:
         state.decode_detokenizer = decode_init.detokenizer
         state.decode_stop_token_ids = decode_init.stop_token_ids
         state.decode_logits_processors = decode_init.logits_processors
-        state.decode_logits_processor_context_size = (
-            decode_init.logits_processor_context_size
-        )
+        state.decode_logits_processor_context_size = decode_init.logits_processor_context_size
         state.next_input_token = decode_init.next_input_token
         state.mark_decode_ready()
         state.phase = RequestPhase.DECODE_READY
@@ -1174,7 +1186,9 @@ class InferenceEngine:
             return
 
         checkpoints: set[int] = set(state.reuse_points)
-        if logical_prefix_tokens == len(state.prompt_tokens) and self._should_store_full_prompt_checkpoint(state):
+        if logical_prefix_tokens == len(
+            state.prompt_tokens
+        ) and self._should_store_full_prompt_checkpoint(state):
             checkpoints.add(logical_prefix_tokens)
         prefill_budget = max(self.settings.engine.prefill_token_budget, 1)
         chunk_checkpoint_max_tokens = self.settings.engine.snapshot_chunk_checkpoint_max_tokens
@@ -1205,10 +1219,9 @@ class InferenceEngine:
     ) -> None:
         if not self.settings.engine.prefix_cache_enabled:
             return
-        if (
-            logical_prefix_tokens == len(state.prompt_tokens)
-            and not self._should_store_full_prompt_checkpoint(state)
-        ):
+        if logical_prefix_tokens == len(
+            state.prompt_tokens
+        ) and not self._should_store_full_prompt_checkpoint(state):
             return
         if not self._is_live_request(state):
             return
@@ -1229,7 +1242,9 @@ class InferenceEngine:
         )
         if not self._is_live_request(state):
             return
-        approx_bytes = await self._runner_call(self.runtime_kernel.estimate_cache_bytes, snapshot_cache)
+        approx_bytes = await self._runner_call(
+            self.runtime_kernel.estimate_cache_bytes, snapshot_cache
+        )
         if not self._is_live_request(state):
             return
         entry = self.prefix_store.store(
@@ -1338,9 +1353,7 @@ class InferenceEngine:
             )
             return True
         available = await self._runner_call(self.runtime_kernel.available_memory_bytes)
-        memory_budget = int(
-            available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1)
-        )
+        memory_budget = int(available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1))
         state_budget = self._snapshot_budget_for_state(state, memory_budget=memory_budget)
         snapshot_budget = min(configured_budget, state_budget)
         # Keep one cache-sized slot free while the runner materializes the clone.
@@ -1408,7 +1421,9 @@ class InferenceEngine:
         return min(memory_budget, _LONG_CONTEXT_SNAPSHOT_BUDGET_BYTES)
 
     async def _complete_request(self, state: RequestState, *, finish_reason: str = "stop") -> None:
-        tail_text = await self._runner_call(self.runtime_kernel.finalize_detokenizer, state.decode_detokenizer)
+        tail_text = await self._runner_call(
+            self.runtime_kernel.finalize_detokenizer, state.decode_detokenizer
+        )
         if tail_text:
             await self._append_decoded_text(
                 state,
@@ -1421,7 +1436,9 @@ class InferenceEngine:
         )
         state.finish_reason = finish_reason
 
-        prompt_tps = (state.prompt_token_count / state.prefill_seconds) if state.prefill_seconds > 0 else 0.0
+        prompt_tps = (
+            (state.prompt_token_count / state.prefill_seconds) if state.prefill_seconds > 0 else 0.0
+        )
         response = InferenceResponse(
             request_id=state.request_id,
             text="".join(state.output_parts),
@@ -1439,7 +1456,9 @@ class InferenceEngine:
         )
         self.metrics.request_latency.observe(max(time.monotonic() - state.created_at, 0.0))
         if state.decode_started_at is not None:
-            self.metrics.decode_latency.observe(max(time.monotonic() - state.decode_started_at, 0.0))
+            self.metrics.decode_latency.observe(
+                max(time.monotonic() - state.decode_started_at, 0.0)
+            )
         state.mark_terminal(RequestPhase.COMPLETED)
         self._credit_terminal_request(state)
         self._completed_requests += 1
@@ -1530,10 +1549,10 @@ class InferenceEngine:
             return max(budget, 1)
 
         available = self.runtime_kernel.available_memory_bytes()
-        memory_budget = int(
-            available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1)
+        memory_budget = int(available * max(1.0 - self.settings.engine.memory_headroom_ratio, 0.1))
+        transient_budget = (
+            memory_budget - self._active_estimated_bytes - self.prefix_store.current_bytes
         )
-        transient_budget = memory_budget - self._active_estimated_bytes - self.prefix_store.current_bytes
         if transient_budget <= 0:
             return None
 
@@ -1544,9 +1563,7 @@ class InferenceEngine:
             candidate = (low + high) // 2
             static_estimate = profile.estimate(candidate, state.cache_token_count + candidate)
             observed_estimate = int(
-                state.prefill_transient_bytes_per_token
-                * candidate
-                * _PREFILL_TRANSIENT_SAFETY
+                state.prefill_transient_bytes_per_token * candidate * _PREFILL_TRANSIENT_SAFETY
             )
             estimate = max(static_estimate, observed_estimate)
             if estimate <= 0 or estimate <= transient_budget:
@@ -1573,7 +1590,9 @@ class InferenceEngine:
                 state.prefill_transient_bytes_per_token,
                 observed_growth_bytes / processed_tokens,
             )
-        state.prefill_active_memory_gb = result.active_memory_gb if result.active_memory_gb > 0 else None
+        state.prefill_active_memory_gb = (
+            result.active_memory_gb if result.active_memory_gb > 0 else None
+        )
 
     def _next_checkpoint_reuse_point(
         self,
@@ -1590,10 +1609,7 @@ class InferenceEngine:
                     point >= min_checkpoint_tokens
                     and point not in state.checkpoints_created
                     and state.cache_token_count < point - 1
-                    and (
-                        target_cache_token_count is None
-                        or point - 1 <= target_cache_token_count
-                    )
+                    and (target_cache_token_count is None or point - 1 <= target_cache_token_count)
                 )
             ),
             default=None,
@@ -1683,7 +1699,9 @@ class InferenceEngine:
         projected = self._active_estimated_bytes + self.prefix_store.current_bytes + estimated_bytes
         if projected <= budget:
             return True
-        self.prefix_store.evict_until_below(max(budget - self._active_estimated_bytes - estimated_bytes, 0))
+        self.prefix_store.evict_until_below(
+            max(budget - self._active_estimated_bytes - estimated_bytes, 0)
+        )
         projected = self._active_estimated_bytes + self.prefix_store.current_bytes + estimated_bytes
         if projected > budget:
             return False
@@ -1806,7 +1824,11 @@ class InferenceEngine:
 
     async def _warm_prefix_cache(self) -> None:
         path = self.settings.engine.warm_prompts_path
-        if self._warm_prompts_completed or not path or not self.settings.engine.prefix_cache_enabled:
+        if (
+            self._warm_prompts_completed
+            or not path
+            or not self.settings.engine.prefix_cache_enabled
+        ):
             return
         try:
             prompts = load_warmup_file(path)

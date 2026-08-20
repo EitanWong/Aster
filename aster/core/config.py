@@ -57,6 +57,8 @@ class EngineSettings(BaseModel):
     decode_active_prefill_token_budget: int | None = Field(default=None, ge=1)
     # Experimental candidate: normalize a processor-free decode batch in one graph.
     decode_tensorized_logprobs_enabled: bool = False
+    # Benchmark-only bounded stage trace; zero keeps the production path uninstrumented.
+    decode_stage_observer_max_events: int = Field(default=0, ge=0, le=256)
     admission_retry_limit: int = 16
     snapshot_budget_bytes: int = 8 * 1024 * 1024 * 1024
     snapshot_min_prefix_tokens: int = 32

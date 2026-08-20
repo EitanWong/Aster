@@ -47,10 +47,24 @@ than treating paper abstracts as implementation evidence. The new gitlinks are
 | [Resource-Fair Scheduling](https://arxiv.org/abs/2608.02244) | Fairness and cost-aware mixed-load scheduling | Informs a future B4 mixed scheduler after decode attribution. |
 | [LLMVisor](https://arxiv.org/abs/2608.08382) | Piecewise/roofline latency attribution under contention | Direct method input for I092's benchmark-only stage attribution. |
 | [Bole](https://arxiv.org/abs/2608.01651) | Tree speculation for hybrid-attention models | CUDA/SGLang reference; defer until hybrid KV verification is proven. |
+| [TileMix](https://arxiv.org/abs/2608.17336) | Tile-centric mixed-precision attention and tile-level precision selection | Paper and claimed author repository URL identified on 2026-08-21; Git head was not pinned after transport failure. Watch for an Apple/MLX kernel reproduction; no Aster change. |
+| [CoRun](https://arxiv.org/abs/2608.14376) | Fixed-shape/padding-aware batched decode for deterministic serving | Paper watch only; no author repository was confirmed. First compare shape normalization against Aster's cohort-sensitive BF16 boundary. |
 
 The foundation gate remains active. These references expand the research
-frontier but do not authorize MTP, DFlash, EAGLE-family, tree speculation, or
-adaptive multi-token prediction in Aster.
+frontier but do not authorize MTP, DFlash, EAGLE-family, tree speculation,
+adaptive multi-token prediction, tile-mixed precision, or fixed-shape padding
+in Aster.
+
+## 2026-08-21 Attribution Follow-up
+
+I092 read the official LLMVisor abstract/API description and used its
+piecewise/roofline feature layout as a measurement template. The first Aster
+observer failed its no-op gate, so its stage shares are diagnostic only. The
+next experiment removes per-step event allocation before importing any
+attribution feature into a runtime decision. TileMix's claimed repository
+(`https://github.com/HanzhiZhang-Ulrica/TileMix`) remains unpinned because the
+read-only Git transport could not establish a verified head; CoRun has no
+confirmed code repository in this intake.
 
 ## Latest Source Refresh
 

@@ -8,7 +8,7 @@ Updated: 2026-08-21
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 091. Active iteration: 092, phase `baseline`.
+- Last completed iteration: 092. Active iteration: 093, phase `baseline`.
 - I090 closes the current Qwen3.5-9B foundation screen with a recomputable
   32-row, four-repetition performance ledger. Relative to direct/model-native
   MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
@@ -24,11 +24,18 @@ Updated: 2026-08-21
   B4-short decode changed `-1.584%` and B4-mixed `+0.025%`; order strata stayed
   below 3%, and one mixed candidate row grew host swap by `317,587,456` bytes.
   The switch remains default-off and no production inference default changed.
-  I092 now profiles the decode-driver boundary with benchmark-only stage
-  attribution.
+  I092 profiled the decode-driver boundary with benchmark-only stage
+  attribution. The observer is exact and no-forced-evaluation, but its own
+  overhead fails the no-op gate; no production default changed. I093 now
+  targets aggregate or sampled low-overhead attribution.
 - I091 was delivered in `e492b44f60dc90ce271213571fb5a20bb9acd011`
   and pushed to `origin/main`; its rejection artifact SHA-256 is
   `979443e7549ded3b1d465ac8c2e93c33e6fee8e4f09da4167461c8bb2d14c5c9`.
+- I092 was delivered as a benchmark-only observer experiment. Its 16-row
+  evidence artifact is `decode-stage-observer-rejection.json` with SHA-256
+  `285560917ecf6f9c50018526d605cb1f5e2efec3b9f52fa187fc0ec86bfb7f44`.
+  Decode on/off is `52.376785 -> 51.820241 tok/s` in B4-short and
+  `33.019685 -> 31.433437 tok/s` in B4-mixed; the observer remains disabled.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -761,9 +768,9 @@ Updated: 2026-08-21
 
 ## Next Priority
 
-1. Execute I092's benchmark-only decode-driver roofline attribution on the
-   locked B4 short and mixed cohorts. Admit no production candidate unless a
-   removable stage owns at least 3% of the valid boundary in both cells.
+1. Execute I093's low-overhead decode-stage attribution on the locked B4 short
+   and mixed cohorts. Require `<1%` observer overhead in both cells before
+   interpreting stage ownership or admitting a runtime candidate.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Do not grow generated caches or exceed the recorded +25/+20
    allowances.

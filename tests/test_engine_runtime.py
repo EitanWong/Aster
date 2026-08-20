@@ -89,6 +89,7 @@ class FakeRunner:
         self.prefill_calls = 0
         self.decode_batch_sizes: list[int] = []
         self.decode_request_ids: list[tuple[str | None, ...]] = []
+        self.decode_contexts: list[tuple[tuple[int, int], ...]] = []
         self.prefill_delay_seconds = 0.0
         self.prefill_peak_memory_gb = 1.5
         self.prefill_active_memory_gb = 1.0
@@ -210,6 +211,9 @@ class FakeRunner:
             time.sleep(self.decode_delay_seconds)
         self.decode_batch_sizes.append(len(items))
         self.decode_request_ids.append(tuple(getattr(item, "request_id", None) for item in items))
+        self.decode_contexts.append(
+            tuple((item.context_tokens, item.completion_tokens) for item in items)
+        )
         results: list[DecodeResult | BaseException] = []
         for item in items:
             if getattr(item.detokenizer, "fail_decode", False):
@@ -652,10 +656,7 @@ def test_snapshot_budget_preserves_short_context_and_caps_long_context(
         prompt_tokens=list(range(prompt_token_count)),
     )
 
-    assert (
-        engine._snapshot_budget_for_state(state, memory_budget=memory_budget)
-        == expected_budget
-    )
+    assert engine._snapshot_budget_for_state(state, memory_budget=memory_budget) == expected_budget
 
 
 def test_long_context_snapshot_cap_is_applied_before_clone() -> None:
@@ -941,7 +942,9 @@ def test_engine_batches_decode_steps_for_concurrent_requests() -> None:
         await engine.start()
         try:
             first = asyncio.create_task(
-                engine.submit(InferenceRequest(prompt="one two", max_tokens=2, trace_id="batch-one"))
+                engine.submit(
+                    InferenceRequest(prompt="one two", max_tokens=2, trace_id="batch-one")
+                )
             )
             second = asyncio.create_task(
                 engine.submit(
@@ -960,6 +963,16 @@ def test_engine_batches_decode_steps_for_concurrent_requests() -> None:
         assert second_result.peak_memory_gb == 1.5
         assert any(size >= 2 for size in runner.decode_batch_sizes)
         assert any(set(ids) >= {"batch-one", "batch-two"} for ids in runner.decode_request_ids)
+        assert {
+            completion_tokens
+            for contexts in runner.decode_contexts
+            for _, completion_tokens in contexts
+        } == {0, 1}
+        assert all(
+            context_tokens == 3 + completion_tokens
+            for contexts in runner.decode_contexts
+            for context_tokens, completion_tokens in contexts
+        )
         status = engine.status()
         assert status["decode_steps"] >= 1
         timing = status["engine_timing"]
@@ -993,7 +1006,9 @@ def test_engine_batches_decode_steps_for_concurrent_requests() -> None:
     asyncio.run(scenario())
 
 
-def test_scheduler_step_prioritizes_decode_before_new_admissions(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scheduler_step_prioritizes_decode_before_new_admissions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     async def scenario() -> None:
         engine, _runner = _make_engine()
         calls: list[str] = []
@@ -1408,9 +1423,7 @@ def test_decode_memory_error_clears_runtime_cache_before_failing_request() -> No
         await engine.start()
         try:
             with pytest.raises(AsterError) as exc_info:
-                await engine.submit(
-                    InferenceRequest(prompt="oom during decode", max_tokens=2)
-                )
+                await engine.submit(InferenceRequest(prompt="oom during decode", max_tokens=2))
         finally:
             await engine.stop()
 
@@ -1458,9 +1471,7 @@ def test_engine_reuses_prefix_checkpoints_and_skips_prefill_work() -> None:
             first_clone_counts = list(runner.clone_cache_token_counts)
             first_store_count = engine.prefix_store.stats.stores
             first_entry_count = engine.prefix_store.entry_count
-            first_trace_count = len(
-                engine.status()["snapshot_reservation_trace"]["events"]
-            )
+            first_trace_count = len(engine.status()["snapshot_reservation_trace"]["events"])
             second = await engine.submit(InferenceRequest(prompt="alpha beta gamma", max_tokens=1))
             status = engine.status()
         finally:
@@ -1583,9 +1594,7 @@ def test_engine_disables_periodic_checkpoints_by_default() -> None:
 
 def test_engine_limits_periodic_checkpoints_but_keeps_explicit_reuse_points() -> None:
     async def scenario() -> None:
-        engine, runner = _make_engine(
-            engine_overrides={"snapshot_chunk_checkpoint_max_tokens": 4}
-        )
+        engine, runner = _make_engine(engine_overrides={"snapshot_chunk_checkpoint_max_tokens": 4})
         state = RequestState(
             request_id="bounded-chunk-checkpoint",
             request=InferenceRequest(prompt="ignored"),
@@ -1641,9 +1650,7 @@ def test_engine_prefill_targets_earliest_pending_reuse_point() -> None:
 
 def test_engine_prefill_skips_reuse_points_below_snapshot_minimum() -> None:
     async def scenario() -> None:
-        engine, runner = _make_engine(
-            engine_overrides={"snapshot_min_prefix_tokens": 4}
-        )
+        engine, runner = _make_engine(engine_overrides={"snapshot_min_prefix_tokens": 4})
         state = RequestState(
             request_id="reuse-boundary-min",
             request=InferenceRequest(prompt="ignored"),
@@ -1661,11 +1668,14 @@ def test_engine_prefill_skips_reuse_points_below_snapshot_minimum() -> None:
         assert state.cache_token_count == 4
         assert state.checkpoints_created == {5}
         assert runner.clone_cache_token_counts == [4]
-        assert engine.prefix_store.lookup(
-            engine.settings.model.name,
-            [1, 2, 3],
-            model_fingerprint="fake-model",
-        ) is None
+        assert (
+            engine.prefix_store.lookup(
+                engine.settings.model.name,
+                [1, 2, 3],
+                model_fingerprint="fake-model",
+            )
+            is None
+        )
         matched = engine.prefix_store.lookup(
             engine.settings.model.name,
             [1, 2, 3, 4, 5],

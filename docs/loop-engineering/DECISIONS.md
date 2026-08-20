@@ -1736,3 +1736,27 @@
   by LLMVisor. MTP and speculation remain behind foundation parity and full
   KV/recurrent rollback, sampler, stop, streaming, cancellation, and mixed-load
   gates.
+
+## 2026-08-21: Reject per-step decode-stage observer in I092
+
+- Decision: close I092 as a valid attribution measurement but reject the
+  observer as production instrumentation. Keep
+  `engine.decode_stage_observer_max_events=0` by default and retain the
+  bounded observer only for benchmark experiments.
+- Evidence: the final-source matrix has 16 fresh Aster processes across B4
+  short/mixed and four repetitions per state. Source, input, execution
+  contract, output/finish, terminal, and fallback gates pass; observer-off
+  retains zero events and observer-on retains 11/18 timed events with zero
+  drops.
+- Performance delta: observer-on versus observer-off decode is `-1.063%` in
+  B4-short and `-4.804%` in B4-mixed. TTFT p95 rises `+6.980%`/`+3.140%`,
+  end-to-end p95 rises `+5.646%`/`+3.099%`, and B4-mixed peak MLX/RSS rises
+  `+3.650%`/`+7.055%`.
+- Attribution: the diagnostic window is dominated by existing lazy evaluation
+  (`93.116%` short, `94.648%` mixed median share), but that share includes the
+  MLX work released by the current materialization boundary and is not a
+  private-kernel claim.
+- Next gate: I093 must reduce instrumentation to under `1%` overhead before
+  any stage share is used to choose a runtime change. TileMix (`2608.17336`)
+  and CoRun (`2608.14376`) are watch-only frontier inputs; MTP remains
+  foundation-gated.

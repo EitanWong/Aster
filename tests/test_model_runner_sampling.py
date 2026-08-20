@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from aster.core.config import RuntimeSettings
 from aster.inference.model_runner import DecodeResult, DecodeWorkItem, ModelRunner
 
 
-def test_tensorized_logprobs_normalizes_processor_free_batch_once() -> None:
+def test_tensorized_logprobs_normalizes_processor_free_batch_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class FakeTensor:
         shape = (2, 4)
         dtype = "float16"
@@ -70,7 +74,10 @@ def test_tensorized_logprobs_normalizes_processor_free_batch_once() -> None:
     settings = RuntimeSettings.model_validate(
         {
             "embeddings": {"enabled": False},
-            "engine": {"decode_tensorized_logprobs_enabled": True},
+            "engine": {
+                "decode_stage_observer_max_events": 1,
+                "decode_tensorized_logprobs_enabled": True,
+            },
         }
     )
     runner = ModelRunner(settings)
@@ -81,6 +88,8 @@ def test_tensorized_logprobs_normalizes_processor_free_batch_once() -> None:
     runner._model = lambda _tokens, *, cache: model_logits  # type: ignore[assignment]
     runner._get_decode_batch_cache = lambda _items: ([FakeLayer()], None)  # type: ignore[method-assign]
     runner._extract_prompt_cache = lambda _cache, index: [index]  # type: ignore[method-assign]
+    timestamps = iter((0.0, 1.0, 3.0, 6.0, 10.0, 15.0))
+    monkeypatch.setattr("aster.inference.model_runner.time.perf_counter", lambda: next(timestamps))
 
     sampler_rows: list[int | None] = []
 
@@ -100,6 +109,7 @@ def test_tensorized_logprobs_normalizes_processor_free_batch_once() -> None:
             completion_tokens=0,
             max_tokens=2,
             request_id=f"tensorized-{index}",
+            context_tokens=11 + (18 * index),
         )
         for index in range(2)
     ]
@@ -112,7 +122,37 @@ def test_tensorized_logprobs_normalizes_processor_free_batch_once() -> None:
     assert len(fake_mx.logsumexp_inputs) == 1
     assert fake_mx.logsumexp_inputs[0] is model_logits
     assert sampler_rows == [0, 1]
-    assert runner.decode_diagnostics()["decode_tensorized_logprobs_steps"] == 1
+    diagnostics = runner.decode_diagnostics()
+    assert diagnostics["decode_tensorized_logprobs_steps"] == 1
+    observer = diagnostics["decode_stage_observer"]
+    assert observer["configured_max_events"] == 1
+    assert observer["batch_steps"] == 1
+    assert observer["single_steps"] == 0
+    assert observer["dropped_events"] == 0
+    assert observer["seconds"] == {
+        "cache_prepare": 1.0,
+        "model_enqueue": 2.0,
+        "sampling_enqueue": 3.0,
+        "evaluation_window": 4.0,
+        "result_delivery": 5.0,
+        "eager_completion": 0.0,
+        "observed_total": 15.0,
+    }
+    assert observer["events"] == [
+        {
+            "mode": "batch",
+            "path": "grouped_lazy",
+            "batch_size": 2,
+            "batch_size_squared": 4,
+            "context_token_sum": 40,
+            "context_token_min": 11,
+            "context_token_max": 29,
+            "completion_token_sum": 0,
+            "processor_rows": 0,
+            "cache_mode": "uncached",
+            "seconds": observer["seconds"],
+        }
+    ]
 
 
 def test_tensorized_logprobs_keeps_processor_rows_on_conservative_path() -> None:
@@ -200,6 +240,44 @@ def test_tensorized_logprobs_keeps_processor_rows_on_conservative_path() -> None
 
     assert fake_mx.logsumexp_calls == 2
     assert runner.decode_diagnostics()["decode_tensorized_logprobs_steps"] == 0
+
+
+def test_decode_stage_observer_bounds_events_but_keeps_aggregate_totals() -> None:
+    runner = ModelRunner(
+        RuntimeSettings.model_validate(
+            {
+                "embeddings": {"enabled": False},
+                "engine": {"decode_stage_observer_max_events": 1},
+            }
+        )
+    )
+    item = DecodeWorkItem(
+        prompt_cache=[],
+        input_token=1,
+        sampler=lambda _logprobs: 1,
+        detokenizer=object(),
+        stop_token_ids=frozenset(),
+        logits_processors=(),
+        logits_processor_tokens=[],
+        completion_tokens=2,
+        max_tokens=4,
+        context_tokens=17,
+    )
+
+    for _ in range(2):
+        runner._record_decode_stage_event(
+            mode="batch",
+            path="grouped_lazy",
+            items=[item, item],
+            cache_mode="reuse",
+            seconds={"observed_total": 0.25},
+        )
+
+    observer = runner.decode_diagnostics()["decode_stage_observer"]
+    assert observer["batch_steps"] == 2
+    assert observer["dropped_events"] == 1
+    assert len(observer["events"]) == 1
+    assert observer["seconds"]["observed_total"] == 0.5
 
 
 def test_batch_sampling_groups_lazy_rows_and_preserves_python_values() -> None:
@@ -394,7 +472,9 @@ def test_eager_row_mode_is_visible_through_processor_wrappers() -> None:
     assert ModelRunner._uses_eager_row_sampling([item]) is True
 
 
-def test_all_python_sampler_values_still_force_model_barrier() -> None:
+def test_all_python_sampler_values_still_force_model_barrier(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class FakeTensor:
         shape = ()
         dtype = "float16"
@@ -449,6 +529,10 @@ def test_all_python_sampler_values_still_force_model_barrier() -> None:
     runner._model = lambda _tokens, *, cache: model_logits  # type: ignore[assignment]
     runner._get_decode_batch_cache = lambda _items: ([FakeLayer()], None)  # type: ignore[method-assign]
     runner._extract_prompt_cache = lambda _cache, index: [index]  # type: ignore[method-assign]
+    monkeypatch.setattr(
+        "aster.inference.model_runner.time.perf_counter",
+        lambda: (_ for _ in ()).throw(AssertionError("disabled observer called perf_counter")),
+    )
     items = [
         DecodeWorkItem(
             prompt_cache=[],
