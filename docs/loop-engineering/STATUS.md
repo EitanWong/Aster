@@ -36,6 +36,9 @@ Updated: 2026-08-21
   `285560917ecf6f9c50018526d605cb1f5e2efec3b9f52fa187fc0ec86bfb7f44`.
   Decode on/off is `52.376785 -> 51.820241 tok/s` in B4-short and
   `33.019685 -> 31.433437 tok/s` in B4-mixed; the observer remains disabled.
+  The implementation and evidence are committed in
+  `9216ed592de4c187fdb9e8862f6e722e7d1e0010` and will be pushed with this
+  iteration delivery.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.

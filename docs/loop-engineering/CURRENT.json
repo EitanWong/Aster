@@ -5,7 +5,7 @@
   "last_completed_iteration": "ITER-20260821-092-decode-driver-roofline-attribution",
   "active_iteration": "ITER-20260821-093-low-overhead-decode-stage-attribution",
   "phase": "baseline",
-  "baseline_commit": "d9fc7148693fde84eb3b23179a063e6f8bcd05be",
+  "baseline_commit": "9216ed592de4c187fdb9e8862f6e722e7d1e0010",
   "objective": "Reduce decode-stage attribution overhead below 1% on the locked Qwen3.5-9B B4 cohorts before selecting another production optimization.",
   "hypothesis": "I092's per-step timestamps and event dictionaries contaminate the decode boundary; aggregate or sampled counters can preserve stage ownership evidence without changing MLX lazy evaluation.",
   "success_gates": [
@@ -85,6 +85,7 @@
     "iteration_092_decision": "Reject the per-step observer as production instrumentation because the 3% no-op gate fails on mixed decode, tails, and resources. Keep engine.decode_stage_observer_max_events=0 by default; advance I093 to aggregate or sampled low-overhead attribution.",
     "iteration_092_artifact": "decode-stage-observer-rejection.json stores the 16 raw rows, source hashes, paired deltas, stage shares, and gate recomputation. SHA-256 285560917ecf6f9c50018526d605cb1f5e2efec3b9f52fa187fc0ec86bfb7f44.",
     "iteration_092_verification": "Focused I092/config/model-runner tests pass 73/73; full suite passes 612 with 9 skipped and 1 dependency warning. Touched Ruff, JSON parsing, diff check, and strict workspace audit pass with only the expected completed-iteration artifact and generated-cache warnings.",
+    "iteration_092_delivery": "I092 observer implementation, rejection evidence, I093 plan, and rollback verification were committed in 9216ed592de4c187fdb9e8862f6e722e7d1e0010; push to origin/main is required before starting the next matrix.",
     "iteration_093_plan": "Compare one-timestamp aggregate counters, deterministic periodic sampling, and an external-process trace. Require <1% decode/tail/resource overhead before interpreting stage ownership or admitting a runtime candidate.",
     "frontier_2026_08_21": "Added mlx-swift-lm 7871b09b (MIT) with native MTP/staged-KV rollback telemetry and SpecForge 2590f48e (MIT) with EAGLE3/P-EAGLE/DFlash/Domino/DSpark paths as git-submodule references. Reviewed mlx-swift 97cf19ef, LookaheadDecoding eed010da, and papers 2608.15454/2608.05806/2608.03624/2608.00434/2608.02244/2608.08382/2608.01651. All MTP/speculation remains foundation-gated.",
     "iteration_091_baseline_delivery": "The I091 baseline anchor is commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c; state-accounting commit 8e9403abb13833c69e3f1750ddec658915a1ef55 is also pushed to origin/main.",
