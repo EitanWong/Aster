@@ -58,6 +58,8 @@ runtime code.
 - Full-suite verification at consolidation: 604 passed, 9 skipped, 1 warning.
 - Production decision: no change; native merge, scheduler defaults, precision,
   and greedy semantics remain unchanged.
+- Delivery: commit `9bf3fcf199b14caf3ec308e750f3ad22f726246c` was pushed to
+  `origin/main`; I091 is anchored to that pushed baseline.
 
 ## Next Iteration
 

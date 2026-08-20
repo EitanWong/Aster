@@ -69,6 +69,8 @@
     "iteration_090_output_boundary": "Cross-engine output identity diverges only at b4-short/short-3 and b4-mixed/short-0; terminal identity remains exact. The matrix selects the bounded aster-manual-decode-driver profile but does not authorize a production change.",
     "iteration_090_decision": "Close I090 without a runtime change; I091 must align the B4 output contract, remove forced-evaluation timing, and report a fresh valid baseline/candidate delta before implementation.",
     "iteration_090_verification": "Retained foundation-parity artifact recomputes; focused foundation/diagnostic tests pass 16/16. Current full suite is 604 passed, 9 skipped, 1 warning.",
+    "iteration_090_delivery": "I090 evidence, reference gitlinks, and the performance-ledger protocol were delivered in commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c and pushed successfully to origin/main.",
+    "iteration_091_baseline_delivery": "The I091 baseline anchor is commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c; state-accounting commit 8e9403abb13833c69e3f1750ddec658915a1ef55 is also pushed to origin/main.",
     "touched_file_ruff": "Passed for the I087/I088 arrival, cap-frontier, logit-diagnostic, and focused-test files; all five new Python files also pass Ruff formatting.",
     "full_tree_ruff": "227 historical errors remain outside the iteration scope; this is an explicit verification boundary, not an I081-I084 regression.",
     "iteration_082_production_budget": "Four fresh 8 GiB windows at offsets 6, 12, 18, and 24 match I080 source/plan/execution/terminal identity; each retains six entries/six stores, one exact hit, zero eviction/preflight/replay prefill, six trace events, and zero terminal active/pending/pinned state.",
