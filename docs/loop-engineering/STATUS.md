@@ -40,8 +40,7 @@ Updated: 2026-08-21
   Decode on/off is `52.376785 -> 51.820241 tok/s` in B4-short and
   `33.019685 -> 31.433437 tok/s` in B4-mixed; the observer remains disabled.
   The implementation and evidence are committed in
-  `9216ed592de4c187fdb9e8862f6e722e7d1e0010` and will be pushed with this
-  iteration delivery.
+  `9216ed592de4c187fdb9e8862f6e722e7d1e0010` and pushed to `origin/main`.
 - I093's sampled observer artifact is
   `docs/loop-engineering/artifacts/ITER-20260821-093-low-overhead-decode-stage-attribution/decode-stage-observer-sampled-matrix.json`
   with SHA-256
@@ -51,6 +50,9 @@ Updated: 2026-08-21
   but the strict `<1%` no-op gate is false in mixed state strata and the
   control engine is also variable. The observer remains default-disabled and
   benchmark-only.
+- I093 implementation, evidence, reference refresh, and I094 plan are in
+  `1f8ec3509ffd881ef1efd1d2bc2f58b52b4d540f`; the state-anchor documentation
+  commit follows after the baseline hash is bound in `CURRENT.json`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
