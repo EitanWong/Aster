@@ -228,7 +228,7 @@
   },
   "workspace_audit": {
     "health": "warn",
-    "head": "e492b44f60dc",
+    "head": "4bfedcf2f5c4",
     "changed_files": 0,
     "staged_files": 0,
     "unstaged_files": 0,
