@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-08-01
+Updated: 2026-08-20
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -54,6 +54,7 @@ for Aster's rejected I086 Metal kernel.
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [Gigatoken](https://github.com/marcelroed/gigatoken), commit `34a1599`, MIT | Rust SIMD pretokenization, cache-aware BPE encoding, and HuggingFace compatibility API; upstream lists Qwen3.5 support | Remote source/license reviewed; not installed or routed by Aster | Treat as CPU ingress-only reference. First prove exact Qwen3.5 IDs for public/chat/special-token cases and measure queue-aware TTFT/e2e; it cannot substitute for MLX GPU prefill/decode optimization. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
+| Deferred | llama.cpp MTP (`0a50d990`), vLLM-MLX (`0dd11576`), OMLX (`d0ee0e85`) | Next-n heads with target verification, hidden-state transfer, KV/recurrent rollback, membership reconciliation, and acceptance telemetry | Primary local implementations and licenses reviewed; no Aster candidate. I089 closes merge/extract ownership and exposes reference-shared cohort-sensitive BF16 arithmetic. | Revisit after I090 and the remaining foundation parity/rollback gates. Require exact sampler/stop/stream behavior plus B1/B4/B8 mixed-load acceptance, TTFT, TPOT, throughput, memory, and swap gates. |
 | P1 | [SSSD](https://github.com/huawei-csl/sssd_speculator), ACL 2026, BSD-3-Clause-Clear | Training-free suffix-array/prompt/self-output speculation | Source/license verified remotely; not cloned | Later candidate after core: compare against prompt lookup and DFlash without a draft model. |
 | P1 | [CONCUR](https://arxiv.org/abs/2601.22705) | Agent-level cache-pressure feedback and proactive admission | Paper found; no author code located in first pass | Reproduce only after a sustained Agent KV-thrashing workload exists. |
 | P1 | [llama.cpp backend sampler graph](https://github.com/ggml-org/llama.cpp/pull/17004) and [vLLM sampling sync removal](https://github.com/vllm-project/vllm/pull/16436) | Move sampler/penalty work into backend graphs and remove host synchronization | Primary implementations reviewed; no Aster transfer yet | Profile Aster's post-group penalty/logsumexp graph first. Require exact Metal probabilities and arbitrary-processor behavior. |

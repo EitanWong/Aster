@@ -1,27 +1,74 @@
 {
   "schema_version": 1,
-  "updated": "2026-08-01",
+  "updated": "2026-08-20",
   "workflow_status": "active",
-  "last_completed_iteration": "ITER-20260801-088-active-cap-workload-frontier",
-  "active_iteration": "ITER-20260801-089-greedy-batch-shape-determinism",
-  "phase": "planned",
-  "baseline_commit": "03c222ac687d8a5ffe9ef08eedbd943209285391",
-  "objective": "Determine whether the Qwen3.5 greedy single-versus-batched output drift found in I088 is shared by direct/model-native MLX-LM, and isolate model batch arithmetic from Aster cache-merge state before proposing any determinism mechanism.",
-  "hypothesis": "The 0.125-logit near tie may be an inherent BF16 batch-shape effect rather than Aster state corruption; a production change is justified only if a reference-equivalent method preserves ordinary greedy semantics, output quality, and serving performance.",
+  "last_completed_iteration": "ITER-20260820-090-qwen35-9b-foundation-parity",
+  "active_iteration": "ITER-20260820-091-decode-driver-attribution",
+  "phase": "baseline",
+  "baseline_commit": "f1038fa50b7679c0b378de96583e6d1b5b1e13d4",
+  "objective": "Attribute the current Aster manual decode-driver gap on the locked Qwen3.5-9B B4 short and mixed cohorts before changing production code.",
+  "hypothesis": "Aster-owned host-side decode-driver work is the dominant reproducible B4 gap; aligning a valid common timing boundary can identify one removable cost without changing greedy semantics, cache ownership, or scheduler defaults.",
   "success_gates": [
-    "Freeze the identical public prompt, tokenizer/model files, greedy settings, prompt-cache state, selected-token prefix, and candidate-token logits across Aster single, Aster merged batch, and the closest runnable model-native MLX-LM boundaries.",
-    "Reproduce or falsify the completion-index-6 divergence in independent processes while retaining exact request/source hashes and separating diagnostic evaluation from performance timing.",
-    "Distinguish model batch arithmetic from cache merge/extract state with a same-cache controlled single-versus-batch probe; do not infer state corruption from output hashes alone.",
-    "Reject epsilon tie-breaking, forced single-row greedy decode, or higher-precision production routing unless it preserves declared argmax semantics and clears exact output/quality plus throughput/TTFT/memory gates.",
-    "Production defaults, scheduler logic, and sampler behavior remain unchanged during I089."
+    "Freeze the same 9B model/tokenizer files, public source records, greedy settings, prompt chunking, output limits, cache state, runtime sources, and metric definitions for both engines.",
+    "Reuse I090's locked model, public records, generation settings, source hashes, and B4 cohort definitions without forced logit evaluation.",
+    "Align cross-engine output/finish identity for B4 short and mixed before interpreting timing as a production claim.",
+    "Measure the common decode-driver boundary with independent fresh processes, balanced AB/BA order, TTFT, decode TPS, end-to-end p95, memory, RSS, and swap.",
+    "Admit at most one minimal Aster-owned change only when a reproducible >=3% primary gap and all correctness/resource/rollback gates pass; otherwise reject and keep defaults unchanged."
   ],
   "next_actions": [
-    "Build a source-bound same-cache single/batch logit probe that identifies the first divergent token without using its instrumented timing as performance evidence.",
-    "Run the closest direct/model-native MLX-LM comparison on the same prompt and selected-token prefix, recording whether candidate logits and greedy output share the cohort-shape split.",
-    "Classify the boundary as reference-shared numerical behavior or Aster-specific state behavior, then design a candidate only if the classification supports one."
+    "Trace Aster's manual decode-driver boundary and define a no-forced-evaluation timing record.",
+    "Add red/green tests for B4 output identity, metric ownership, terminal cleanup, and rollback behavior.",
+    "Run a fresh balanced B4 baseline/candidate matrix and record absolute values plus percentage deltas before selecting an implementation."
   ],
+  "performance_baseline_contract": {
+    "required": true,
+    "primary_metric": "decode_driver_tps",
+    "required_fields": [
+      "baseline_label",
+      "candidate_or_reference_label",
+      "baseline_value",
+      "candidate_value",
+      "absolute_delta",
+      "relative_delta_percent",
+      "sample_count",
+      "order_strata",
+      "measurement_status",
+      "correctness_and_resource_gates",
+      "decision"
+    ],
+    "invalidated_timing_rule": "A diagnostic must record null timing deltas, an explicit reason, and a linked valid baseline; it cannot claim a speedup or slowdown."
+  },
+  "deferred_research": {
+    "multi_token_prediction": {
+      "status": "deferred-foundation-gated",
+      "scope": "Research only; MTP remains gated behind foundation parity and complete verify/rollback/sampler contracts.",
+      "local_references": {
+        "llama.cpp": "70aff25250075bf23b533c207b55168a4f926350",
+        "vllm-mlx": "7afa61aff396254f3948b98a9a84fe26ebf77bb7",
+        "omlx": "146d27241e9b01bab08e4768fddda749f6f085fa"
+      },
+      "entry_gates": [
+        "I089 is closed: merge/extract is intact and the observed near tie is reference-shared batched-history/cohort arithmetic.",
+        "Close or attribute source-bound Aster/direct-MLX-LM baseline gaps for prefill, decode, TTFT, throughput, tail latency, and memory.",
+        "Prove snapshot, restore, partial rollback, cancellation, finish, and membership-change semantics for KV and recurrent state.",
+        "Preserve declared greedy, stochastic sampler, logits-processor, stop, and streaming semantics under target verification.",
+        "Clear isolated-process B1/B4/B8 acceptance, TTFT, TPOT, throughput, memory, swap, and mixed-load gates with at least a 3% material effect and no correctness or resource regression."
+      ]
+    }
+  },
   "latest_verification": {
-    "full_suite": "588 passed, 9 skipped, 1 warning",
+    "full_suite": "604 passed, 9 skipped, 1 warning",
+    "iteration_089_matrix": "Four independent balanced single-first/batch-first Qwen3.5-9B processes pass all 22 source, frozen-state, process, cache, reference, and cohort-shape gates.",
+    "iteration_089_cache": "Serial target cache is 491b3b82...40c4b. Aster and MLX-LM paired-history target caches are byte-identical at 3d1f3322...c14bf; all canonical hashes remain unchanged after probes and merge/extract matches direct single-row execution.",
+    "iteration_089_attribution": "Serial state selects 364 across single/duplicate/native controls; paired-history single selects 8574, duplicate-target B2 selects 364, and the original heterogeneous companion selects 421 in both Aster and MLX-LM. Classification is reference-shared-batched-history-cohort-arithmetic.",
+    "iteration_089_decision": "No production change. Retain native MLX merge and ordinary greedy argmax; reject epsilon tie-breaking, forced-single routing, or precision exceptions without broad quality and serving gates. I090 returns to 9B foundation parity; MTP remains deferred.",
+    "iteration_089_artifact": "greedy-batch-shape-evidence.json is 88375 bytes with SHA-256 d4bfa13255ace4db107ea70b3925964de7f41423fd12dfdf50f2513c21b3dd45 and retains four raw hashes plus three source hashes.",
+    "iteration_089_verification": "Focused I088/I089 tests pass 11/11; full suite passes 593 with 9 skipped and 1 dependency warning; touched Ruff/format, JSON parsing, diff check, source hashes, and strict workspace audit pass.",
+    "iteration_090_matrix": "Four public cells x two engines x four independent repetitions produced 32 source-bound rows with balanced first-engine order; source, input, execution-contract, order, terminal, memory, RSS, and swap gates pass.",
+    "iteration_090_performance_baseline": "Against direct/model-native MLX-LM, paired median Aster decode-driver deficits are -8.132% (B1-short), +5.978% pooled but order-reversing (B1-long), +36.322% (B4-short), and +24.484% (B4-mixed). Aggregate throughput deficits are +11.504%/+1.640%/+110.030%/-31.323% for B1-short/B1-long/B4-short/B4-mixed; no global ranking is claimed.",
+    "iteration_090_output_boundary": "Cross-engine output identity diverges only at b4-short/short-3 and b4-mixed/short-0; terminal identity remains exact. The matrix selects the bounded aster-manual-decode-driver profile but does not authorize a production change.",
+    "iteration_090_decision": "Close I090 without a runtime change; I091 must align the B4 output contract, remove forced-evaluation timing, and report a fresh valid baseline/candidate delta before implementation.",
+    "iteration_090_verification": "Retained foundation-parity artifact recomputes; focused foundation/diagnostic tests pass 16/16. Current full suite is 604 passed, 9 skipped, 1 warning.",
     "touched_file_ruff": "Passed for the I087/I088 arrival, cap-frontier, logit-diagnostic, and focused-test files; all five new Python files also pass Ruff formatting.",
     "full_tree_ruff": "227 historical errors remain outside the iteration scope; this is an explicit verification boundary, not an I081-I084 regression.",
     "iteration_082_production_budget": "Four fresh 8 GiB windows at offsets 6, 12, 18, and 24 match I080 source/plan/execution/terminal identity; each retains six entries/six stores, one exact hit, zero eviction/preflight/replay prefill, six trace events, and zero terminal active/pending/pinned state.",
@@ -67,7 +114,7 @@
     "protocol_deviation": "Numeric memory ceilings were missing from CURRENT.json before the formal matrix. Its memory observations are discovery evidence only; fresh confirmation passed after recording explicit ceilings.",
     "technical_admission": "Iteration 059 admitted; all 12 composite gates pass and the 50-file formal evidence bundle recomputes exactly.",
     "iteration_059_artifacts": "13 files, 488329 bytes; repeated scratch removed after 2 archive-only tests passed.",
-    "workspace_strict": "Post-I088 strict audit is WARN with no blockers: 18 changed paths (0 staged, 9 unstaged, 9 untracked), 2 artifact files / 0.09 MiB, zero mixed-index/reference paths, and zero debt growth. Warnings are the completed I087/I088 artifacts relative to planned I089 plus 24 generated caches.",
+    "workspace_strict": "Post-I089 strict audit is WARN with no blockers: 11 changed paths (0 staged, 7 unstaged, 4 untracked), 1 artifact file / 0.08 MiB, zero mixed-index/reference paths, zero generated caches, and zero debt growth. The only warning is the completed I089 artifact relative to newly active I090.",
     "iteration_060_screen": "Native LMFE baseline versus reusable list-backed candidate: short B4 +17.205% and 24601-token B2 +12.643%, exact token/text/cache parity and zero swap growth in source-bound paired screens.",
     "iteration_060_ownership": "Repeated source-bound profiles: short B4 median RSS growth 1901150208 -> 25059328 bytes (-98.682%); long B2 median 488308736 -> 11657216 bytes (-97.613%); each candidate lane retained one active state and released all request TokenLists.",
     "iteration_060_admission": "Admitted: two 18-process / 9 AB-BA formal matrices recompute exactly, both order strata clear 3%, stop-aware B4 is 4/4 schema-valid, zero swap growth, and all 12 compact-evidence gates pass.",

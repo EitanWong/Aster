@@ -46,6 +46,25 @@ intervals, exact output, stable memory, and no discarded observations. Scenario
 results must stay scenario-scoped; percentages from different iterations are
 never added together.
 
+## Performance Baseline Ledger
+
+Every iteration must leave a recomputable performance baseline, even when the
+iteration is diagnostic and makes no production change. The iteration record
+must name:
+
+- the baseline and candidate/reference boundary, primary metric, and unit;
+- absolute baseline/candidate values, signed delta, and relative percentage;
+- process/repetition count, order strata, workload scope, and aggregation rule;
+- correctness, terminal-state, memory, swap, and measurement-validity gates;
+- the decision (`admit`, `reject`, or `defer`) and the one measured next target.
+
+For a diagnostic whose timing is invalidated (for example, forced logit
+evaluation), record `measurement_status: invalidated`, a null timing delta, the
+reason, and a linked valid baseline. Such a record must not claim a speedup or
+slowdown; the next iteration must restore a valid timed boundary before a
+production decision. A benchmark-only screen may select a follow-up profile,
+but it cannot change production defaults without the full gates.
+
 ## Public Data and Cross-Engine Gate
 
 - Cross-engine performance evidence begins with
@@ -126,6 +145,11 @@ An iteration closes only when all of the following are true:
 8. Any cross-engine conclusion names its public workload profile, source-lock
    hash, required-engine inventory, excluded-engine reasons, and completeness
    result. A scoped profile cannot be described as a global engine ranking.
+9. The performance baseline ledger records a valid delta, or an explicit
+   invalidation with a linked baseline and a bounded follow-up measurement.
+10. Consolidation ends with one reviewable commit pushed to the configured
+    remote. Record the pushed commit and remote result; a failed push leaves the
+    iteration open rather than silently treating local state as delivered.
 
 If a gate fails, keep the iteration active or reject the candidate. Do not hide
 the failure by widening tolerances, changing inputs, or selecting favorable runs.

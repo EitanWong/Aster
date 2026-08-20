@@ -1,5 +1,12 @@
 # Known Issues
 
+- I090 establishes a valid 32-row Qwen3.5-9B foundation baseline, but two B4
+  cells have declared cross-engine output divergences (`b4-short/short-3` and
+  `b4-mixed/short-0`). Aster's paired median decode-driver deficit is
+  `+36.322%` and `+24.484%` in those cells; B1-long reverses by order. I091
+  must align the output contract and remeasure a common decode-driver boundary
+  before any production change. Every iteration now requires this explicit
+  baseline/delta ledger and a pushed consolidation commit.
 - Historical workspace debt remains. Its immutable baseline is 1,164 changed
   paths / 1,114 artifact files at `2cb14052d4a3`; the active iteration keeps its
   own 20-file / 5 MiB budget. The latest strict counts and warnings are tracked
@@ -233,7 +240,17 @@
   Fresh diagnostics locate the first difference at completion index 6 after a
   shared six-token prefix: single-row decode selects token 364 and two-row
   decode selects token 421 from candidates separated by at most 0.125 logits.
-  This is a retained batch-shape determinism issue, but its owner remains open:
-  model-native BF16 batch arithmetic and Aster cache merge/extract state have
-  not yet been isolated. Diagnostic timing is invalid, epsilon tie-breaking is
-  not admitted, and all production scheduler/sampler defaults remain unchanged.
+  I089 isolates the owner: Aster and native MLX-LM produce byte-identical
+  paired-history caches and the same 364/8574/421 selections for serial,
+  paired-history single, duplicate, and original-companion controls.
+  Merge/extract is intact. The remaining issue is a reference-shared BF16
+  near-tie whose ordinary argmax depends on decode history and cohort shape;
+  exact output identity across different shapes is not a general invariant.
+  Diagnostic timing is invalid, epsilon tie-breaking is not admitted, and all
+  production scheduler/sampler/precision defaults remain unchanged.
+- MTP remains deferred after I089. Adding speculative next-n verification now
+  would multiply cohort-sensitive arithmetic, rollback, sampler, stop, and
+  membership contracts before 9B foundation parity is measured. A usable
+  model-side MTP head is also a separate compatibility requirement. The local
+  llama.cpp, vLLM-MLX, and OMLX sources remain design references until the
+  parity and full verification/rollback gates pass.

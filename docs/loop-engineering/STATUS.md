@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-08-01
+Updated: 2026-08-20
 
 ## Current State
 
@@ -8,7 +8,17 @@ Updated: 2026-08-01
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 088. Active iteration: 089, phase `planned`.
+- Last completed iteration: 090. Active iteration: 091, phase `baseline`.
+- I090 closes the current Qwen3.5-9B foundation screen with a recomputable
+  32-row, four-repetition performance ledger. Relative to direct/model-native
+  MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
+  short and `+24.484%` at B4 mixed; B1 short is `-8.132%`, and B1 long is
+  order-unstable (`+12.774%/-2.731%`). The matrix has two declared B4 output
+  divergences, so it selects an I091 decode-driver attribution profile but no
+  production change or global engine claim.
+- Every iteration now requires a baseline/candidate delta ledger, explicit
+  measurement validity, and a pushed consolidation commit. Diagnostic timing
+  invalidation must be recorded rather than presented as a performance result.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -311,6 +321,23 @@ Updated: 2026-08-01
   full suite passes 588 with 9 skipped and one dependency warning. Touched
   Ruff, new-file formatting, JSON/source hashes, diff check, and strict audit
   pass without blockers.
+- I089 completes four independent balanced-order Qwen3.5-9B diagnostics and
+  passes all 22 gates. Aster and native MLX-LM build byte-identical paired
+  target caches (`3d1f3322...c14bf`), merge/extract is lossless, and every
+  canonical cache remains unchanged. Serial state selects 364 across all
+  controls; paired history selects 8574 as B1, 364 as duplicate B2, and 421
+  with the original heterogeneous companion in both engines.
+- I089 classifies the I088 drift as reference-shared batched-history/cohort
+  arithmetic, not Aster-specific state corruption. The 88,375-byte artifact
+  retains four raw records and all source/cache/model bindings. No production
+  scheduler, sampler, cache, precision, or default changed. Full verification
+  is `593 passed, 9 skipped, 1 warning`.
+- MTP is recorded as deferred, foundation-gated research rather than an I089
+  candidate. Local llama.cpp, vLLM-MLX, and OMLX sources show that next-token
+  heads are only the front edge: target verification, hidden-state transfer,
+  KV/recurrent rollback, batch membership, sampler semantics, and acceptance
+  telemetry are part of the serving contract. Aster will revisit this only
+  after baseline parity and deterministic cache/decode semantics are closed.
 - Iteration 059 retained only 13 artifact files / 0.47 MiB, compacting 50
   logical evidence files into one 237,686-byte archive. Its repeated scratch
   output was removed after archive-only recomputation passed.
@@ -724,15 +751,15 @@ Updated: 2026-08-01
 
 ## Next Priority
 
-1. Execute I089's source-bound greedy batch-shape determinism comparison.
-   Separate model batch arithmetic from Aster cache merge/extract state and
-   compare the same near-tie with direct/model-native MLX-LM before proposing
-   epsilon tie-breaking, forced single-row decode, or precision changes.
+1. Execute I090's source-bound Qwen3.5-9B foundation-parity matrix. Compare
+   Aster with direct/model-native MLX-LM on declared B1 and B4 public cohorts,
+   including short, long, and mixed load, before selecting an Aster-owned gap.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Do not grow generated caches or exceed the recorded +25/+20
    allowances.
 3. Archive a fresh automatic default-config 128K snapshot-cap reproduction.
 4. Close evidence gaps in this order: broader schemas and tool calls, 32K
    mixed-agent and cancellation pressure, 30-minute stability, then energy and
-   thermal behavior. Keep native MLX attention as production and DFlash
-   deferred until a measured candidate clears the same gates.
+   thermal behavior. Keep native MLX attention as production and DFlash/MTP
+   deferred until foundation parity is established and a measured candidate
+   clears the same correctness, load, rollback, and resource gates.

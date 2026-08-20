@@ -76,10 +76,36 @@ I088 maps caps 2/3/4/5/6/16 across exact-long, simultaneous short, and mixed
 B8 traffic. The lower-cap intersection is empty because short traffic clears
 no candidate. Mixed caps 2/5 also expose a batch-shape-sensitive greedy near
 tie: after six shared output tokens, a single-row step selects token 364 while
-a two-row step selects 421 from logits within 0.125. The diagnostic does not
-classify model batch arithmetic versus cache merge/extract state and its forced
-evaluation invalidates timing. Production admission, merged-cache decode, and
-ordinary MLX-LM sampler semantics therefore remain unchanged.
+a two-row step selects 421 from logits within 0.125.
+
+I089 closes that ownership question. Four independent AB/BA processes build
+serial and continuously paired target histories through both Aster and native
+MLX-LM `GenerationBatch`. The paired target caches are byte-identical across
+engines; merge then extract matches a direct single-row call and every frozen
+cache remains immutable. From the serial state, all single/duplicate/reference
+controls select 364. From the paired-history state, one row selects 8574, two
+identical rows select 364, and the original heterogeneous companion selects
+421 in both engines. The boundary is reference-shared BF16 history/cohort
+arithmetic, not Aster cache corruption. Forced evaluation invalidates timing;
+production admission, merge/extract, precision, and greedy semantics remain
+unchanged.
+
+## Deferred Multi-Token Prediction Boundary
+
+MTP is outside the current production graph. The local llama.cpp implementation
+uses a dedicated MTP context, target hidden-state transfer, target-side sampler
+verification, per-sequence pending state, cache checkpoints, and partial
+rollback. The local vLLM-MLX and OMLX implementations add recurrent-state
+restore, membership reconciliation, stochastic acceptance, bypass telemetry,
+and load-sensitive fallbacks.
+
+Aster will not add an MTP head loader or speculative scheduler in isolation.
+Entry requires deterministic single/batch cache semantics, source-bound parity
+with direct MLX-LM on the baseline serving metrics, and proven snapshot/restore
+for both KV and recurrent state across accept, reject, cancel, finish, and batch
+membership changes. Any later candidate must preserve the declared sampler,
+logits-processor, stop, and streaming contracts and clear isolated-process
+B1/B4/B8 acceptance, latency, throughput, memory, swap, and mixed-load gates.
 
 ## Reference Comparison
 

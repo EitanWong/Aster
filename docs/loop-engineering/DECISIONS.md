@@ -1649,3 +1649,66 @@
 - Next decision: I089 runs a same-cache single/batch control and the closest
   direct/model-native MLX-LM comparison. A determinism proposal requires a
   classified owner plus exact output/quality and serving-performance gates.
+
+## 2026-08-20: Defer MTP until foundation parity
+
+- Decision: record Multi-Token Prediction as a later research track, not an
+  I089 candidate or production dependency. I089 remains the only active
+  hypothesis and must first classify the current greedy batch-shape near tie.
+- Reference evidence: llama.cpp `0a50d990` couples its next-n heads to a
+  dedicated MTP context, target hidden-state transfer, target sampler
+  verification, checkpoints, partial rollback, and per-position acceptance
+  telemetry. vLLM-MLX `0dd11576` and OMLX `d0ee0e85` additionally demonstrate
+  recurrent-state restore, membership reconciliation, stochastic acceptance,
+  bypass paths, and batch/load-dependent value.
+- Entry boundary: first close deterministic cache/decode ownership and
+  source-bound Aster/direct-MLX-LM parity for prefill, decode, TTFT, throughput,
+  tail latency, and memory. Then prove KV/recurrent rollback and complete
+  sampler, logits-processor, stop, streaming, cancellation, and finish behavior.
+- Admission boundary: a future candidate must use compatible model-side heads
+  and clear independent-process B1/B4/B8 mixed-load acceptance, TTFT, TPOT,
+  throughput, memory, and swap gates with exact semantics and a material
+  effect. High acceptance alone is not an engine result.
+
+## 2026-08-20: Classify I088 drift as reference-shared cohort arithmetic
+
+- Decision: close I089 without a production change. Keep native cache merge,
+  current scheduler/defaults, BF16 execution, and ordinary greedy argmax.
+- Evidence: four independent balanced-order 9B processes pass all 22 gates.
+  Aster and native MLX-LM paired-history target caches are byte-identical at
+  `3d1f3322...c14bf`; serial state is `491b3b82...40c4b`. Merge/extract always
+  matches direct single-row execution and all canonical caches stay immutable.
+- Attribution: serial state selects 364 across single, duplicate, and native
+  controls. The paired-history cache selects 8574 as one row, 364 when copied
+  into two identical rows, and 421 with the original 57-token companion. Aster
+  and MLX-LM agree at every boundary and the original cohort reproduces I088.
+- Interpretation: the output drift is reference-shared BF16 batched-history and
+  cohort-shape arithmetic on a three-token near tie, not Aster cache corruption.
+  Cross-shape greedy identity cannot select a scheduler policy by itself.
+- Rejected changes: epsilon tie-breaking, forced single-row routing, and a
+  prompt-specific precision exception alter declared semantics or serving
+  performance without broad quality evidence. I090 instead establishes current
+  9B foundation parity before choosing another Aster-owned optimization.
+
+## 2026-08-20: Establish the I090 foundation-parity performance baseline
+
+- Decision: close the foundation screen without a production change and select
+  `aster-manual-decode-driver` as the bounded I091 attribution profile.
+- Baseline: direct/model-native MLX-LM on the locked Qwen3.5-9B public cohorts;
+  Aster is the measured path. The matrix has 32 rows (four cells, two engines,
+  four independent repetitions) with balanced first-engine order.
+- Performance ledger: paired median Aster deficits for aggregate throughput,
+  decode-driver TPS, TTFT p95, end-to-end p95, and peak MLX memory are
+  respectively `+11.504%/+110.030%/-31.323%`,
+  `-8.132%/+36.322%/+24.484%`,
+  `+21.306%/+183.324%/-31.674%`,
+  `+11.504%/+110.023%/-31.323%`, and
+  `+1.049%/-0.921%/-32.763%` for B1-short/B4-short/B4-mixed. B1-long
+  decode is `+5.978%` pooled but reverses by order (`+12.774%/-2.731%`) and
+  is not selected.
+- Correctness boundary: source/input/order/terminal/resource contracts pass;
+  B4-short `short-3` and B4-mixed `short-0` have declared cross-engine output
+  divergences, so this is a workload-scoped baseline, not an engine ranking.
+- Next gate: I091 must remove forced-evaluation timing, align the B4 output
+  contract, and report a fresh valid baseline/candidate delta before any
+  runtime change. MTP remains foundation-gated.
