@@ -1,6 +1,6 @@
 # Loop Engineering Status
 
-Updated: 2026-08-20
+Updated: 2026-08-21
 
 ## Current State
 
@@ -8,7 +8,7 @@ Updated: 2026-08-20
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 090. Active iteration: 091, phase `baseline`.
+- Last completed iteration: 091. Active iteration: 092, phase `baseline`.
 - I090 closes the current Qwen3.5-9B foundation screen with a recomputable
   32-row, four-repetition performance ledger. Relative to direct/model-native
   MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
@@ -19,6 +19,13 @@ Updated: 2026-08-20
 - Every iteration now requires a baseline/candidate delta ledger, explicit
   measurement validity, and a pushed consolidation commit. Diagnostic timing
   invalidation must be recorded rather than presented as a performance result.
+- I091 completed a balanced, source-bound 16-row B4 attribution matrix. The
+  processor-free tensorized-logprob candidate is exact and exercised, but
+  B4-short decode changed `-1.584%` and B4-mixed `+0.025%`; order strata stayed
+  below 3%, and one mixed candidate row grew host swap by `317,587,456` bytes.
+  The switch remains default-off and no production inference default changed.
+  I092 now profiles the decode-driver boundary with benchmark-only stage
+  attribution.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -712,7 +719,7 @@ Updated: 2026-08-20
   changes. Strict checking has no blocker because growth is bounded against
   the immutable debt baseline, but the underlying 1,172-path inventory remains
   an ownership and reviewability risk rather than a clean Git boundary.
-- The full suite is green (`561 passed, 9 skipped, 1 warning`). Long-context snapshot
+- The full suite is green (`608 passed, 9 skipped, 1 warning`). Long-context snapshot
   budgeting is implemented and covered, but the automatic default-config
   128K real-model reproduction remains unarchived.
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
@@ -751,15 +758,16 @@ Updated: 2026-08-20
 
 ## Next Priority
 
-1. Execute I090's source-bound Qwen3.5-9B foundation-parity matrix. Compare
-   Aster with direct/model-native MLX-LM on declared B1 and B4 public cohorts,
-   including short, long, and mixed load, before selecting an Aster-owned gap.
+1. Execute I092's benchmark-only decode-driver roofline attribution on the
+   locked B4 short and mixed cohorts. Admit no production candidate unless a
+   removable stage owns at least 3% of the valid boundary in both cells.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Do not grow generated caches or exceed the recorded +25/+20
    allowances.
 3. Archive a fresh automatic default-config 128K snapshot-cap reproduction.
 4. Close evidence gaps in this order: broader schemas and tool calls, 32K
    mixed-agent and cancellation pressure, 30-minute stability, then energy and
-   thermal behavior. Keep native MLX attention as production and DFlash/MTP
-   deferred until foundation parity is established and a measured candidate
-   clears the same correctness, load, rollback, and resource gates.
+   thermal behavior. Keep native MLX attention as production and DFlash/MTP,
+   EAGLE-family, tree speculation, and adaptive multi-token heads deferred until
+   foundation parity is established and a measured candidate clears the same
+   correctness, load, rollback, and resource gates.

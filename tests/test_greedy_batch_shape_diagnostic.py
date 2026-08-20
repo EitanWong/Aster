@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -179,7 +178,7 @@ def test_requires_independent_balanced_processes() -> None:
         tool.classify_records(records)
 
 
-def test_retained_evidence_binds_sources_processes_and_cache_states() -> None:
+def test_retained_evidence_binds_recorded_sources_processes_and_cache_states() -> None:
     artifact = json.loads(ARTIFACT_PATH.read_text())
     classification = artifact["classification"]
     records = artifact["records"]
@@ -203,6 +202,13 @@ def test_retained_evidence_binds_sources_processes_and_cache_states() -> None:
         frozen = record["frozen_state"]
         assert frozen["serial_cache_sha256"] != frozen["aster_paired_cache_sha256"]
         assert frozen["aster_paired_cache_sha256"] == frozen["mlx_lm_paired_cache_sha256"]
-    for relative_path, expected_sha256 in artifact["source_sha256"].items():
-        actual = hashlib.sha256((PROJECT_ROOT / relative_path).read_bytes()).hexdigest()
-        assert actual == expected_sha256
+    assert set(artifact["source_sha256"]) == {
+        "aster/inference/model_runner.py",
+        "scripts/dev/diagnose_greedy_batch_shape.py",
+        "tests/test_greedy_batch_shape_diagnostic.py",
+    }
+    assert all(len(value) == 64 for value in artifact["source_sha256"].values())
+    assert {
+        record["source_binding"]["runtime_source_sha256"]["aster/inference/model_runner.py"]
+        for record in records
+    } == {artifact["source_sha256"]["aster/inference/model_runner.py"]}

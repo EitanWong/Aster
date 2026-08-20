@@ -6,6 +6,202 @@ from aster.core.config import RuntimeSettings
 from aster.inference.model_runner import DecodeResult, DecodeWorkItem, ModelRunner
 
 
+def test_tensorized_logprobs_normalizes_processor_free_batch_once() -> None:
+    class FakeTensor:
+        shape = (2, 4)
+        dtype = "float16"
+
+        def __init__(
+            self,
+            _value: Any = None,
+            *,
+            row: int | None = None,
+            dtype: Any = None,
+        ) -> None:
+            del _value
+            del dtype
+            self.row = row
+
+        def __getitem__(self, key: Any) -> FakeTensor:
+            if isinstance(key, slice):
+                return FakeTensor(row=int(key.start or 0))
+            return self
+
+        def __sub__(self, _other: Any) -> FakeTensor:
+            return FakeTensor()
+
+    class FakeMX:
+        uint32 = "uint32"
+
+        @staticmethod
+        def array(_value: Any, *, dtype: Any = None) -> FakeTensor:
+            del dtype
+            return FakeTensor()
+
+        def __init__(self) -> None:
+            self.logsumexp_inputs: list[FakeTensor] = []
+            self.eval_calls: list[Any] = []
+
+        def logsumexp(self, value: FakeTensor, *, axis: int, keepdims: bool) -> FakeTensor:
+            assert axis == -1
+            assert keepdims is True
+            self.logsumexp_inputs.append(value)
+            return FakeTensor()
+
+        def async_eval(self, _value: Any) -> None:
+            return None
+
+        def eval(self, value: Any) -> None:
+            self.eval_calls.append(value)
+
+        @staticmethod
+        def get_peak_memory() -> int:
+            return 0
+
+    class FakeLayer:
+        state = object()
+
+    class FakeDetokenizer:
+        last_segment = ""
+
+        def add_token(self, _token: int) -> None:
+            return None
+
+    settings = RuntimeSettings.model_validate(
+        {
+            "embeddings": {"enabled": False},
+            "engine": {"decode_tensorized_logprobs_enabled": True},
+        }
+    )
+    runner = ModelRunner(settings)
+    fake_mx = FakeMX()
+    runner._loaded = True
+    runner._mx = fake_mx
+    model_logits = FakeTensor()
+    runner._model = lambda _tokens, *, cache: model_logits  # type: ignore[assignment]
+    runner._get_decode_batch_cache = lambda _items: ([FakeLayer()], None)  # type: ignore[method-assign]
+    runner._extract_prompt_cache = lambda _cache, index: [index]  # type: ignore[method-assign]
+
+    sampler_rows: list[int | None] = []
+
+    def sampler(logprobs: FakeTensor) -> int:
+        sampler_rows.append(logprobs.row)
+        return 40 + len(sampler_rows)
+
+    items = [
+        DecodeWorkItem(
+            prompt_cache=[],
+            input_token=index,
+            sampler=sampler,
+            detokenizer=FakeDetokenizer(),
+            stop_token_ids=frozenset(),
+            logits_processors=(),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=2,
+            request_id=f"tensorized-{index}",
+        )
+        for index in range(2)
+    ]
+
+    results = runner.decode_batch_step(items)
+
+    assert results, results
+    assert all(isinstance(result, DecodeResult) for result in results), repr(results)
+    assert [result.token_id for result in results if isinstance(result, DecodeResult)] == [41, 42]
+    assert len(fake_mx.logsumexp_inputs) == 1
+    assert fake_mx.logsumexp_inputs[0] is model_logits
+    assert sampler_rows == [0, 1]
+    assert runner.decode_diagnostics()["decode_tensorized_logprobs_steps"] == 1
+
+
+def test_tensorized_logprobs_keeps_processor_rows_on_conservative_path() -> None:
+    class FakeTensor:
+        shape = (1, 4)
+        dtype = "float16"
+
+        def __getitem__(self, _key: Any) -> FakeTensor:
+            return self
+
+        def __sub__(self, _other: Any) -> FakeTensor:
+            return self
+
+    class FakeMX:
+        uint32 = "uint32"
+
+        def __init__(self) -> None:
+            self.logsumexp_calls = 0
+
+        @staticmethod
+        def array(_value: Any, *, dtype: Any = None) -> FakeTensor:
+            del dtype
+            return FakeTensor()
+
+        def logsumexp(self, value: FakeTensor, *, axis: int, keepdims: bool) -> FakeTensor:
+            del value, axis, keepdims
+            self.logsumexp_calls += 1
+            return FakeTensor()
+
+        @staticmethod
+        def async_eval(_value: Any) -> None:
+            return None
+
+        @staticmethod
+        def eval(_value: Any) -> None:
+            return None
+
+        @staticmethod
+        def get_peak_memory() -> int:
+            return 0
+
+    class FakeLayer:
+        state = object()
+
+    class FakeDetokenizer:
+        last_segment = ""
+
+        def add_token(self, _token: int) -> None:
+            return None
+
+    settings = RuntimeSettings.model_validate(
+        {
+            "embeddings": {"enabled": False},
+            "engine": {"decode_tensorized_logprobs_enabled": True},
+        }
+    )
+    runner = ModelRunner(settings)
+    fake_mx = FakeMX()
+    runner._loaded = True
+    runner._mx = fake_mx
+    runner._model = lambda _tokens, *, cache: FakeTensor()  # type: ignore[assignment]
+    runner._get_decode_batch_cache = lambda _items: ([FakeLayer()], None)  # type: ignore[method-assign]
+    runner._extract_prompt_cache = lambda _cache, index: [index]  # type: ignore[method-assign]
+
+    def processor(_tokens: Any, logits: FakeTensor) -> FakeTensor:
+        return logits
+
+    items = [
+        DecodeWorkItem(
+            prompt_cache=[],
+            input_token=index,
+            sampler=lambda _logprobs, token=index: token + 50,
+            detokenizer=FakeDetokenizer(),
+            stop_token_ids=frozenset(),
+            logits_processors=(processor,),
+            logits_processor_tokens=[],
+            completion_tokens=0,
+            max_tokens=2,
+            request_id=f"processor-{index}",
+        )
+        for index in range(2)
+    ]
+
+    runner.decode_batch_step(items)
+
+    assert fake_mx.logsumexp_calls == 2
+    assert runner.decode_diagnostics()["decode_tensorized_logprobs_steps"] == 0
+
+
 def test_batch_sampling_groups_lazy_rows_and_preserves_python_values() -> None:
     events: list[str] = []
 
@@ -169,9 +365,7 @@ def test_mlx_sample_detection_excludes_array_like_non_mlx_values() -> None:
     sample = MlxArray()
     wrapper = ArrayLikeWrapper()
 
-    lazy_samples, trusted_type = ModelRunner._mlx_sample_arrays(
-        RealLikeMX(), [sample, wrapper, 7]
-    )
+    lazy_samples, trusted_type = ModelRunner._mlx_sample_arrays(RealLikeMX(), [sample, wrapper, 7])
 
     assert lazy_samples == [sample]
     assert trusted_type is True
@@ -654,9 +848,7 @@ def test_group_evaluation_failure_does_not_replay_samplers() -> None:
     diagnostics = runner.decode_diagnostics()
     assert diagnostics["batch_fallbacks"] == 0
     assert diagnostics["batch_post_sample_failures"] == 1
-    assert diagnostics["last_batch_fallback_error"] == (
-        "RuntimeError: group evaluation failed"
-    )
+    assert diagnostics["last_batch_fallback_error"] == ("RuntimeError: group evaluation failed")
 
 
 def test_sample_materialization_failure_does_not_replay_samplers() -> None:
@@ -863,15 +1055,9 @@ def test_grouped_sampling_keeps_results_and_caches_aligned_after_reorder() -> No
         ]
     )
 
-    assert [
-        result.token_id for result in reordered if isinstance(result, DecodeResult)
-    ] == [80, 81]
-    reordered_results = [
-        result for result in reordered if isinstance(result, DecodeResult)
-    ]
-    resolved = [
-        runner._resolve_decode_cache(result.prompt_cache) for result in reordered_results
-    ]
+    assert [result.token_id for result in reordered if isinstance(result, DecodeResult)] == [80, 81]
+    reordered_results = [result for result in reordered if isinstance(result, DecodeResult)]
+    resolved = [runner._resolve_decode_cache(result.prompt_cache) for result in reordered_results]
     assert [cache[0].labels for cache in resolved] == [
         ("cache-b",),
         ("cache-a",),

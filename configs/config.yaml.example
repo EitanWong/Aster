@@ -37,6 +37,7 @@ engine:
   idle_prefill_token_limit: 4096
   pressure_prefill_token_budget: 512
   decode_active_prefill_token_budget: 512
+  decode_tensorized_logprobs_enabled: false  # experimental; processor-free batch candidate
   snapshot_budget_bytes: 8589934592   # 8 GB
   snapshot_min_prefix_tokens: 64
   snapshot_max_entries: 256

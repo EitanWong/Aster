@@ -381,6 +381,7 @@ def _execution_contract() -> dict[str, Any]:
         "process_isolation": "fresh-process-per-engine-cell-repetition",
         "prefix_cache": "off",
         "input_mode": "pinned-public-source-resolved-token-ids",
+        "decode_tensorized_logprobs_enabled": False,
         "prefill_model_boundary": "model-prefill-call-time",
         "decode_driver_boundary": "batch-decode-driver-including-cache-sampler-and-result-work",
     }
@@ -597,8 +598,9 @@ async def _run_aster_cell(
             "sample_count": lifecycle_summary["sample_count"],
             "decode_runner_batches": int(timing["decode_runner_batches"]),
             "decode_runner_items": int(timing["decode_runner_items"]),
+            "decode_batch_diagnostics": dict(status.get("decode_batch_diagnostics", {})),
         }
-        return _cell_envelope(
+        envelope = _cell_envelope(
             engine="aster",
             cell=cell,
             repetition=repetition,
@@ -616,6 +618,10 @@ async def _run_aster_cell(
             metrics=metrics,
             lifecycle=lifecycle,
         )
+        envelope["execution"]["decode_tensorized_logprobs_enabled"] = bool(
+            settings.engine.decode_tensorized_logprobs_enabled
+        )
+        return envelope
     finally:
         lifecycle_stop.set()
         if lifecycle_task is not None:

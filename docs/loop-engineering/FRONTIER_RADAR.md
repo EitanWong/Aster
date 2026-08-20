@@ -1,6 +1,6 @@
 # Local Inference Frontier Radar
 
-Updated: 2026-08-20
+Updated: 2026-08-21
 
 This radar tracks inference papers and implementations that could improve
 Aster's Apple Silicon core. Recency is not an admission criterion. A mechanism
@@ -23,21 +23,50 @@ coverage, and a rollback path.
 6. Treat closed cores, missing licenses, missing code, and hardware-specific
    CUDA/RDMA paths as evidence or watch items, not code sources.
 
+## 2026-08-21 Frontier Intake
+
+This intake adds current Apple-native and speculative-decoding source rather
+than treating paper abstracts as implementation evidence. The new gitlinks are
+`examples/mlx-swift-lm` at `7871b09b2eda7500bc2acad51125ebd772cbaffe` (MIT) and
+`examples/SpecForge` at `2590f48e3a93f69a1e9e63caa23e9f2f9e07c84a` (MIT).
+
+| Source | What was inspected | Aster implication |
+| --- | --- | --- |
+| [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) | `MTPSpeculativeTokenIterator`, staged KV rounds, per-round acceptance counters, sticky single-token passthrough, and cache rollback validation | The future MTP design must make state ownership, partial rollback, capability loss, and telemetry explicit; no Aster path is enabled. |
+| [SpecForge](https://github.com/sgl-project/SpecForge) | Current EAGLE3, P-EAGLE, DFlash, Domino, and DSpark training/acceptance recipes, including Qwen3.5 DFlash guidance | CUDA/ROCm training and SGLang serving are reference inputs only; foundation parity and Apple-native verification remain prerequisites. |
+| [mlx-swift](https://github.com/ml-explore/mlx-swift) | Native `eval`/`asyncEval` ownership and the Swift-to-MLX boundary | Supports grouped lazy-graph ownership as a design reference, not proof that I091's Python normalization path is beneficial. |
+| [LookaheadDecoding](https://github.com/hao-ai-lab/LookaheadDecoding) | Jacobi trajectory, n-gram cache, lookahead and verification branches | Deferred research; its CUDA/LLaMA assumptions do not transfer to Aster's hybrid MLX cache without a new state contract. |
+
+### Paper Watchlist
+
+| Paper | Signal for Aster | Status |
+| --- | --- | --- |
+| [Dynamic Multi-Byte Prediction With Hierarchical Language Models](https://arxiv.org/abs/2608.15454) | Variable-length latent segments and multi-byte horizons | Watch only; requires target-head and rollback proof. |
+| [Hierarchical Latent Prediction for Language Models](https://arxiv.org/abs/2608.05806) | Longer-horizon latent prediction | Watch only; no Apple implementation. |
+| [LoopMTP](https://arxiv.org/abs/2608.03624) / [AdaMTP](https://arxiv.org/abs/2608.00434) | Looped and entropy-boundary adaptive MTP | Research hypotheses, not admitted candidates. |
+| [Resource-Fair Scheduling](https://arxiv.org/abs/2608.02244) | Fairness and cost-aware mixed-load scheduling | Informs a future B4 mixed scheduler after decode attribution. |
+| [LLMVisor](https://arxiv.org/abs/2608.08382) | Piecewise/roofline latency attribution under contention | Direct method input for I092's benchmark-only stage attribution. |
+| [Bole](https://arxiv.org/abs/2608.01651) | Tree speculation for hybrid-attention models | CUDA/SGLang reference; defer until hybrid KV verification is proven. |
+
+The foundation gate remains active. These references expand the research
+frontier but do not authorize MTP, DFlash, EAGLE-family, tree speculation, or
+adaptive multi-token prediction in Aster.
+
 ## Latest Source Refresh
 
-On 2026-08-01, the configured Web search endpoint returned HTTP 404 again, so
-the refresh used read-only official GitHub APIs/Git refs and the arXiv API.
-MLX main resolved to `2ad0d4d311f54de855b06cd21ca85d3b628c1012` and still
-exposes batch-contiguous public SDPA. vllm-metal main resolved to
-`b6e35b6c642162dbf6f31009b81635426a91b64a`; commit `32cc5fd7` builds
-invariant block tables/sequence metadata once per forward instead of once per
-layer. SGLang and FlashInfer resolved to `89f4a80c` and `668a1ba1`.
+On 2026-08-21, read-only official Git refs and source files were refreshed.
+The newly pinned Apple-native/speculation sources are listed above; the
+configured engine heads currently include MLX `27fec909`, MLX-LM `d06c5374`,
+SGLang `82c6fc2d`, vLLM `6259572b`, vLLM-MLX `7afa61af`, vllm-metal
+`bd32be88`, llama.cpp `70aff252`, and OMLX `146d2724`. These are source
+snapshots for reproducible study, not a claim that every runtime is installed
+or benchmark-comparable on this host.
 
-The matching paper refresh found PackInfer (`2602.06072`), Feather
-(`2605.06046`), and RadixMLP (`2601.15013`). They target kernel packing,
-prefix-homogeneous scheduling, and position-wise prefill deduplication,
-respectively; these are separate mechanisms and are not treated as evidence
-for Aster's rejected I086 Metal kernel.
+The prior paper refresh found PackInfer (`2602.06072`), Feather (`2605.06046`),
+and RadixMLP (`2601.15013`). The current intake adds hierarchical/variable
+length MTP, adaptive horizon, resource-fair scheduling, latency attribution,
+and hybrid-attention tree speculation. Each mechanism remains separately
+gated; no paper result is substituted for an Aster measurement.
 
 ## Current candidates
 
@@ -54,7 +83,9 @@ for Aster's rejected I086 Metal kernel.
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [Gigatoken](https://github.com/marcelroed/gigatoken), commit `34a1599`, MIT | Rust SIMD pretokenization, cache-aware BPE encoding, and HuggingFace compatibility API; upstream lists Qwen3.5 support | Remote source/license reviewed; not installed or routed by Aster | Treat as CPU ingress-only reference. First prove exact Qwen3.5 IDs for public/chat/special-token cases and measure queue-aware TTFT/e2e; it cannot substitute for MLX GPU prefill/decode optimization. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
-| Deferred | llama.cpp MTP (`0a50d990`), vLLM-MLX (`0dd11576`), OMLX (`d0ee0e85`) | Next-n heads with target verification, hidden-state transfer, KV/recurrent rollback, membership reconciliation, and acceptance telemetry | Primary local implementations and licenses reviewed; no Aster candidate. I089 closes merge/extract ownership and exposes reference-shared cohort-sensitive BF16 arithmetic. | Revisit after I090 and the remaining foundation parity/rollback gates. Require exact sampler/stop/stream behavior plus B1/B4/B8 mixed-load acceptance, TTFT, TPOT, throughput, memory, and swap gates. |
+| P0 research | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm), `7871b09b`, MIT | Apple-native MTP iterator, staged KV rounds, sticky passthrough, acceptance telemetry, Qwen3.5 MTP support | Added under `examples/`; source read at the pinned head | Use as the native state/rollback contract reference. Do not port MTP until I092 and foundation/rollback gates close. |
+| P1 research | [SpecForge](https://github.com/sgl-project/SpecForge), `2590f48e`, MIT | EAGLE3/P-EAGLE/DFlash/Domino/DSpark training and acceptance tooling | Added under `examples/`; CUDA/ROCm/SGLang oriented | Track draft quality and acceptance methodology; no Apple runtime admission. |
+| Deferred | llama.cpp MTP (`0a50d990`), vLLM-MLX (`0dd11576`), OMLX (`d0ee0e85`) | Next-n heads with target verification, hidden-state transfer, KV/recurrent rollback, membership reconciliation, and acceptance telemetry | Primary local implementations and licenses reviewed; no Aster candidate. I089 closes merge/extract ownership and exposes reference-shared cohort-sensitive BF16 arithmetic. | Revisit after I092 and the remaining foundation parity/rollback gates. Require exact sampler/stop/stream behavior plus B1/B4/B8 mixed-load acceptance, TTFT, TPOT, throughput, memory, and swap gates. |
 | P1 | [SSSD](https://github.com/huawei-csl/sssd_speculator), ACL 2026, BSD-3-Clause-Clear | Training-free suffix-array/prompt/self-output speculation | Source/license verified remotely; not cloned | Later candidate after core: compare against prompt lookup and DFlash without a draft model. |
 | P1 | [CONCUR](https://arxiv.org/abs/2601.22705) | Agent-level cache-pressure feedback and proactive admission | Paper found; no author code located in first pass | Reproduce only after a sustained Agent KV-thrashing workload exists. |
 | P1 | [llama.cpp backend sampler graph](https://github.com/ggml-org/llama.cpp/pull/17004) and [vLLM sampling sync removal](https://github.com/vllm-project/vllm/pull/16436) | Move sampler/penalty work into backend graphs and remove host synchronization | Primary implementations reviewed; no Aster transfer yet | Profile Aster's post-group penalty/logsumexp graph first. Require exact Metal probabilities and arbitrary-processor behavior. |
@@ -220,11 +251,12 @@ match Aster's Apple Silicon B1-B8 path.
 
 ## Next reproduction
 
-Profile the post-group sampler graph by processor class. Measure logsumexp,
-greedy/random sampler graph construction, repetition/presence/frequency
-penalties, structured constraints, and required host output materialization.
-Test tensorized homogeneous groups or a backend sampler graph only if they
-preserve dynamic membership, random order, arbitrary processors, and exact
-Metal results. The same adjacent-pair, 6K-context, B8 sustained, memory, and
-structured gates remain mandatory. A shape-specific split-KV probe remains
-secondary and must beat native MLX, not only Aster paged.
+I092 profiles the post-group sampler graph by stage, using LLMVisor's
+piecewise attribution idea without forcing lazy evaluation. Measure model/cache
+boundary, logsumexp, greedy/random sampler graph construction,
+repetition/presence/frequency penalties, grouped evaluation, and required host
+output materialization. Test a change only when the observer is no-op and the
+stage owns a reproducible 3% of the valid B4 boundary. The same balanced
+fresh-process, exact-output, TTFT/e2e-tail, memory/RSS/swap, cancellation, and
+structured-processor gates remain mandatory. MTP/speculation stays deferred
+until this foundation and its rollback contracts are closed.

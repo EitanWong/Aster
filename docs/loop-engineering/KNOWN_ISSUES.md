@@ -254,3 +254,9 @@
   model-side MTP head is also a separate compatibility requirement. The local
   llama.cpp, vLLM-MLX, and OMLX sources remain design references until the
   parity and full verification/rollback gates pass.
+- I091's processor-free batch-wide logprob normalization is exact but rejected:
+  balanced B4-short decode changes `-1.584%`, B4-mixed changes `+0.025%`, and
+  one mixed candidate row grows host swap by `317,587,456` bytes. The opt-in
+  `decode_tensorized_logprobs_enabled` switch remains false by default; it is
+  not evidence for a production speedup. I092 must attribute the remaining
+  decode-driver boundary without forced evaluation.

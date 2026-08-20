@@ -55,6 +55,8 @@ class EngineSettings(BaseModel):
     idle_prefill_token_limit: int = 4096
     pressure_prefill_token_budget: int = 512
     decode_active_prefill_token_budget: int | None = Field(default=None, ge=1)
+    # Experimental candidate: normalize a processor-free decode batch in one graph.
+    decode_tensorized_logprobs_enabled: bool = False
     admission_retry_limit: int = 16
     snapshot_budget_bytes: int = 8 * 1024 * 1024 * 1024
     snapshot_min_prefix_tokens: int = 32
@@ -82,7 +84,10 @@ class EngineSettings(BaseModel):
 
     @model_validator(mode="after")
     def validate_batch_generator_lanes(self) -> EngineSettings:
-        if self.batch_generator_max_lanes > 1 and self.batch_generator_lane_admission_window_ms <= 0:
+        if (
+            self.batch_generator_max_lanes > 1
+            and self.batch_generator_lane_admission_window_ms <= 0
+        ):
             raise ValueError(
                 "batch_generator_lane_admission_window_ms must be positive when "
                 "batch_generator_max_lanes is greater than one"

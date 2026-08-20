@@ -148,6 +148,7 @@ class ModelRunner:
         self._decode_batch_cache_state: _DecodeBatchCacheState | None = None
         self._decode_batch_cache_reuses = 0
         self._decode_batch_cache_rebuilds = 0
+        self._decode_tensorized_logprobs_steps = 0
         self._decode_tokens_since_cache_clear = 0
         self._decode_cache_clear_attempts = 0
         self._decode_cache_clears = 0
@@ -320,9 +321,7 @@ class ModelRunner:
         penalty_processors = list(
             make_logits_processors(
                 repetition_penalty=(
-                    None
-                    if request.repetition_penalty == 1.0
-                    else request.repetition_penalty
+                    None if request.repetition_penalty == 1.0 else request.repetition_penalty
                 ),
                 repetition_context_size=self._BUILTIN_PENALTY_CONTEXT_SIZE,
                 presence_penalty=request.presence_penalty,
@@ -379,9 +378,7 @@ class ModelRunner:
         except _BatchPostSampleError as exc:
             self._decode_batch_cache_state = None
             self._decode_batch_post_sample_failures += 1
-            self._last_decode_batch_fallback_error = (
-                f"{exc.cause.__class__.__name__}: {exc.cause}"
-            )
+            self._last_decode_batch_fallback_error = f"{exc.cause.__class__.__name__}: {exc.cause}"
             results = [exc.cause for _ in items]
         except Exception as exc:
             self._decode_batch_cache_state = None
@@ -493,6 +490,7 @@ class ModelRunner:
             "last_batch_fallback_error": self._last_decode_batch_fallback_error,
             "batch_cache_reuses": self._decode_batch_cache_reuses,
             "batch_cache_rebuilds": self._decode_batch_cache_rebuilds,
+            "decode_tensorized_logprobs_steps": self._decode_tensorized_logprobs_steps,
             "cache_clear_token_budget": _DECODE_CACHE_CLEAR_TOKEN_BUDGET,
             "cache_clear_attempts": self._decode_cache_clear_attempts,
             "cache_clears": self._decode_cache_clears,
@@ -523,11 +521,7 @@ class ModelRunner:
 
         sequence_tokens = max(prompt_tokens + max_tokens, 1)
         full_attention_per_token = (
-            full_attention_layers
-            * kv_heads
-            * head_dim
-            * 2
-            * bytes_per_scalar
+            full_attention_layers * kv_heads * head_dim * 2 * bytes_per_scalar
         )
         if linear_attention_layers == 0:
             return full_attention_per_token * sequence_tokens
@@ -539,12 +533,10 @@ class ModelRunner:
             * int(config.get("linear_key_head_dim", 0))
             * 4
         )
-        linear_conv_dim = (
-            2
-            * int(config.get("linear_num_key_heads", 0))
-            * int(config.get("linear_key_head_dim", 0))
-            + int(config.get("linear_num_value_heads", 0))
-            * int(config.get("linear_value_head_dim", 0))
+        linear_conv_dim = 2 * int(config.get("linear_num_key_heads", 0)) * int(
+            config.get("linear_key_head_dim", 0)
+        ) + int(config.get("linear_num_value_heads", 0)) * int(
+            config.get("linear_value_head_dim", 0)
         )
         linear_conv_bytes = (
             linear_attention_layers
@@ -570,8 +562,10 @@ class ModelRunner:
             config = {**config, **text_config}
 
         layer_types = config.get("layer_types")
-        if isinstance(layer_types, list) and layer_types and not any(
-            layer == "full_attention" for layer in layer_types
+        if (
+            isinstance(layer_types, list)
+            and layer_types
+            and not any(layer == "full_attention" for layer in layer_types)
         ):
             return None
 
@@ -863,13 +857,24 @@ class ModelRunner:
             )
 
         sampled_tokens: list[Any] = []
-        for index, item in enumerate(items):
-            row = self._apply_logits_processors(
-                logits[index : index + 1],
-                item=item,
-            )
-            logprobs = row - mx.logsumexp(row, axis=-1, keepdims=True)
-            sampled_tokens.append(item.sampler(logprobs))
+        if self.settings.engine.decode_tensorized_logprobs_enabled and all(
+            not item.logits_processors for item in items
+        ):
+            # Processor-free rows share the same normalization graph.  Keep the
+            # per-row sampler boundary so arbitrary sampler return types remain
+            # supported and processors continue using the conservative path.
+            logprobs = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
+            self._decode_tensorized_logprobs_steps += 1
+            for index, item in enumerate(items):
+                sampled_tokens.append(item.sampler(logprobs[index : index + 1]))
+        else:
+            for index, item in enumerate(items):
+                row = self._apply_logits_processors(
+                    logits[index : index + 1],
+                    item=item,
+                )
+                logprobs = row - mx.logsumexp(row, axis=-1, keepdims=True)
+                sampled_tokens.append(item.sampler(logprobs))
 
         lazy_samples, trusted_array_type = self._mlx_sample_arrays(mx, sampled_tokens)
         if not lazy_samples:
@@ -1083,9 +1088,7 @@ class ModelRunner:
     ) -> tuple[list[Any], bool]:
         array_type = getattr(mx, "array", None)
         if isinstance(array_type, type):
-            return [
-                sampled for sampled in sampled_tokens if isinstance(sampled, array_type)
-            ], True
+            return [sampled for sampled in sampled_tokens if isinstance(sampled, array_type)], True
         return [
             sampled
             for sampled in sampled_tokens
@@ -1116,11 +1119,7 @@ class ModelRunner:
         else:
             preceding = max(context_size - 1, 0)
             processor_tokens = [
-                *(
-                    item.logits_processor_tokens[-preceding:]
-                    if preceding
-                    else ()
-                ),
+                *(item.logits_processor_tokens[-preceding:] if preceding else ()),
                 item.input_token,
             ]
         tokens = mx.array(processor_tokens, dtype=mx.uint32)

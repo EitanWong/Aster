@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
-  "updated": "2026-08-20",
+  "updated": "2026-08-21",
   "workflow_status": "active",
-  "last_completed_iteration": "ITER-20260820-090-qwen35-9b-foundation-parity",
-  "active_iteration": "ITER-20260820-091-decode-driver-attribution",
+  "last_completed_iteration": "ITER-20260820-091-decode-driver-attribution",
+  "active_iteration": "ITER-20260821-092-decode-driver-roofline-attribution",
   "phase": "baseline",
-  "baseline_commit": "9bf3fcf199b14caf3ec308e750f3ad22f726246c",
-  "objective": "Attribute the current Aster manual decode-driver gap on the locked Qwen3.5-9B B4 short and mixed cohorts before changing production code.",
-  "hypothesis": "Aster-owned host-side decode-driver work is the dominant reproducible B4 gap; aligning a valid common timing boundary can identify one removable cost without changing greedy semantics, cache ownership, or scheduler defaults.",
+  "baseline_commit": "7ebd34f5db08e03bbde5462543c88ab57ab2dabd",
+  "objective": "Attribute the locked Qwen3.5-9B B4 decode-driver boundary with benchmark-only roofline stages before admitting another production change.",
+  "hypothesis": "A stage-level model/cache, normalization/sampling, grouped-evaluation, or materialization cost owns the remaining B4 gap, but only a no-forced-evaluation observer can distinguish it from MLX lazy-graph and host scheduling effects.",
   "success_gates": [
     "Freeze the same 9B model/tokenizer files, public source records, greedy settings, prompt chunking, output limits, cache state, runtime sources, and metric definitions for both engines.",
-    "Reuse I090's locked model, public records, generation settings, source hashes, and B4 cohort definitions without forced logit evaluation.",
-    "Align cross-engine output/finish identity for B4 short and mixed before interpreting timing as a production claim.",
+    "Reuse I090/I091's locked model, public records, generation settings, source hashes, and B4 cohort definitions without forced logit evaluation.",
+    "Require every stage observer to pass an absolute 3% no-op gate with exact output/finish identity before interpreting its timing.",
     "Measure the common decode-driver boundary with independent fresh processes, balanced AB/BA order, TTFT, decode TPS, end-to-end p95, memory, RSS, and swap.",
-    "Admit at most one minimal Aster-owned change only when a reproducible >=3% primary gap and all correctness/resource/rollback gates pass; otherwise reject and keep defaults unchanged."
+    "Admit at most one minimal Aster-owned change only when a stage owns a reproducible >=3% primary gap and all correctness/resource/rollback gates pass; otherwise record attribution and keep defaults unchanged."
   ],
   "next_actions": [
-    "Trace Aster's manual decode-driver boundary and define a no-forced-evaluation timing record.",
-    "Add red/green tests for B4 output identity, metric ownership, terminal cleanup, and rollback behavior.",
-    "Run a fresh balanced B4 baseline/candidate matrix and record absolute values plus percentage deltas before selecting an implementation."
+    "Define benchmark-only stage boundaries for model/cache, normalization/sampling, grouped evaluation, and result materialization.",
+    "Prove the observer is no-op and does not force MLX evaluation or alter terminal/output state.",
+    "Run a fresh balanced B4 stage-attribution matrix and admit no runtime candidate without a reproducible 3% removable stage."
   ],
   "performance_baseline_contract": {
     "required": true,
@@ -45,7 +45,9 @@
       "local_references": {
         "llama.cpp": "70aff25250075bf23b533c207b55168a4f926350",
         "vllm-mlx": "7afa61aff396254f3948b98a9a84fe26ebf77bb7",
-        "omlx": "146d27241e9b01bab08e4768fddda749f6f085fa"
+        "omlx": "146d27241e9b01bab08e4768fddda749f6f085fa",
+        "mlx-swift-lm": "7871b09b2eda7500bc2acad51125ebd772cbaffe",
+        "specforge": "2590f48e3a93f69a1e9e63caa23e9f2f9e07c84a"
       },
       "entry_gates": [
         "I089 is closed: merge/extract is intact and the observed near tie is reference-shared batched-history/cohort arithmetic.",
@@ -57,7 +59,7 @@
     }
   },
   "latest_verification": {
-    "full_suite": "604 passed, 9 skipped, 1 warning",
+    "full_suite": "608 passed, 9 skipped, 1 warning",
     "iteration_089_matrix": "Four independent balanced single-first/batch-first Qwen3.5-9B processes pass all 22 source, frozen-state, process, cache, reference, and cohort-shape gates.",
     "iteration_089_cache": "Serial target cache is 491b3b82...40c4b. Aster and MLX-LM paired-history target caches are byte-identical at 3d1f3322...c14bf; all canonical hashes remain unchanged after probes and merge/extract matches direct single-row execution.",
     "iteration_089_attribution": "Serial state selects 364 across single/duplicate/native controls; paired-history single selects 8574, duplicate-target B2 selects 364, and the original heterogeneous companion selects 421 in both Aster and MLX-LM. Classification is reference-shared-batched-history-cohort-arithmetic.",
@@ -70,6 +72,13 @@
     "iteration_090_decision": "Close I090 without a runtime change; I091 must align the B4 output contract, remove forced-evaluation timing, and report a fresh valid baseline/candidate delta before implementation.",
     "iteration_090_verification": "Retained foundation-parity artifact recomputes; focused foundation/diagnostic tests pass 16/16. Current full suite is 604 passed, 9 skipped, 1 warning.",
     "iteration_090_delivery": "I090 evidence, reference gitlinks, and the performance-ledger protocol were delivered in commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c and pushed successfully to origin/main.",
+    "iteration_091_matrix": "Balanced fresh-source Aster-only B4 attribution has 16 selected rows: two baseline-first and two candidate-first repetitions per cell. Exact output/finish identity, clean terminal state, zero decode fallbacks, and candidate-path exercise all pass.",
+    "iteration_091_performance": "Batch-wide processor-free logprob normalization changes B4-short decode_driver_tps 54.105929 -> 53.248829 (-1.584%) and B4-mixed 33.850635 -> 33.859096 (+0.025%). Order strata remain below 3%; mixed aggregate throughput/TTFT p95/end-to-end p95 move -0.898%/+1.259%/+1.235%, and one candidate row grows swap 317587456 bytes.",
+    "iteration_091_decision": "Reject decode_tensorized_logprobs_enabled for production. Keep the explicit switch false by default as rollbackable experimental scaffolding; no scheduler, cache, sampler, or production inference default changes.",
+    "iteration_091_artifact": "decode-tensorized-logprobs-rejection.json stores the 16 selected rows, source/model/workload hashes, pair/order ledger, gate recomputation, and frontier references.",
+    "iteration_091_verification": "Focused foundation/sampling/config/artifact tests pass 34/34; full suite passes 608 with 9 skipped and 1 dependency warning. Touched Ruff/format and JSON parsing pass. Strict workspace audit exits 0 with no blockers and expected warnings for the just-closed I091 artifact, two reference gitlinks, and 24 generated caches.",
+    "iteration_092_plan": "Run benchmark-only roofline/stage attribution inspired by LLMVisor across the locked B4 short/mixed cohorts. Do not admit a runtime change unless one no-forced-evaluation stage owns a reproducible >=3% boundary and passes output, rollback, memory, swap, tail, and cancellation gates.",
+    "frontier_2026_08_21": "Added mlx-swift-lm 7871b09b (MIT) with native MTP/staged-KV rollback telemetry and SpecForge 2590f48e (MIT) with EAGLE3/P-EAGLE/DFlash/Domino/DSpark paths as git-submodule references. Reviewed mlx-swift 97cf19ef, LookaheadDecoding eed010da, and papers 2608.15454/2608.05806/2608.03624/2608.00434/2608.02244/2608.08382/2608.01651. All MTP/speculation remains foundation-gated.",
     "iteration_091_baseline_delivery": "The I091 baseline anchor is commit 9bf3fcf199b14caf3ec308e750f3ad22f726246c; state-accounting commit 8e9403abb13833c69e3f1750ddec658915a1ef55 is also pushed to origin/main.",
     "touched_file_ruff": "Passed for the I087/I088 arrival, cap-frontier, logit-diagnostic, and focused-test files; all five new Python files also pass Ruff formatting.",
     "full_tree_ruff": "227 historical errors remain outside the iteration scope; this is an explicit verification boundary, not an I081-I084 regression.",

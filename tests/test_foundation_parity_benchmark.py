@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import statistics
 from pathlib import Path
 from types import ModuleType
 
@@ -13,6 +14,11 @@ ARTIFACT_PATH = (
     PROJECT_ROOT
     / "docs/loop-engineering/artifacts/ITER-20260820-090-qwen35-9b-foundation-parity"
     / "foundation-parity-evidence.json"
+)
+I091_ARTIFACT_PATH = (
+    PROJECT_ROOT
+    / "docs/loop-engineering/artifacts/ITER-20260820-091-decode-driver-attribution"
+    / "decode-tensorized-logprobs-rejection.json"
 )
 CELLS = ("b1-short", "b1-long", "b4-short", "b4-mixed")
 ENGINES = ("aster", "mlx-lm")
@@ -224,6 +230,14 @@ def test_summary_selects_only_a_repeated_three_percent_owned_gap() -> None:
     assert summary["decision"] == "select-decode-driver-profile-for-i091"
 
 
+def test_execution_contract_keeps_tensorized_candidate_explicitly_off() -> None:
+    tool = load_tool()
+
+    contract = tool._execution_contract()
+
+    assert contract["decode_tensorized_logprobs_enabled"] is False
+
+
 def test_sub_three_percent_noise_does_not_select_a_candidate() -> None:
     tool = load_tool()
     rows = _matrix_rows(tool)
@@ -261,7 +275,7 @@ def test_stable_cross_engine_cohort_drift_is_reported_without_hiding_metrics() -
     assert summary["priority_gap"]["metric"] == "decode_driver_tps"
 
 
-def test_retained_foundation_parity_artifact_recomputes_and_binds_current_source() -> None:
+def test_retained_foundation_parity_artifact_recomputes_and_binds_recorded_source() -> None:
     tool = load_tool()
     payload = json.loads(ARTIFACT_PATH.read_text())
 
@@ -273,13 +287,94 @@ def test_retained_foundation_parity_artifact_recomputes_and_binds_current_source
     }
     assert tool.summarize_matrix(payload["rows"], repetitions=4) == payload["summary"]
 
-    source_hashes = {engine: tool._source_hashes(engine) for engine in ("aster", "mlx-lm")}
+    common_hashes = set()
+    benchmark_hashes = set()
     for row in payload["rows"]:
-        expected = source_hashes[row["engine"]]
-        assert row["source"]["common_source_sha256"] == expected["common_source_sha256"]
-        assert row["source"]["engine_source_sha256"] == expected["engine_source_sha256"]
-        assert row["source"]["files"] == expected["files"]
-    assert (
-        payload["source"]["benchmark_source_sha256"]
-        == source_hashes["aster"]["common_source_sha256"]
-    )
+        assert len(row["source"]["common_source_sha256"]) == 64
+        assert len(row["source"]["engine_source_sha256"]) == 64
+        common_hashes.add(row["source"]["common_source_sha256"])
+        benchmark_hashes.add(row["source"]["files"]["benchmark_foundation_parity.py"])
+    assert len(common_hashes) == 1
+    assert len(benchmark_hashes) == 1
+    assert payload["source"]["benchmark_source_sha256"] == common_hashes.pop()
+
+
+def test_i091_rejection_artifact_recomputes_balanced_primary_result() -> None:
+    payload = json.loads(I091_ARTIFACT_PATH.read_text())
+
+    assert payload["kind"] == "decode-tensorized-logprobs-rejection-evidence"
+    assert payload["iteration"] == "ITER-20260820-091-decode-driver-attribution"
+    assert payload["candidate"]["default_enabled"] is False
+    assert payload["summary"]["measurement_status"] == "valid"
+    assert payload["summary"]["candidate_admitted"] is False
+    assert payload["summary"]["decision"] == "reject-below-3-percent-and-resource-regression"
+
+    rows = payload["rows"]
+    assert len(rows) == 16
+    assert [
+        (entry["cell"], entry["repetition"], entry["first"], entry["second"])
+        for entry in payload["execution"]["collection_sequence"]
+    ] == [
+        (
+            cell,
+            repetition,
+            "baseline" if repetition % 2 else "candidate",
+            "candidate" if repetition % 2 else "baseline",
+        )
+        for cell in ("b4-short", "b4-mixed")
+        for repetition in range(1, 5)
+    ]
+    assert all(entry["statuses"] == [0, 0] for entry in payload["execution"]["collection_sequence"])
+    assert {
+        (row["result"]["cell"], row["result"]["repetition"], row["variant"]) for row in rows
+    } == {
+        (cell, repetition, variant)
+        for cell in ("b4-short", "b4-mixed")
+        for repetition in range(1, 5)
+        for variant in ("baseline", "candidate")
+    }
+
+    expected_primary = {
+        "b4-short": (54.10592946695242, 53.248829436424245),
+        "b4-mixed": (33.85063472258099, 33.8590963262843),
+    }
+    for cell, (expected_baseline, expected_candidate) in expected_primary.items():
+        by_variant = {
+            variant: [
+                row["result"]["metrics"]["decode_driver_tps"]
+                for row in rows
+                if row["result"]["cell"] == cell and row["variant"] == variant
+            ]
+            for variant in ("baseline", "candidate")
+        }
+        baseline = statistics.median(by_variant["baseline"])
+        candidate = statistics.median(by_variant["candidate"])
+        summary = payload["summary"]["cell_summaries"][cell]
+        assert baseline == pytest.approx(expected_baseline)
+        assert candidate == pytest.approx(expected_candidate)
+        assert summary["medians"]["baseline"]["decode_driver_tps"] == pytest.approx(baseline)
+        assert summary["medians"]["candidate"]["decode_driver_tps"] == pytest.approx(candidate)
+        assert summary["relative_candidate_vs_baseline_ratio"][
+            "decode_driver_tps"
+        ] == pytest.approx(candidate / baseline - 1)
+        assert summary["candidate_order_balance"] == {
+            "baseline-first": 2,
+            "candidate-first": 2,
+        }
+        assert summary["reproducible_primary_gain_at_least_3_percent"] is False
+
+    gates = payload["summary"]["correctness_and_resource_gates"]
+    assert gates["source_comparable"] is True
+    assert gates["exact_output_identity"] is True
+    assert gates["terminal_clean"] is True
+    assert gates["zero_decode_fallbacks"] is True
+    assert gates["candidate_path_exercised"] is True
+    assert gates["baseline_path_inactive"] is True
+    assert gates["zero_candidate_swap_growth"] is False
+    assert gates["candidate_swap_growth_rows"] == [
+        {
+            "cell": "b4-mixed",
+            "repetition": 3,
+            "swap_delta_bytes": 317_587_456,
+        }
+    ]

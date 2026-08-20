@@ -62,3 +62,11 @@
 	path = examples/vllm-metal
 	url = https://github.com/vllm-project/vllm-metal.git
 	branch = main
+[submodule "examples/mlx-swift-lm"]
+	path = examples/mlx-swift-lm
+	url = https://github.com/ml-explore/mlx-swift-lm.git
+	branch = main
+[submodule "examples/SpecForge"]
+	path = examples/SpecForge
+	url = https://github.com/sgl-project/SpecForge.git
+	branch = main

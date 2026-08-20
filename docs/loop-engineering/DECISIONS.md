@@ -1712,3 +1712,27 @@
 - Next gate: I091 must remove forced-evaluation timing, align the B4 output
   contract, and report a fresh valid baseline/candidate delta before any
   runtime change. MTP remains foundation-gated.
+
+## 2026-08-21: Reject tensorized decode normalization in I091
+
+- Decision: reject `engine.decode_tensorized_logprobs_enabled` as a production
+  optimization. Keep it default-off as an explicitly scoped experiment with a
+  one-field rollback.
+- Evidence: the balanced fresh-process ledger has 16 Aster rows (two
+  baseline-first and two candidate-first repetitions per B4 cell), exact output
+  and terminal identity, zero decode fallbacks, and candidate diagnostics that
+  exercise 9/9 short and 8/8 mixed batch steps. B4-short decode changes
+  `54.105929 -> 53.248829 tok/s` (`-1.584%`); B4-mixed changes
+  `33.850635 -> 33.859096 tok/s` (`+0.025%`). Neither reaches the 3% gate.
+- Contrary evidence: short order strata are `-1.496%/-0.685%`; mixed strata
+  are `-0.610%/+0.157%`. Mixed aggregate throughput falls `0.898%`, TTFT p95
+  and end-to-end p95 rise `1.259%/1.235%`, peak MLX rises `2.278%`, and one
+  candidate row grows host swap by `317,587,456` bytes.
+- Boundary: the random-logit micro-screen is numerically exact and `11.589%`
+  faster, but it is not an end-to-end or lazy-graph result. The initial
+  fixed-order real-model screen is superseded by the balanced recollection and
+  is not used for admission.
+- Next gate: I092 performs benchmark-only roofline/stage attribution inspired
+  by LLMVisor. MTP and speculation remain behind foundation parity and full
+  KV/recurrent rollback, sampler, stop, streaming, cancellation, and mixed-load
+  gates.
