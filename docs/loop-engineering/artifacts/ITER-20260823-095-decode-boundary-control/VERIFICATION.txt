@@ -16,8 +16,8 @@ Exit status: 0
 
 ROLLBACK command
 Command: rtk proxy ROLLBACK.sh /tmp/i095-rollback-copy.json
-Input before rollback: {"benchmark":{"state_control":"control-off","order":"alternating-ab","prewarm":"declared-warmup","process_isolation":"fresh-process"}}
-Literal output/result after rollback: {"benchmark":{"state_control":"observer-off","order":"alternating-ab","prewarm":"declared-warmup","process_isolation":"fresh-process"}}
+Input before rollback: {"benchmark":{"state_control":"control-off","process_isolation":"fresh-process","prewarm":"declared-warmup","order":"alternating-ab"}}
+Literal output/result after rollback: {"benchmark":{"state_control":"observer-off","process_isolation":"fresh-process","prewarm":"declared-warmup","order":"alternating-ab"}}
 Exit status: 0
 Restored behavior/status: rollback copy restored to baseline; MODIFIED_FILE remains changed.
 
@@ -68,5 +68,5 @@ Exit status: 0
 
 Workspace audit
 Command: rtk proxy .venv/bin/python scripts/dev/check_loop_workspace.py --strict
-Literal output/result: Workspace health WARN; blockers none; 24 generated-cache warnings and the completed I095 artifact warning
+Literal output/result: Workspace health WARN; blockers none; 24 generated-cache warnings
 Exit status: 0
