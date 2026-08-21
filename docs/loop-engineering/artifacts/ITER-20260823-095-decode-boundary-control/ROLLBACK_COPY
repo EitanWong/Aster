@@ -1,6 +1,6 @@
 {
   "benchmark": {
-    "state_control": "control-off",
+    "state_control": "observer-off",
     "process_isolation": "fresh-process",
     "prewarm": "declared-warmup",
     "order": "alternating-ab"
