@@ -5,7 +5,7 @@
   "last_completed_iteration": "ITER-20260824-096-host-state-trace",
   "active_iteration": "ITER-20260825-097-quiescent-host-control",
   "phase": "baseline",
-  "baseline_commit": "bfa8f8754e8d222c9e70d1fd25b2fde98f290887",
+  "baseline_commit": "b738f0768ffe5035322d14f2011a49292087f6e5",
   "objective": "Test whether a predeclared rolling host-quiescence barrier makes the locked off/off B4 decode control stable enough for attribution.",
   "hypothesis": "If unrelated host load owns I096's remaining control variance, gating each fresh child on the same rolling CPU, memory, and swap contract will reduce both engines' decode order strata to <=1%; otherwise the owner is below the host-admission boundary.",
   "success_gates": [
@@ -118,6 +118,7 @@
     "iteration_096_decision": "Reject runtime attribution and make no production change. A fixed two-second idle exposes host state but does not stabilize the off/off control; I097 pre-registers a rolling quiescence barrier with complete timeout retention.",
     "iteration_096_artifact": "host-state-trace.json is archived under docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace with SHA-256 1dbddd3a4db469cc94e753804e0a2f5f4a30a2cbc900840538d062bc172639c2 and exactly recomputes 16 baseline plus 16 control rows.",
     "iteration_096_verification": "Focused telemetry/control/foundation tests pass 30/30; the retained artifact independently recomputes; full suite passes 638 with 9 skipped and 1 warning. Touched Ruff/format, JSON, diff, transaction rollback, and strict workspace audit pass without blockers.",
+    "iteration_096_delivery": "I096 benchmark-only host/process/allocator telemetry, 32-row rejection artifact, all 23 refreshed reference working copies, S2-MoE intake, and the I097 preregistration were delivered in b738f0768ffe5035322d14f2011a49292087f6e5 and pushed successfully to origin/main.",
     "iteration_097_plan": "Gate every fresh child on 20 rolling 100 ms samples with CPU median <=6%, p95 <=12%, available memory >=20%, stable swap, and a 120-second retained timeout. Rerun the locked 32-row control; require <=1% decode order strata before another observer or runtime candidate.",
     "iteration_093_delivery": "I093 sampled observer implementation, 32-row evidence artifact, refreshed reference gitlinks, rollback verification, and I094 plan were delivered in 1f8ec3509ffd881ef1efd1d2bc2f58b52b4d540f; the status anchor is pushed separately after baseline binding.",
     "frontier_2026_08_21_refresh": "MLX-LM d06c5374 (2026-08-19 MLX 0.32.1 update observation), MLX 27fec909, llama.cpp 0e1d9185, OMLX fa3e94b3, vLLM bfb6c134, Rapid-MLX 58ad7692, mistral.rs d184053f, uzu 1fd0c461, mlx-swift-lm 3c5805a1, SGLang 0f744b684, Ollama 8f912415, vLLM-MLX 8c814e30, and vLLM-Metal 67100ba7 were fetched and recorded; all remaining pins were already at fetched branch tips. Papers 2608.05326/2608.13966/2608.08721/2608.06723/2608.05448 remain watch-only; no unverified code was transferred.",
@@ -254,7 +255,7 @@
   },
   "workspace_audit": {
     "health": "warn",
-    "head": "b6aee25d0025",
+    "head": "b738f0768ffe",
     "changed_files": 0,
     "staged_files": 0,
     "unstaged_files": 0,
