@@ -376,8 +376,7 @@ def _decode_stage_observer_delta(before: dict[str, Any], after: dict[str, Any]) 
         "sample_interval": int(after.get("sample_interval", 1)),
         "batch_steps": int(after.get("batch_steps", 0)) - int(before.get("batch_steps", 0)),
         "single_steps": int(after.get("single_steps", 0)) - int(before.get("single_steps", 0)),
-        "sampled_steps": int(after.get("sampled_steps", 0))
-        - int(before.get("sampled_steps", 0)),
+        "sampled_steps": int(after.get("sampled_steps", 0)) - int(before.get("sampled_steps", 0)),
         "dropped_events": int(after.get("dropped_events", 0))
         - int(before.get("dropped_events", 0)),
         "seconds": seconds,
@@ -568,6 +567,7 @@ async def _run_aster_cell(
             engine.status()["decode_batch_diagnostics"].get("decode_stage_observer", {})
         )
         mx.reset_peak_memory()
+        allocator_before = _mlx_allocator_snapshot(mx)
         sampler.start()
         lifecycle_task = asyncio.create_task(
             arrival._sample_engine_lifecycle(engine, lifecycle_stop, lifecycle_summary)
@@ -583,6 +583,7 @@ async def _run_aster_cell(
         await lifecycle_task
         lifecycle_task = None
         memory = sampler.finish()
+        allocator_after = _mlx_allocator_snapshot(mx)
         arrival._attach_timelines(result)
         status = result["engine_status"]
         timing = _timing_delta(timing_before, status["engine_timing"])
@@ -647,6 +648,10 @@ async def _run_aster_cell(
                 observer_before,
                 dict(status["decode_batch_diagnostics"].get("decode_stage_observer", {})),
             ),
+            "mlx_allocator": {
+                "before_timed": allocator_before,
+                "after_timed": allocator_after,
+            },
         }
         envelope = _cell_envelope(
             engine="aster",
@@ -719,6 +724,14 @@ def _direct_lifecycle(generator: Any) -> dict[str, int]:
     }
 
 
+def _mlx_allocator_snapshot(mx: Any) -> dict[str, int]:
+    return {
+        "active_memory_bytes": int(mx.get_active_memory()),
+        "cache_memory_bytes": int(mx.get_cache_memory()),
+        "peak_memory_bytes": int(mx.get_peak_memory()),
+    }
+
+
 def _run_direct_cell(
     *,
     cell: str,
@@ -750,7 +763,6 @@ def _run_direct_cell(
     interactive, _ = _records_for_plan(workload)
     warmup_tokens = _encode_with_tokenizer(tokenizer, resolver.resolve(interactive[0]))
     _drain_direct_warmup(model, tokenizer, warmup_tokens)
-    mx.reset_peak_memory()
 
     generator = _new_batch_generator(model, tokenizer, batch_size=plan.concurrency)
     stats = BatchStats()
@@ -770,6 +782,8 @@ def _run_direct_cell(
             maxima[field] = max(maxima[field], value)
         samples += 1
 
+    mx.reset_peak_memory()
+    allocator_before = _mlx_allocator_snapshot(mx)
     started = time.perf_counter()
     sampler.start()
     decode_driver_seconds = 0.0
@@ -821,6 +835,7 @@ def _run_direct_cell(
                         finish_reasons[uid] = str(response.finish_reason)
                 sample_lifecycle()
         memory = sampler.finish()
+        allocator_after = _mlx_allocator_snapshot(mx)
         requests = []
         for uid in uids:
             entry = entry_by_uid[uid]
@@ -864,6 +879,10 @@ def _run_direct_cell(
             "sample_count": samples,
             "batch_generator_decode_steps": int(generator._steps_counter),
             "official_generation_seconds": float(stats.generation_time),
+            "mlx_allocator": {
+                "before_timed": allocator_before,
+                "after_timed": allocator_after,
+            },
         }
         return _cell_envelope(
             engine="mlx-lm",

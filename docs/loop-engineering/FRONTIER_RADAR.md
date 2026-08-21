@@ -37,10 +37,37 @@ than treating paper abstracts as implementation evidence. The new gitlinks are
 | [mlx-swift](https://github.com/ml-explore/mlx-swift) | Native `eval`/`asyncEval` ownership and the Swift-to-MLX boundary | Supports grouped lazy-graph ownership as a design reference, not proof that I091's Python normalization path is beneficial. |
 | [LookaheadDecoding](https://github.com/hao-ai-lab/LookaheadDecoding) | Jacobi trajectory, n-gram cache, lookahead and verification branches | Deferred research; its CUDA/LLaMA assumptions do not transfer to Aster's hybrid MLX cache without a new state contract. |
 
+### Second Source Intake
+
+The same-day follow-up pinned the author implementation of
+[S2-MoE](https://github.com/angerybob/S2-MoE) at `fba914c3` (MIT). Its
+llama.cpp fork implements routing-aware draft-tree pruning, target-verification
+only expert-reuse bias, and optional target/draft KV sharing. The published
+Orin/RTX paths are CUDA, MoE, and hardware-cost-model specific, so this is a
+future mechanism reference rather than an Apple/MLX candidate.
+
+Current upstream changes also sharpen the eventual speculation contract:
+
+- Rapid-MLX `a8e185d3` separates runtime capability from verified
+  recommendation and keeps unknown or quantized pairs behind explicit
+  experimental metadata; `200362e7` exposes tested MTP presets.
+- vLLM `2adf4b9e` contains cost-curve-driven adaptive verification
+  (`5df31ea5`) and per-request acceptance length/rate/histogram telemetry
+  (`7cfb97e3`). Aster should require both capability tiering and acceptance
+  evidence before any future MTP rollout.
+- SGLang `6127d1da` makes its unified radix tree the default, adds decode-side
+  SWA hybrid radix caching, and restores finite top-k sampling-mask checks.
+  These remain distributed/CUDA ownership references, not Aster code sources.
+
 ### Paper Watchlist
 
 | Paper | Signal for Aster | Status |
 | --- | --- | --- |
+| [S2-MoE](https://arxiv.org/abs/2608.15018) | Routing-aware self-speculative expansion, reuse-aware MoE gating, and shared target context/KV on edge devices | Author MIT implementation pinned at `examples/S2-MoE`; CUDA/MoE-only research, deferred behind foundation and model-compatibility gates. |
+| [From Positionwise Confidence to Prefix Scheduling](https://arxiv.org/abs/2608.14787) | Verifier skipping exposes prefix scheduling as a separate control axis | Lossy method; excluded from Aster's exact-output path unless an explicitly approximate serving mode is designed and quality-gated. |
+| [DARTree](https://arxiv.org/abs/2608.13524) | Batched autoregressive correction over diffusion draft trees with deferred best-first pruning | Official CUDA code exists but has no repository license file; paper watch only, no source transfer. |
+| [SPADE](https://arxiv.org/abs/2608.13076) | Edge drafter/cloud verifier split and verifier-call reduction | Distributed network architecture, not a local Apple decode candidate; retain for future heterogeneous serving work. |
+| [Pre-Compiled Pipeline Shards](https://arxiv.org/abs/2608.19147) | Stateful pipeline shards, mask-based KV rewind, speculation, and per-request cache micro-batching | Intel/OpenVINO reproduction; useful rollback/measurement reference, but hardware and code-license boundaries do not match Aster. |
 | [Dynamic Multi-Byte Prediction With Hierarchical Language Models](https://arxiv.org/abs/2608.15454) | Variable-length latent segments and multi-byte horizons | Watch only; requires target-head and rollback proof. |
 | [Hierarchical Latent Prediction for Language Models](https://arxiv.org/abs/2608.05806) | Longer-horizon latent prediction | Watch only; no Apple implementation. |
 | [LoopMTP](https://arxiv.org/abs/2608.03624) / [AdaMTP](https://arxiv.org/abs/2608.00434) | Looped and entropy-boundary adaptive MTP | Research hypotheses, not admitted candidates. |
@@ -84,15 +111,23 @@ behavior and bounded sampling still pass, but mixed Aster strata are
 result is retained as a length-sensitive baseline and does not authorize a
 runtime change. I095 now classifies host/control state at the common boundary.
 
+I095's off/off control remained unstable, so I096 ran 16 same-run
+observer-off/control-off pairs with external process telemetry and MLX
+allocator snapshots. Every structural gate passes, but decode order strata
+still exceed `1%`. System CPU pair deltas correlate with decode deltas at
+`r=-0.822` for Aster and `r=-0.798` for MLX-LM (`n=8` each); this is diagnostic,
+not causal. I097 therefore tests a predeclared quiescent-host launch gate before
+another runtime, MTP, or speculative candidate.
+
 ## Latest Source Refresh
 
 On 2026-08-21, read-only official Git refs and source files were refreshed.
 The newly pinned Apple-native/speculation sources are listed above; the
-configured engine heads currently include MLX `27fec909`, MLX-LM `d06c5374`,
-SGLang `0f744b684`, vLLM `bfb6c134`, vLLM-MLX `8c814e30`, vllm-metal
-`67100ba7`, llama.cpp `0e1d9185`, and OMLX `fa3e94b3`. Rapid-MLX is
-`58ad7692`, mistral.rs is `d184053f`, uzu is `1fd0c461`, and
-mlx-swift-lm is `3c5805a1`. These are source
+configured engine heads currently include MLX `27fec909`, MLX-LM `d53e70f7`,
+SGLang `6127d1da`, vLLM `2adf4b9e`, vLLM-MLX `8c814e30`, vllm-metal
+`67100ba7`, llama.cpp `749f688f`, and OMLX `fa3e94b3`. Rapid-MLX is
+`a8e185d3`, mistral.rs is `d184053f`, Uzu is `9022ad3b`, mlx-swift-lm is
+`130e3f0c`, SpecForge is `de0ea2f5`, and S2-MoE is `fba914c3`. These are source
 snapshots for reproducible study, not a claim that every runtime is installed
 or benchmark-comparable on this host.
 
@@ -130,8 +165,9 @@ gated; no paper result is substituted for an Aster measurement.
 | P1 | [Native LLM and MLLM Inference at Scale on Apple Silicon](https://arxiv.org/abs/2601.19139) / [vllm-mlx](https://github.com/waybarrios/vllm-mlx) | Production-shaped MLX batching, prefix reuse, lifecycle | Existing pinned reference and extensively cross-checked | Continue using for scheduler and lifecycle parity. |
 | P1 | [Gigatoken](https://github.com/marcelroed/gigatoken), commit `34a1599`, MIT | Rust SIMD pretokenization, cache-aware BPE encoding, and HuggingFace compatibility API; upstream lists Qwen3.5 support | Remote source/license reviewed; not installed or routed by Aster | Treat as CPU ingress-only reference. First prove exact Qwen3.5 IDs for public/chat/special-token cases and measure queue-aware TTFT/e2e; it cannot substitute for MLX GPU prefill/decode optimization. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
-| P0 research | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm), `7871b09b`, MIT | Apple-native MTP iterator, staged KV rounds, sticky passthrough, acceptance telemetry, Qwen3.5 MTP support | Added under `examples/`; source read at the pinned head | Use as the native state/rollback contract reference. Do not port MTP until I092 and foundation/rollback gates close. |
-| P1 research | [SpecForge](https://github.com/sgl-project/SpecForge), `2590f48e`, MIT | EAGLE3/P-EAGLE/DFlash/Domino/DSpark training and acceptance tooling | Added under `examples/`; CUDA/ROCm/SGLang oriented | Track draft quality and acceptance methodology; no Apple runtime admission. |
+| P0 research | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm), `130e3f0c`, MIT | Apple-native MTP iterator, staged KV rounds, sticky passthrough, acceptance telemetry, Qwen3.5 MTP support | Added under `examples/`; source read at the pinned head | Use as the native state/rollback contract reference. Do not port MTP until foundation/rollback gates close. |
+| P1 research | [SpecForge](https://github.com/sgl-project/SpecForge), `de0ea2f5`, MIT | EAGLE3/P-EAGLE/DFlash/Domino/DSpark training and acceptance tooling | Added under `examples/`; CUDA/ROCm/SGLang oriented | Track draft quality and acceptance methodology; no Apple runtime admission. |
+| P1 research | [S2-MoE](https://github.com/angerybob/S2-MoE), `fba914c3`, MIT | Routing-aware adaptive expansion, verification-time expert reuse, and shared target/draft context for edge MoE inference | Author llama.cpp fork pinned under `examples/`; source and tests inspected; CUDA Orin/4090 only | Retain its cost/acceptance/state contract. Do not port until Aster foundation stability, a compatible MoE model, MLX implementation, exact rollback, and real-load gain are proven. |
 | Deferred | llama.cpp MTP (`0a50d990`), vLLM-MLX (`0dd11576`), OMLX (`d0ee0e85`) | Next-n heads with target verification, hidden-state transfer, KV/recurrent rollback, membership reconciliation, and acceptance telemetry | Primary local implementations and licenses reviewed; no Aster candidate. I089 closes merge/extract ownership and exposes reference-shared cohort-sensitive BF16 arithmetic. | Revisit after I092 and the remaining foundation parity/rollback gates. Require exact sampler/stop/stream behavior plus B1/B4/B8 mixed-load acceptance, TTFT, TPOT, throughput, memory, and swap gates. |
 | P1 | [SSSD](https://github.com/huawei-csl/sssd_speculator), ACL 2026, BSD-3-Clause-Clear | Training-free suffix-array/prompt/self-output speculation | Source/license verified remotely; not cloned | Later candidate after core: compare against prompt lookup and DFlash without a draft model. |
 | P1 | [CONCUR](https://arxiv.org/abs/2601.22705) | Agent-level cache-pressure feedback and proactive admission | Paper found; no author code located in first pass | Reproduce only after a sustained Agent KV-thrashing workload exists. |

@@ -205,6 +205,21 @@ def test_cell_command_propagates_the_longer_output_cap() -> None:
     assert command[index + 1] == "32"
 
 
+def test_mlx_allocator_snapshot_preserves_integer_counters() -> None:
+    tool = load_tool()
+    mx = SimpleNamespace(
+        get_active_memory=lambda: 101,
+        get_cache_memory=lambda: 202,
+        get_peak_memory=lambda: 303,
+    )
+
+    assert tool._mlx_allocator_snapshot(mx) == {
+        "active_memory_bytes": 101,
+        "cache_memory_bytes": 202,
+        "peak_memory_bytes": 303,
+    }
+
+
 def test_engine_order_is_balanced_per_cell_across_four_repetitions() -> None:
     tool = load_tool()
 
@@ -504,10 +519,7 @@ def test_i092_stage_observer_artifact_recomputes_noop_rejection() -> None:
 
     rows = payload["rows"]
     assert len(rows) == 16
-    assert {
-        (row["cell"], row["repetition"], row["state"])
-        for row in rows
-    } == {
+    assert {(row["cell"], row["repetition"], row["state"]) for row in rows} == {
         (cell, repetition, state)
         for cell in ("b4-short", "b4-mixed")
         for repetition in range(1, 5)

@@ -70,3 +70,7 @@
 	path = examples/SpecForge
 	url = https://github.com/sgl-project/SpecForge.git
 	branch = main
+[submodule "examples/S2-MoE"]
+	path = examples/S2-MoE
+	url = https://github.com/angerybob/S2-MoE.git
+	branch = orin

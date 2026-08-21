@@ -1,0 +1,13 @@
+--- BASELINE_FILE
++++ MODIFIED_FILE
+@@ -1,7 +1,7 @@
+ {
+   "benchmark": {
+-    "telemetry": "disabled",
+-    "thermal_power": "unprobed",
+-    "process_sampling": "none"
++    "telemetry": "enabled",
++    "thermal_power": "explicit-availability",
++    "process_sampling": "child-rss-cpu-system-state"
+   }
+ }

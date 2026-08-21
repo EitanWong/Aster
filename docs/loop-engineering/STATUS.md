@@ -8,7 +8,7 @@ Updated: 2026-08-21
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 094. Active iteration: 095, phase `baseline`.
+- Last completed iteration: 096. Active iteration: 097, phase `baseline`.
 - I090 closes the current Qwen3.5-9B foundation screen with a recomputable
   32-row, four-repetition performance ledger. Relative to direct/model-native
   MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
@@ -63,7 +63,8 @@ Updated: 2026-08-21
   after binding `CURRENT.json` to this delivery commit.
 - I095 completed a 16-row fresh-process off/off control matrix against the
   retained I094 32-token observer rows. Source, exact output/finish, terminal,
-  fallback, swap, output-cap, and declared-warmup contracts all pass, but the
+  fallback, output-cap, and declared-warmup contracts all pass, and all 16 new
+  control rows have zero workload swap growth, but the
   Aster B4-mixed control-first decode stratum is `+25.825%` versus
   `+1.464%` observer-off-first (one paired control delta is `+48.771%`).
   MLX-LM control strata are `-1.403%/+1.274%`; B4-short Aster and MLX-LM are
@@ -71,6 +72,16 @@ Updated: 2026-08-21
   I095 rejects observer/runtime attribution and makes no production change.
   Evidence and rollback verification are archived under
   `docs/loop-engineering/artifacts/ITER-20260823-095-decode-boundary-control/`.
+  A later audit found `458,752` bytes of host-global swap growth in one reused
+  I094 observer-off row; I096+ hard-gates zero swap on both sides.
+- I096 completed a 32-row same-session fresh-process control matrix with 50 ms
+  host/process sampling and MLX allocator snapshots. All semantic and resource
+  contracts pass, but control stability does not: paired decode medians are
+  `+0.012%/-1.492%` for Aster short/mixed and `+0.748%/+1.266%` for MLX-LM,
+  while at least one order stratum in every cell exceeds `1%`. Total-system
+  CPU deltas correlate with decode deltas but include the inference child, so
+  no runtime owner or production change is admitted. I097 now pre-registers a
+  rolling quiescence barrier and retains every admission timeout.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.

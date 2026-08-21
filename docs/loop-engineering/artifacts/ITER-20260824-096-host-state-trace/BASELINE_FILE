@@ -1,0 +1,7 @@
+{
+  "benchmark": {
+    "telemetry": "disabled",
+    "thermal_power": "unprobed",
+    "process_sampling": "none"
+  }
+}

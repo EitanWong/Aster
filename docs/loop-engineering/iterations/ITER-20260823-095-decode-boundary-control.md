@@ -70,10 +70,14 @@ window, and I094 source hashes were reused. The matrix adds 16 fresh control
 rows: two B4 cells, two engines, four repetitions. Each control row uses the
 same off configuration and declared warmup as its paired observer-off row.
 
-All structural gates pass: source comparability, exact output token/text/
-finish identity, clean terminal lifecycle, zero decode fallbacks, zero swap
-growth, output-cap parity, and positive warmup requests. The control stability
-gate does not pass:
+All original structural gates pass: source comparability, exact output token/
+text/finish identity, clean terminal lifecycle, zero decode fallbacks,
+output-cap parity, and positive warmup requests. All 16 new control rows have
+zero workload swap growth. A later I096 audit found one reused I094
+observer-off baseline row with `458,752` bytes of host-global swap growth; the
+historical I095 summary did not hard-gate that field. I096 and later telemetry
+matrices require zero workload swap on both sides. The control stability gate
+does not pass:
 
 | Cell | Engine | Control-off first | Observer-off first | Control median |
 | --- | --- | ---: | ---: | ---: |

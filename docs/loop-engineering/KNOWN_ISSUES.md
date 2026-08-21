@@ -1,12 +1,25 @@
 # Known Issues
 
+- I096 captures complete host/process/allocator telemetry for 32 same-session
+  off/off fresh processes, but the decode control remains unstable. Absolute
+  medians move `74.262821 -> 76.051570` tok/s (B4-short Aster),
+  `85.869765 -> 86.018931` (short MLX-LM), `45.154499 -> 44.398127`
+  (mixed Aster), and `66.207854 -> 67.737609` (mixed MLX-LM). Every cell has
+  an order stratum outside `1%`; individual Aster deltas reach `+10.824%` and
+  `-7.159%`. Total-system CPU is correlated with timing but includes the child,
+  so it cannot identify external load. I097 must gate pre-launch quiescence and
+  retain all timeouts before another runtime owner is selected.
 - I095 confirms a fresh-process control-state confound at the common decode
   boundary. In a locked 32-token B4 matrix, all 16 off/off rows preserve exact
-  output/finish, clean terminal state, zero fallback/swap, and declared
-  warmup, but Aster B4-mixed control-first decode TPS is `+25.825%` versus
+  output/finish, clean terminal state, zero fallback, declared warmup, and zero
+  workload swap in all 16 new control rows, but Aster B4-mixed control-first
+  decode TPS is `+25.825%` versus
   `+1.464%` observer-off-first (one paired delta is `+48.771%`). The retained
   observer on/off timing therefore cannot be assigned to instrumentation or a
   runtime owner until host/thermal/allocator state is explicitly controlled.
+  One reused I094 observer-off row has `458,752` bytes of host-global swap
+  growth; I096+ hard-gates both sides at zero rather than rewriting I095's
+  archived summary.
 - I090 establishes a valid 32-row Qwen3.5-9B foundation baseline, but two B4
   cells have declared cross-engine output divergences (`b4-short/short-3` and
   `b4-mixed/short-0`). Aster's paired median decode-driver deficit is

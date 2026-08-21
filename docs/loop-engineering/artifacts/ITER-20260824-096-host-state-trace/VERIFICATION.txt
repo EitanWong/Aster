@@ -1,0 +1,132 @@
+I096 TOOL TRANSACTION AND PERFORMANCE VERIFICATION
+
+Changed field: benchmark.telemetry / benchmark.thermal_power /
+benchmark.process_sampling.
+Changed branch: benchmark-only host/process/allocator state envelope and
+same-session paired control; production inference behavior and defaults remain
+unchanged.
+
+Artifact paths
+BASELINE_FILE: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/BASELINE_FILE
+MODIFIED_FILE: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/MODIFIED_FILE
+DIFF_FILE: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/DIFF_FILE
+ROLLBACK.sh: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/ROLLBACK.sh
+ROLLBACK_COPY: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/ROLLBACK_COPY
+MODIFIED_FILE is intentionally left changed.
+
+BASELINE command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"] == {"telemetry":"disabled","thermal_power":"unprobed","process_sampling":"none"}; print("assertion passed")' docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/BASELINE_FILE
+Input: {"benchmark":{"telemetry":"disabled","thermal_power":"unprobed","process_sampling":"none"}}
+Literal output/result: assertion passed
+Exit status: 0
+
+MODIFIED command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"] == {"telemetry":"enabled","thermal_power":"explicit-availability","process_sampling":"child-rss-cpu-system-state"}; print("assertion passed; MODIFIED_FILE remains changed")' docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/MODIFIED_FILE
+Input: {"benchmark":{"telemetry":"enabled","thermal_power":"explicit-availability","process_sampling":"child-rss-cpu-system-state"}}
+Literal output/result: assertion passed; MODIFIED_FILE remains changed
+Exit status: 0
+
+ROLLBACK command
+Preparation command: rtk proxy cp docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/MODIFIED_FILE /tmp/aster-i096-rollback-copy-final.json
+Command: rtk proxy docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/ROLLBACK.sh /tmp/aster-i096-rollback-copy-final.json
+Input before rollback: {"benchmark":{"telemetry":"enabled","thermal_power":"explicit-availability","process_sampling":"child-rss-cpu-system-state"}}
+Literal command output/result: no stdout; exit status 0
+Verification command: rtk proxy .venv/bin/python -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data["benchmark"] == {"telemetry":"disabled","thermal_power":"unprobed","process_sampling":"none"}; print(json.dumps(data,separators=(",",":")))' /tmp/aster-i096-rollback-copy-final.json
+Literal verification output/result: {"benchmark":{"telemetry":"disabled","thermal_power":"unprobed","process_sampling":"none"}}
+Verification exit status: 0
+Restored behavior/status: the separate rollback copy restores disabled
+telemetry, unprobed thermal/power, and no process sampling; MODIFIED_FILE
+remains enabled/explicit/child-sampled.
+
+Transaction hashes
+BASELINE_FILE SHA-256: b42c12e18711a2ed484ff2a22b81f3717445dc3f4be60709a2af47287b3a735f
+MODIFIED_FILE SHA-256: 42bfdea1efa262bbafc5e710192b0ad8514e23cd1f91cef46aae1ddb1420f7be
+ROLLBACK_COPY SHA-256: b42c12e18711a2ed484ff2a22b81f3717445dc3f4be60709a2af47287b3a735f
+DIFF_FILE SHA-256: ca3ca3cceba0bfcd5c555d016ed91da515ecb4ba0de96c3db0ee724b2c43f4e8
+ROLLBACK.sh SHA-256: 3cf9f306fedbf4ae0344818af88d66ce88b0d458215bee28c8f7f1e9dfcaf0e5
+
+Formal paired matrix
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_boundary_control.py --observer-matrix /tmp/aster-i094-long-final/matrix-i094.json --off-config /tmp/aster-i094-off.yaml --workload run/loop-engineering/public-benchmarks/cross-engine-core.json --lock docs/loop-engineering/benchmarks/public-dataset-lock.json --data-root run/loop-engineering/public-benchmarks --model-sha256 d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a --tokenizer-sha256 94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e --repetitions 4 --max-output-tokens 32 --cooldown-seconds 1 --idle-seconds 2 --telemetry-interval-seconds 0.05 --telemetry-probe-timeout-seconds 1.5 --enable-telemetry --paired-host-state --process-timeout-seconds 600 --run-root /tmp/aster-i096-host-state-paired-final-v2 --output /tmp/aster-i096-host-state-paired-final-v2/matrix-i096.json --iteration ITER-20260824-096-host-state-trace
+Input/result scope: locked Qwen3.5-9B model/tokenizer and public B4
+short/mixed records; observer-off/control-off x Aster/direct MLX-LM x four
+repetitions; 32 fresh processes, two-second idle, 50 ms telemetry.
+Literal output/result: 32 rows (16 baseline, 16 control);
+measurement_status=valid, control_contract=true, telemetry_contract=true,
+allocator_contract=true, exact_output_identity_off_vs_control=true,
+terminal_clean=true, zero_decode_fallbacks=true, prewarm_contract=true,
+control_stable_primary_and_strata=false, decision=reject-control-variance.
+Exit status: 0
+
+Evidence artifact
+Path: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260824-096-host-state-trace/host-state-trace.json
+SHA-256: 1dbddd3a4db469cc94e753804e0a2f5f4a30a2cbc900840538d062bc172639c2
+
+Performance result
+Primary metric: decode_driver_tps; values are observer-off -> control-off.
+- B4-short Aster: 74.262821 -> 76.051570 tok/s; absolute +1.788749;
+  paired median +0.012%; control-first/observer-first +5.263%/-0.102%.
+- B4-short MLX-LM: 85.869765 -> 86.018931 tok/s; absolute +0.149167;
+  paired median +0.748%; strata +0.370%/+1.674%.
+- B4-mixed Aster: 45.154499 -> 44.398127 tok/s; absolute -0.756372;
+  paired median -1.492%; strata +0.186%/-4.459%.
+- B4-mixed MLX-LM: 66.207854 -> 67.737609 tok/s; absolute +1.529755;
+  paired median +1.266%; strata +1.203%/+2.294%.
+System-CPU/decode-delta Pearson r: all -0.673 (n=16), Aster -0.822
+(n=8), MLX-LM -0.798 (n=8). Total system CPU includes child work, so this
+is diagnostic and noncausal. Every cell has an order stratum above 1%; no
+runtime candidate or production change is admitted.
+
+Artifact recomputation
+Command: rtk proxy .venv/bin/pytest -q tests/test_decode_boundary_control.py::test_retained_i096_artifact_recomputes_host_state_matrix
+Input: immutable host-state-trace.json with 16 baseline and 16 control rows.
+Literal output/result: 1 passed in 0.12s
+Exit status: 0
+Restored/recomputed status: summarize_control exactly equals the retained
+summary and reproduces all valid semantic/resource gates plus the rejected
+control-stability decision.
+
+Unsupported replay boundary
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_boundary_control.py [same formal arguments] --output /tmp/aster-i096-host-state-paired-final-v2/matrix-i096-recomputed.json --reuse-existing
+Literal output/result: ValueError: reuse-existing is not supported for paired host-state rows
+Exit status: 1
+Resolution: paired rows are recomputed through the immutable pure-analysis
+artifact test above; generic single-row cache replay is not claimed.
+
+Focused tests
+Command: rtk proxy .venv/bin/pytest -q tests/test_host_state_telemetry.py tests/test_decode_boundary_control.py tests/test_foundation_parity_benchmark.py
+Literal output/result: 30 passed in 0.44s
+Exit status: 0
+
+Full suite
+Command: rtk proxy .venv/bin/pytest -q
+Literal output/result: 638 passed, 9 skipped, 1 warning in 7.90s
+Exit status: 0
+
+Static checks
+Command: rtk proxy .venv/bin/ruff check scripts/dev/host_state_telemetry.py scripts/dev/benchmark_decode_boundary_control.py scripts/dev/benchmark_foundation_parity.py tests/test_host_state_telemetry.py tests/test_decode_boundary_control.py tests/test_foundation_parity_benchmark.py
+Literal output/result: All checks passed!
+Exit status: 0
+Command: rtk proxy .venv/bin/ruff format --check scripts/dev/host_state_telemetry.py scripts/dev/benchmark_decode_boundary_control.py scripts/dev/benchmark_foundation_parity.py tests/test_host_state_telemetry.py tests/test_decode_boundary_control.py tests/test_foundation_parity_benchmark.py
+Literal output/result: 6 files already formatted
+Exit status: 0
+Command: rtk git diff --check
+Literal output/result: no output
+Exit status: 0
+
+Reference refresh
+Command: rtk proxy zsh -c '[verify every configured submodule HEAD equals its configured origin branch and worktree is clean]'
+Literal output/result: verified=19 mismatches=0
+Exit status: 0
+Command: rtk proxy zsh -c '[verify dflash-mlx-aryagm, dflash-mlx-bstnxbt, dflash-z-lab, and gemma4metal HEAD equal origin branch and worktree is clean]'
+Literal output/result: verified=4 mismatches=0
+Exit status: 0
+Combined result: all 23 reference working copies are at their fetched official
+branch tips and clean. S2-MoE is the MIT-licensed author repository at
+fba914c3455403f0de2b50be3faeba0a4195e0f6 on origin/orin.
+
+Workspace audit
+Command: rtk proxy .venv/bin/python scripts/dev/check_loop_workspace.py --strict
+Literal output/result: Workspace health WARN; blockers none; 33 changes;
+7 artifact files / 1.20 MiB; 9 reference paths; 0 mixed-index paths;
+24 generated-cache warnings.
+Exit status: 0

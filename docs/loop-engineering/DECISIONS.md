@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-08-21: Reject I096 Runtime Attribution And Gate Host Quiescence
+
+- Decision: retain benchmark-only telemetry, make no production inference
+  change, and advance to a predeclared rolling host-quiescence control.
+- Evidence: all 32 paired fresh-process rows pass source, exact output/finish,
+  terminal, fallback, swap, prewarm, telemetry, and MLX allocator contracts.
+  Aster paired decode medians are `+0.012%` in B4-short and `-1.492%` in
+  B4-mixed; direct MLX-LM is `+0.748%` and `+1.266%`. At least one order
+  stratum in every cell exceeds `1%`, including Aster short `+5.263%` and
+  mixed `-4.459%`.
+- Interpretation: a fixed two-second idle exposes but does not control the
+  remaining state. System-CPU delta correlations (`r=-0.822` Aster,
+  `r=-0.798` MLX-LM) are observational and include child work. The derived
+  child-normalized values remain diagnostic, not causal evidence.
+- Rollback: remove the benchmark-only telemetry/control files and archived
+  artifact; no serving path imports them and no production default changed.
+- Next experiment: require rolling two-second pre-launch CPU median `<=6%`,
+  p95 `<=12%`, available memory `>=20%`, stable swap, and retained timeout
+  evidence before rerunning the 32-row control. MTP and speculation remain
+  foundation-gated.
+
 ## 2026-08-21: Reject I095 Decode Attribution Until Control State Is Stable
 
 - Decision: keep the sampled observer benchmark-only and make no production
@@ -8,7 +29,10 @@
 - Evidence: 16 new off/off control rows reuse the locked I094 Qwen3.5-9B,
   public B4 workload, 32-token cap, cache-off state, declared warmup, and
   balanced engine/control order. Exact output/finish, source, terminal,
-  fallback, swap, output-cap, and warmup contracts all pass. Aster B4-mixed
+  fallback, output-cap, and warmup contracts all pass; all 16 new control rows
+  have zero workload swap growth. A later audit found `458,752` bytes of
+  host-global swap growth in one reused I094 observer-off row, which was not a
+  hard gate in the historical I095 summary. Aster B4-mixed
   control-first decode TPS is `+25.825%` versus `+1.464%` observer-off-first;
   the retained paired control deltas include `+48.771%`. MLX-LM control
   strata are `-1.403%/+1.274%`.
