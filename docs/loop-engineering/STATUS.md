@@ -8,7 +8,7 @@ Updated: 2026-08-21
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 093. Active iteration: 094, phase `baseline`.
+- Last completed iteration: 094. Active iteration: 095, phase `baseline`.
 - I090 closes the current Qwen3.5-9B foundation screen with a recomputable
   32-row, four-repetition performance ledger. Relative to direct/model-native
   MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
@@ -53,6 +53,14 @@ Updated: 2026-08-21
 - I093 implementation, evidence, reference refresh, and I094 plan are in
   `1f8ec3509ffd881ef1efd1d2bc2f58b52b4d540f`; the state-anchor documentation
   commit follows after the baseline hash is bound in `CURRENT.json`.
+- I094 completed the longer 32-token observer matrix. All 32 rows pass exact
+  output/finish, terminal, fallback, swap, source, and bounded-observer gates,
+  but B4-mixed Aster decode order strata are `-2.174%/+30.592%` and the
+  MLX-LM control also exceeds the `1%` stability gate. The observer remains
+  benchmark-only; no production inference default changed.
+- I094 implementation, evidence, and the I095 control-first plan are in
+  `6521fb003cf5307f12dc097e8ccc625404561152`; the final state anchor follows
+  after binding `CURRENT.json` to this delivery commit.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.
@@ -746,7 +754,7 @@ Updated: 2026-08-21
   changes. Strict checking has no blocker because growth is bounded against
   the immutable debt baseline, but the underlying 1,172-path inventory remains
   an ownership and reviewability risk rather than a clean Git boundary.
-- The full suite is green (`621 passed, 9 skipped, 1 warning`). Long-context snapshot
+- The full suite is green (`626 passed, 9 skipped, 1 warning`). Long-context snapshot
   budgeting is implemented and covered, but the automatic default-config
   128K real-model reproduction remains unarchived.
 - The new paged-attention benchmark randomizes A/B order and records allocator peak memory, but it is a synthetic kernel probe rather than a full model serving benchmark; failed-request allocator data and energy remain unavailable.
@@ -785,9 +793,9 @@ Updated: 2026-08-21
 
 ## Next Priority
 
-1. Execute I094's longer mixed-load attribution-stability matrix. Require
-   Aster and MLX-LM control order strata within `1%` before assigning ownership
-   to the decode-driver gap or selecting a runtime candidate.
+1. Execute I095's control-first decode-boundary experiment. Require Aster and
+   MLX-LM control order strata within `1%` before assigning ownership to the
+   decode-driver gap or selecting a runtime candidate.
 2. Reduce the immutable workspace debt only through owner-attributed review
    boundaries. Do not grow generated caches or exceed the recorded +25/+20
    allowances.
