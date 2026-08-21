@@ -1792,3 +1792,37 @@
   order strata to stabilize before any decode-stage owner is assigned. MTP,
   DFlash, EAGLE-family, tree speculation, and multi-token prediction remain
   foundation-gated.
+
+## 2026-08-21: Reject longer-window observer attribution in I094
+
+- Decision: reject the periodic sampled observer as production instrumentation
+  and keep `engine.decode_stage_observer_max_events=0`. Add only a
+  benchmark-harness output-cap parameter; the production inference path and
+  defaults remain unchanged.
+- Implementation: `--max-output-tokens` now propagates through the public
+  cohort plan, Aster/direct-MLX-LM child commands, execution envelope, and
+  completion-length contract. The default remains eight tokens, preserving all
+  prior baselines. The I094 matrix uses 32 tokens and sample interval eight.
+- Evidence: 32 fresh rows (B4-short/mixed x Aster/MLX-LM x observer off/on x
+  four repetitions) pass source/input, exact output/finish, terminal, zero
+  fallback, zero swap, and observer event/drop gates. Observer-on samples five
+  steps per B4-short row and seven per B4-mixed row.
+- Performance ledger: B4-short Aster decode is `81.406115 -> 81.652300`
+  tok/s, paired median `+0.613%`, with order strata `+1.594%/+0.160%`.
+  B4-mixed is `46.954306 -> 49.853883` tok/s, paired median `+6.393%`, but
+  order strata are `-2.174%/+30.592%`; the four paired deltas are
+  `-5.593%/+49.643%/+1.245%/+11.541%`. The MLX-LM control also varies beyond
+  `1%` in mixed tails and decode strata, so this is control-confounded
+  diagnostic evidence rather than a speedup claim.
+- Boundary result: at the same 32-token observer-off window, Aster is
+  `12.693%` faster than MLX-LM in B4-short and `36.373%` faster in B4-mixed.
+  This reverses the eight-token relationship and proves the comparison is
+  window/workload-scoped, not a global engine ranking.
+- Attribution: evaluation remains the dominant sampled window (`95.501%`
+  short, `96.565%` mixed median share). This includes work released by the
+  existing materialization boundary and is not a private-kernel claim.
+- Artifact: `docs/loop-engineering/artifacts/ITER-20260822-094-mixed-load-attribution-stability/mixed-load-attribution-stability.json`,
+  SHA-256 `2cddae9bf06f6fb129a2b86893c76417b76b50bd7c307594ba713b118b2f7fb4`.
+- Next gate: I095 uses a control-first decode-boundary design with explicit
+  host-state classification. MTP, DFlash, EAGLE-family, tree speculation, and
+  multi-token prediction remain foundation-gated.

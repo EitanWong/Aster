@@ -101,11 +101,15 @@ def _records_for_plan(
     return interactive, qmsum
 
 
-def build_foundation_plan(workload: dict[str, Any], *, cell: str) -> arrival.ArrivalPlan:
+def build_foundation_plan(
+    workload: dict[str, Any], *, cell: str, max_output_tokens: int = MAX_OUTPUT_TOKENS
+) -> arrival.ArrivalPlan:
     """Build one fixed public cohort without resolving or copying prompt text."""
 
     if cell not in CELLS:
         raise BenchmarkError(f"unknown foundation-parity cell: {cell}")
+    if max_output_tokens <= 0:
+        raise BenchmarkError("max_output_tokens must be positive")
     interactive, qmsum = _records_for_plan(workload)
     selected: list[tuple[str, dict[str, Any]]]
     if cell == "b1-short":
@@ -121,7 +125,7 @@ def build_foundation_plan(workload: dict[str, Any], *, cell: str) -> arrival.Arr
         arrival._entry(
             key=key,
             record=record,
-            cap=MAX_OUTPUT_TOKENS,
+            cap=max_output_tokens,
             release="at-start",
         )
         for key, record in selected
@@ -402,9 +406,9 @@ async def _warm_aster(
     )
 
 
-def _execution_contract() -> dict[str, Any]:
+def _execution_contract(*, max_output_tokens: int = MAX_OUTPUT_TOKENS) -> dict[str, Any]:
     return {
-        "max_output_tokens": MAX_OUTPUT_TOKENS,
+        "max_output_tokens": max_output_tokens,
         "temperature": 0.0,
         "top_p": 1.0,
         "top_k": 0,
@@ -451,11 +455,12 @@ def _cell_envelope(
     requests: list[dict[str, Any]],
     metrics: dict[str, Any],
     lifecycle: dict[str, Any],
+    max_output_tokens: int = MAX_OUTPUT_TOKENS,
 ) -> dict[str, Any]:
     expected_count = 1 if cell.startswith("b1-") else 4
     request_contract = (
         len(requests) == expected_count
-        and all(int(request["completion_tokens"]) == MAX_OUTPUT_TOKENS for request in requests)
+        and all(int(request["completion_tokens"]) == max_output_tokens for request in requests)
         and all(request["finish_reason"] == "length" for request in requests)
         and all(float(request["ttft_seconds"]) > 0 for request in requests)
         and all(float(request["end_to_end_seconds"]) > 0 for request in requests)
@@ -497,7 +502,7 @@ def _cell_envelope(
                 for item in input_manifest
             ]
         ),
-        "execution": _execution_contract(),
+        "execution": _execution_contract(max_output_tokens=max_output_tokens),
         "requests": requests,
         "metrics": metrics,
         "lifecycle": lifecycle,
@@ -523,6 +528,7 @@ async def _run_aster_cell(
     tokenizer_sha256: str,
     timeout_seconds: float,
     memory_sample_interval: float,
+    max_output_tokens: int,
 ) -> dict[str, Any]:
     import mlx.core as mx
 
@@ -531,7 +537,7 @@ async def _run_aster_cell(
         raise BenchmarkError("workload source lock differs from the active source lock")
     lock = public.load_lock(lock_path)
     resolver = public.PublicWorkloadResolver(lock, data_root)
-    plan = build_foundation_plan(workload, cell=cell)
+    plan = build_foundation_plan(workload, cell=cell, max_output_tokens=max_output_tokens)
     base_settings = load_settings(str(config_path))
     settings = arrival._apply_baseline_settings(
         base_settings,
@@ -659,6 +665,7 @@ async def _run_aster_cell(
             requests=requests,
             metrics=metrics,
             lifecycle=lifecycle,
+            max_output_tokens=max_output_tokens,
         )
         envelope["execution"]["decode_tensorized_logprobs_enabled"] = bool(
             settings.engine.decode_tensorized_logprobs_enabled
@@ -725,6 +732,7 @@ def _run_direct_cell(
     tokenizer_sha256: str,
     timeout_seconds: float,
     memory_sample_interval: float,
+    max_output_tokens: int,
 ) -> dict[str, Any]:
     import mlx.core as mx
     from mlx_lm import load
@@ -735,7 +743,7 @@ def _run_direct_cell(
         raise BenchmarkError("workload source lock differs from the active source lock")
     lock = public.load_lock(lock_path)
     resolver = public.PublicWorkloadResolver(lock, data_root)
-    plan = build_foundation_plan(workload, cell=cell)
+    plan = build_foundation_plan(workload, cell=cell, max_output_tokens=max_output_tokens)
     settings = load_settings(str(config_path))
     model, tokenizer = load(str(settings.model.path))
     input_manifest = _direct_input_manifest(tokenizer, plan, workload, resolver)
@@ -789,7 +797,7 @@ def _run_direct_cell(
     try:
         uids = generator.insert(
             [list(item["token_ids"]) for item in input_manifest],
-            max_tokens=[MAX_OUTPUT_TOKENS] * plan.concurrency,
+            max_tokens=[max_output_tokens] * plan.concurrency,
         )
         entry_by_uid = dict(zip(uids, plan.entries, strict=True))
         input_by_uid = dict(zip(uids, input_manifest, strict=True))
@@ -874,6 +882,7 @@ def _run_direct_cell(
             requests=requests,
             metrics=metrics,
             lifecycle=lifecycle,
+            max_output_tokens=max_output_tokens,
         )
     finally:
         PromptProcessingBatch.generate = original_generate
@@ -1241,6 +1250,8 @@ def _cell_command(
         str(args.timeout_seconds),
         "--memory-sample-interval",
         str(args.memory_sample_interval),
+        "--max-output-tokens",
+        str(args.max_output_tokens),
         "--output",
         str(output),
     ]
@@ -1321,7 +1332,7 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
             "benchmark_source_sha256": source_before,
         },
         "execution": {
-            **_execution_contract(),
+            **_execution_contract(max_output_tokens=args.max_output_tokens),
             "decode_stage_observer_max_events": int(
                 settings.engine.decode_stage_observer_max_events
             ),
@@ -1373,6 +1384,7 @@ def main() -> None:
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument("--process-timeout-seconds", type=float, default=300.0)
     parser.add_argument("--memory-sample-interval", type=float, default=0.02)
+    parser.add_argument("--max-output-tokens", type=int, default=MAX_OUTPUT_TOKENS)
     parser.add_argument("--cooldown-seconds", type=float, default=DEFAULT_COOLDOWN_SECONDS)
     parser.add_argument("--run-root", type=Path, default=DEFAULT_RUN_ROOT)
     parser.add_argument("--output", type=Path)
@@ -1385,6 +1397,8 @@ def main() -> None:
     args.run_root = args.run_root.resolve()
     if args.memory_sample_interval <= 0:
         raise BenchmarkError("memory sample interval must be positive")
+    if args.max_output_tokens <= 0:
+        raise BenchmarkError("max output tokens must be positive")
     if args.cooldown_seconds < 0:
         raise BenchmarkError("cooldown seconds must be non-negative")
     if args.timeout_seconds <= 0 or args.process_timeout_seconds <= 0:
@@ -1413,6 +1427,7 @@ def main() -> None:
             "tokenizer_sha256": args.tokenizer_sha256,
             "timeout_seconds": args.timeout_seconds,
             "memory_sample_interval": args.memory_sample_interval,
+            "max_output_tokens": args.max_output_tokens,
         }
         payload = (
             asyncio.run(_run_aster_cell(**kwargs))

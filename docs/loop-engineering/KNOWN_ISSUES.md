@@ -281,3 +281,16 @@
   its 2026-08-19 MLX 0.32.1 update. All configured reference branch refs were
   fetched in the I093 refresh and eleven gitlinks advanced. Reproducible Aster
   evidence must continue to name both the local pin and the refresh date.
+
+- I094 lengthened the observer window to 32 generated tokens and preserved all
+  correctness/resource contracts, but attribution is still not stable. Aster
+  B4-mixed decode order strata are `-2.174%/+30.592%`; the MLX-LM control also
+  violates the `1%` mixed stability gate. The apparent `+6.393%` paired median
+  is therefore rejected as a performance claim. The same window makes Aster
+  `12.693%/36.373%` faster than direct MLX-LM in B4-short/mixed, reversing the
+  earlier short-window direction; all cross-engine conclusions remain scoped to
+  the named token window and public cohort.
+- The benchmark foundation now accepts a parameterized output cap, but this is
+  measurement infrastructure only. Production requests, scheduler behavior,
+  cache ownership, and inference defaults remain unchanged. I095 must classify
+  host/control state before another observer or runtime candidate is considered.

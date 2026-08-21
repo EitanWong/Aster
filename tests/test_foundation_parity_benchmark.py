@@ -4,7 +4,7 @@ import importlib.util
 import json
 import statistics
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -169,6 +169,40 @@ def test_foundation_plan_freezes_b1_b4_and_mixed_public_cohorts() -> None:
     assert {entry.release for plan in plans.values() for entry in plan.entries} == {"at-start"}
     assert [plans[cell].concurrency for cell in CELLS] == [1, 1, 4, 4]
     assert {entry.max_tokens for plan in plans.values() for entry in plan.entries} == {8}
+
+
+def test_foundation_plan_accepts_a_longer_benchmark_output_cap() -> None:
+    tool = load_tool()
+
+    plan = tool.build_foundation_plan(_workload(), cell="b4-mixed", max_output_tokens=32)
+
+    assert {entry.max_tokens for entry in plan.entries} == {32}
+
+
+def test_cell_command_propagates_the_longer_output_cap() -> None:
+    tool = load_tool()
+    args = SimpleNamespace(
+        config=Path("/tmp/off.yaml"),
+        workload=Path("/tmp/workload.json"),
+        lock=Path("/tmp/lock.json"),
+        data_root=Path("/tmp/data"),
+        timeout_seconds=180.0,
+        memory_sample_interval=0.02,
+        max_output_tokens=32,
+    )
+
+    command = tool._cell_command(
+        args,
+        cell="b4-mixed",
+        engine="aster",
+        repetition=1,
+        pair_order=("aster", "mlx-lm"),
+        output=Path("/tmp/result.json"),
+        fingerprint={"model_sha256": "model", "tokenizer_sha256": "tokenizer"},
+    )
+
+    index = command.index("--max-output-tokens")
+    assert command[index + 1] == "32"
 
 
 def test_engine_order_is_balanced_per_cell_across_four_repetitions() -> None:

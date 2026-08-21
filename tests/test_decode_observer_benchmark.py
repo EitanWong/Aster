@@ -44,6 +44,47 @@ def test_state_order_is_balanced_per_cell() -> None:
         assert orders.count(("observer-on", "observer-off")) == 2
 
 
+def test_long_window_contract_is_explicitly_supported() -> None:
+    harness = load_harness()
+
+    assert harness.DEFAULT_ITERATION.endswith("093-low-overhead-decode-stage-attribution")
+    assert "--max-output-tokens" in harness.FOUNDATION_PATH.read_text()
+
+
+def test_summary_rejects_a_mismatched_long_window_cap() -> None:
+    harness = load_harness()
+    foundation = harness.load_foundation()
+    rows = _synthetic_rows()
+    for row in rows:
+        row["result"]["execution"]["max_output_tokens"] = 32
+    collection = [
+        {"cell": cell, "repetition": repetition, "state": state, "engine": engine, "status": 0}
+        for cell in harness.CELLS
+        for repetition in range(1, 5)
+        for state in harness.STATES
+        for engine in harness.ENGINES
+    ]
+
+    with pytest.raises(ValueError, match="output cap"):
+        harness.summarize(
+            foundation,
+            rows,
+            collection,
+            repetitions=4,
+            expected_sample_interval=8,
+            expected_max_output_tokens=8,
+        )
+    payload = harness.summarize(
+        foundation,
+        rows,
+        collection,
+        repetitions=4,
+        expected_sample_interval=8,
+        expected_max_output_tokens=32,
+    )
+    assert payload["measurement_status"] == "valid"
+
+
 def _synthetic_rows() -> list[dict[str, object]]:
     harness = load_harness()
     foundation_tests = load_foundation_tests()

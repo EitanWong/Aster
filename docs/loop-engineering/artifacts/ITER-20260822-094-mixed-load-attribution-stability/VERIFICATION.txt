@@ -1,0 +1,48 @@
+I094 TOOL TRANSACTION VERIFICATION
+
+Changed field: benchmark.max_output_tokens.
+Changed branch: benchmark-only longer-window attribution; production inference defaults unchanged.
+
+BASELINE command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"]=={"max_output_tokens":8,"sample_interval":8}' BASELINE_FILE
+Literal output/result: assertion passed
+Exit status: 0
+
+MODIFIED command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"]=={"max_output_tokens":32,"sample_interval":8}' MODIFIED_FILE
+Literal output/result: assertion passed; MODIFIED_FILE remains at 32 tokens
+Exit status: 0
+
+ROLLBACK command
+Command: rtk proxy ROLLBACK.sh ROLLBACK_COPY
+Input before rollback: {"benchmark":{"max_output_tokens":32,"sample_interval":8}}
+Literal output/result after rollback: {"benchmark":{"max_output_tokens":8,"sample_interval":8}}
+Exit status: 0
+Restored behavior/status: baseline restored in ROLLBACK_COPY; MODIFIED_FILE remains changed.
+
+Hashes
+BASELINE_FILE SHA-256: 3ba9cd8b64a0d477ff4ab4cff6fcad172d8bc5fcee1a18b588713c8c63f3ed66
+MODIFIED_FILE SHA-256: 9c42f013f054f7d3a9d7d6cf0cefc508bb89bdf1f794d19d339a841a1c613754
+ROLLBACK_COPY SHA-256: 3ba9cd8b64a0d477ff4ab4cff6fcad172d8bc5fcee1a18b588713c8c63f3ed66
+
+Formal matrix
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_observer.py --off-config /tmp/aster-i094-off.yaml --on-config /tmp/aster-i094-sample8.yaml --workload run/loop-engineering/public-benchmarks/cross-engine-core.json --lock docs/loop-engineering/benchmarks/public-dataset-lock.json --data-root run/loop-engineering/public-benchmarks --model-sha256 d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a --tokenizer-sha256 94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e --repetitions 4 --expected-sample-interval 8 --max-output-tokens 32 --cooldown-seconds 1 --process-timeout-seconds 600 --run-root /tmp/aster-i094-long-final --output /tmp/aster-i094-long-final/matrix-i094.json
+Literal output/result: 32 rows; source/output/terminal/fallback/swap/observer bounds pass; Aster and control order-strata no-op gates fail; candidate rejected.
+Raw matrix SHA-256: 4eaad8503963788e590a71c0c55cc91170ba7010b154a9ba55420d6aa8447334
+Compact artifact SHA-256: 2cddae9bf06f6fb129a2b86893c76417b76b50bd7c307594ba713b118b2f7fb4
+Exit status: 0
+
+Focused tests
+Command: rtk proxy .venv/bin/pytest -q tests/test_foundation_parity_benchmark.py tests/test_decode_observer_benchmark.py tests/test_mixed_load_attribution_stability.py
+Literal output/result: 27 passed in 0.11s
+Exit status: 0
+
+Full suite
+Command: rtk proxy .venv/bin/pytest -q
+Literal output/result: 626 passed, 9 skipped, 1 warning in 7.68s
+Exit status: 0
+
+Workspace audit
+Command: rtk proxy .venv/bin/python scripts/dev/check_loop_workspace.py --strict
+Literal output/result: Workspace health WARN; blockers none; 24 generated-cache warnings and the completed I094 artifact warning
+Exit status: 0

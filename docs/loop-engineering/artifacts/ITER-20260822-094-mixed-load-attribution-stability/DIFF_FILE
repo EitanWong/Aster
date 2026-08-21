@@ -1,0 +1,5 @@
+--- BASELINE_FILE
++++ MODIFIED_FILE
+@@
+-{"benchmark":{"max_output_tokens":8,"sample_interval":8}}
++{"benchmark":{"max_output_tokens":32,"sample_interval":8}}

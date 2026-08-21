@@ -17,6 +17,7 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FOUNDATION_PATH = PROJECT_ROOT / "scripts/dev/benchmark_foundation_parity.py"
+DEFAULT_ITERATION = "ITER-20260821-093-low-overhead-decode-stage-attribution"
 CELLS = ("b4-short", "b4-mixed")
 ENGINES = ("aster", "mlx-lm")
 STATES = ("observer-off", "observer-on")
@@ -60,6 +61,7 @@ def _runner_args(args: argparse.Namespace, config: Path) -> SimpleNamespace:
         data_root=args.data_root,
         timeout_seconds=args.timeout_seconds,
         memory_sample_interval=args.memory_sample_interval,
+        max_output_tokens=args.max_output_tokens,
     )
 
 
@@ -161,6 +163,7 @@ def summarize(
     *,
     repetitions: int,
     expected_sample_interval: int,
+    expected_max_output_tokens: int = 8,
 ) -> dict[str, Any]:
     expected = {
         (cell, repetition, state, engine)
@@ -176,6 +179,12 @@ def summarize(
         raise ValueError(f"expected {len(expected)} observer rows")
     if any(entry["status"] != 0 for entry in collection):
         raise ValueError("observer matrix contains a failed process")
+    if any(
+        int(row["result"]["execution"].get("max_output_tokens", -1))
+        != expected_max_output_tokens
+        for row in rows
+    ):
+        raise ValueError("observer matrix output cap differs from the requested contract")
 
     source_fields = (
         "workload_sha256",
@@ -407,12 +416,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         collection,
         repetitions=args.repetitions,
         expected_sample_interval=args.expected_sample_interval,
+        expected_max_output_tokens=args.max_output_tokens,
     )
     first = rows[0]["result"]
     return {
         "schema_version": 1,
         "kind": "decode-stage-observer-sampled-matrix",
-        "iteration": "ITER-20260821-093-low-overhead-decode-stage-attribution",
+        "iteration": getattr(args, "iteration", DEFAULT_ITERATION),
         "created_at": datetime.now(UTC).isoformat(),
         "execution": {
             "cells": list(CELLS),
@@ -424,6 +434,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "off_config": str(args.off_config),
             "on_config": str(args.on_config),
             "expected_sample_interval": args.expected_sample_interval,
+            "max_output_tokens": args.max_output_tokens,
         },
         "source": first["source"],
         "summary": summary,
@@ -442,12 +453,14 @@ def main() -> None:
     parser.add_argument("--tokenizer-sha256", required=True)
     parser.add_argument("--repetitions", type=int, default=4)
     parser.add_argument("--expected-sample-interval", type=int, default=8)
+    parser.add_argument("--max-output-tokens", type=int, default=8)
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument("--process-timeout-seconds", type=float, default=300.0)
     parser.add_argument("--memory-sample-interval", type=float, default=0.02)
     parser.add_argument("--cooldown-seconds", type=float, default=1.0)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--iteration", default=DEFAULT_ITERATION)
     parser.add_argument("--reuse-existing", action="store_true")
     args = parser.parse_args()
     args.off_config = args.off_config.resolve()
@@ -457,6 +470,8 @@ def main() -> None:
     args.data_root = args.data_root.resolve()
     args.run_root = args.run_root.resolve()
     args.output = args.output.resolve()
+    if args.max_output_tokens <= 0:
+        raise ValueError("max output tokens must be positive")
     args.fingerprint = {
         "model_sha256": args.model_sha256,
         "tokenizer_sha256": args.tokenizer_sha256,

@@ -78,6 +78,12 @@ stage shares are therefore diagnostic only. I094 will use longer windows and
 explicit control stability before assigning ownership to an Aster runtime
 boundary.
 
+I094 repeated the same matrix with a 32-token output window. Exact state
+behavior and bounded sampling still pass, but mixed Aster strata are
+`-2.174%/+30.592%` and the MLX-LM control is also unstable. The longer-window
+result is retained as a length-sensitive baseline and does not authorize a
+runtime change. I095 now classifies host/control state at the common boundary.
+
 ## Latest Source Refresh
 
 On 2026-08-21, read-only official Git refs and source files were refreshed.
