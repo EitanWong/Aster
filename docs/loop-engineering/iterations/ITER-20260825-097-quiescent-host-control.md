@@ -76,3 +76,74 @@ boundary, such as frequency, stream, graph, or kernel state.
 
 MTP, S2-MoE, DFlash, EAGLE-family, adaptive tree verification, and other
 speculative paths remain reference-only until the foundation gate closes.
+
+## Implementation
+
+- `host_state_telemetry.py` now evaluates deterministic rolling admission
+  windows, retains every raw sample and rejected window, and returns an
+  explicit non-replaceable timeout.
+- During-child sampling stores the declared
+  `max(0, system_cpu_percent - child_cpu_percent / logical_cpu_count)` estimate
+  for every aligned sample plus recomputable median/p95 summaries. The contract
+  independently recalculates every derived sample before accepting a row.
+- The control harness gates every row independently, stops at the first formal
+  timeout without launching that child, and hard-gates every
+  engine/cell/state external-CPU stratum when a complete matrix exists.
+- Focused tests cover admission statistics, rolling retention, timeout
+  retention, sample-aligned estimates, per-stratum rejection, no child launch
+  after timeout, and full recomputation of the retained formal artifact.
+
+## Calibration And Formal Result
+
+The independent 20-second calibration did not satisfy the declared CPU gate:
+its last window had CPU median `18.65%`, p95 `26.11%`, available memory
+`35.94%`, and stable swap. This calibration did not count as the formal run.
+
+The one formal attempt preserved the preregistration exactly. Its first planned
+row was repetition 1, B4-short, direct MLX-LM, control-off. The rolling gate
+waited `120.084624` seconds and timed out before a child was launched. It
+retained 1,156 raw samples and 1,137 rejected windows. Across all samples CPU
+median was `16.2%` and nearest-rank p95 was `33.3%`; the minimum rolling-window
+p95 was still `17.025%`, above the `12%` gate. Available memory never fell below
+`35.097%`, and all samples retained the same `1,961,689,088` swap-used value.
+
+The formal status is `invalid-quiescence-timeout`: one row was attempted, zero
+inference rows completed, and the remaining 31 rows were not started. No retry
+or replacement sample was collected.
+
+## Performance Delta Ledger
+
+I096 is the latest valid control baseline. I097 has no valid decode sample, so
+every candidate value and delta is explicitly null rather than being reported
+as a speedup or slowdown.
+
+| Cell / engine | I096 observer-off -> control-off median TPS | I096 paired median / order strata | I097 candidate TPS | Absolute delta | Relative delta | Samples (I096 / I097) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| B4-short / Aster | `74.262821 -> 76.051570` | `+0.012%`; `+5.263%/-0.102%` | `null` | `null` | `null` | `4 / 0` |
+| B4-short / MLX-LM | `85.869765 -> 86.018931` | `+0.748%`; `+0.370%/+1.674%` | `null` | `null` | `null` | `4 / 0` |
+| B4-mixed / Aster | `45.154499 -> 44.398127` | `-1.492%`; `+0.186%/-4.459%` | `null` | `null` | `null` | `4 / 0` |
+| B4-mixed / MLX-LM | `66.207854 -> 67.737609` | `+1.266%`; `+1.203%/+2.294%` | `null` | `null` | `null` | `4 / 0` |
+
+Measurement status is `invalid-quiescence-timeout`. Admission, complete-row,
+telemetry, allocator, external-CPU, semantic, resource, and control-stability
+gates are not satisfied because no child ran. The decision is
+`reject-quiescence-timeout`; no runtime candidate or production default changes.
+
+## Evidence And Decision
+
+- Raw artifact:
+  `docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/quiescent-host-control.json`
+  (`2,628,512` bytes, SHA-256
+  `92042c9841029b4b887188e188ff9bcd1f15e18e368e49a2c85f62d6697649e8`).
+- Every retained rolling window recomputes from its raw 20 samples in the
+  artifact regression test.
+- The transaction rollback restores disabled admission, unrecorded rejected
+  windows, and no external-CPU estimate on a separate copy while leaving the
+  modified fixture enabled.
+- The benchmark-only gate is retained because it prevents invalid performance
+  claims. Production inference behavior remains unchanged.
+
+I098 moves to a same-process, independently owned, crossed decode control that
+can cancel persistent desktop load at a much shorter time scale. A failure at
+that boundary makes a dedicated headless benchmark environment a hard
+prerequisite. MTP and other speculative paths remain deferred.

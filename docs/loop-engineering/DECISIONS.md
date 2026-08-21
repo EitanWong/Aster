@@ -1871,3 +1871,26 @@
 - Next gate: I095 uses a control-first decode-boundary design with explicit
   host-state classification. MTP, DFlash, EAGLE-family, tree speculation, and
   multi-token prediction remain foundation-gated.
+
+## 2026-08-21: Reject I097 after retained quiescence timeout
+
+- Decision: close I097 as an invalid formal performance attempt and retain its
+  benchmark-only admission guard. Do not relax the preregistered CPU limits,
+  replace the timed-out row, infer a speedup/slowdown, or change production.
+- Evidence: the first planned direct-MLX-LM B4-short control row waited
+  `120.084624s`, retained 1,156 raw samples and 1,137 rejected 20-sample
+  windows, and launched no child. Whole-wait CPU median/p95 were
+  `16.2%/33.3%`; minimum window p95 was `17.025%` versus the `12%` gate.
+  Available memory stayed above `35.097%`, and swap never changed.
+- Performance ledger: I096 remains the latest valid baseline. I097 candidate
+  TPS, absolute delta, relative delta, and order strata are all `null`, with
+  zero completed performance rows. Status is `invalid-quiescence-timeout` and
+  decision is `reject-quiescence-timeout`.
+- Retained change: deterministic rolling admission, complete window/timeout
+  evidence, and sample-aligned child-normalized external CPU fields remain in
+  the benchmark harness. Production model, scheduler, cache, sampler, and
+  defaults are unchanged.
+- Next gate: I098 uses two independently owned same-process decode branches in
+  four-token AB/BA blocks. If the control cannot hold all medians/order strata
+  within `1%`, a dedicated headless host becomes mandatory. MTP, MemSpec,
+  Windowed-MTP, AngelSpec, and other speculative work remain reference-only.

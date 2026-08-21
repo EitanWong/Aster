@@ -1,0 +1,7 @@
+{
+  "benchmark": {
+    "quiescence_admission": "rolling-window-enabled",
+    "rejected_windows": "all-retained",
+    "external_cpu_estimate": "child-normalized-sample-aligned"
+  }
+}

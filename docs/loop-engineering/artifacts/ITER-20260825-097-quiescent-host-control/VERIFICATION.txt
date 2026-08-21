@@ -1,0 +1,140 @@
+I097 TOOL TRANSACTION AND PERFORMANCE VERIFICATION
+
+Changed fields: benchmark.quiescence_admission,
+benchmark.rejected_windows, and benchmark.external_cpu_estimate.
+Changed branch: benchmark-only rolling host admission, complete timeout
+retention, and sample-aligned child-normalized external CPU estimation;
+production inference behavior and defaults remain unchanged.
+
+Artifact paths
+BASELINE_FILE: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/BASELINE_FILE
+MODIFIED_FILE: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/MODIFIED_FILE
+DIFF_FILE: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/DIFF_FILE
+VERIFICATION.txt: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/VERIFICATION.txt
+ROLLBACK.sh: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/ROLLBACK.sh
+ROLLBACK_COPY: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/ROLLBACK_COPY
+MODIFIED_FILE is intentionally left changed.
+
+BASELINE command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"] == {"quiescence_admission":"disabled","rejected_windows":"not-recorded","external_cpu_estimate":"not-recorded"}; print("assertion passed")' docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/BASELINE_FILE
+Input: {"benchmark":{"quiescence_admission":"disabled","rejected_windows":"not-recorded","external_cpu_estimate":"not-recorded"}}
+Literal output/result: assertion passed
+Exit status: 0
+
+MODIFIED command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"] == {"quiescence_admission":"rolling-window-enabled","rejected_windows":"all-retained","external_cpu_estimate":"child-normalized-sample-aligned"}; print("assertion passed; MODIFIED_FILE remains changed")' docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/MODIFIED_FILE
+Input: {"benchmark":{"quiescence_admission":"rolling-window-enabled","rejected_windows":"all-retained","external_cpu_estimate":"child-normalized-sample-aligned"}}
+Literal output/result: assertion passed; MODIFIED_FILE remains changed
+Exit status: 0
+
+ROLLBACK command
+Command: rtk proxy docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/ROLLBACK.sh docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/ROLLBACK_COPY
+Input before rollback: {"benchmark":{"quiescence_admission":"rolling-window-enabled","rejected_windows":"all-retained","external_cpu_estimate":"child-normalized-sample-aligned"}}
+Literal command output/result: no stdout
+Exit status: 0
+Verification command: rtk proxy .venv/bin/python -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data["benchmark"] == {"quiescence_admission":"disabled","rejected_windows":"not-recorded","external_cpu_estimate":"not-recorded"}; print(json.dumps(data,separators=(",",":")))' docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/ROLLBACK_COPY
+Literal verification output/result: {"benchmark":{"quiescence_admission":"disabled","rejected_windows":"not-recorded","external_cpu_estimate":"not-recorded"}}
+Verification exit status: 0
+Restored behavior/status: the separate rollback copy restores disabled
+admission, unrecorded rejected windows, and no external-CPU estimate;
+MODIFIED_FILE remains rolling-window-enabled/all-retained/child-normalized.
+
+Transaction hashes
+BASELINE_FILE SHA-256: 8f26f4dc813fbc2200d81de9a2cbc69a6973c7f4a25142e912983707948a0c75
+MODIFIED_FILE SHA-256: 9f940bb83f83ca8c72d573d83973aa800e523388cbfdf217536a0572743ddc71
+ROLLBACK_COPY SHA-256: 8f26f4dc813fbc2200d81de9a2cbc69a6973c7f4a25142e912983707948a0c75
+DIFF_FILE SHA-256: bff3399afb3a4983fb696af006a3c64c0d6e3e2f40866ea834f9ed0bac9119de
+ROLLBACK.sh SHA-256: 4fbe108d3b32c5bd956edfee03697df44d95940bcf473320a13850db3617e56b
+ROLLBACK.sh mode: -rwxr-xr-x
+
+Independent calibration
+Command: rtk proxy .venv/bin/python -c 'import json; from scripts.dev.host_state_telemetry import await_quiescent_host; r=await_quiescent_host(sample_interval_seconds=0.1,min_samples=20,max_wait_seconds=20.0,cpu_median_limit=6.0,cpu_p95_limit=12.0,memory_percent_floor=20.0); print(json.dumps({"status":r["status"],"timed_out":r["timed_out"],"wait_seconds":r["wait_seconds"],"sample_count":len(r["samples"]),"window_count":len(r["windows"]),"last_window":r["windows"][-1]},sort_keys=True))'
+Input/result scope: independent 20-second rolling-window calibration; it does
+not count as or replace a formal attempt.
+Literal output/result: {"last_window": {"cpu_median_percent": 18.65, "cpu_p95_percent": 26.110000000000003, "failure_reasons": ["cpu-median-above-limit", "cpu-p95-above-limit"], "memory_available_min_percent": 35.94315846761068, "passed": false, "sample_count": 20, "sample_end_index": 192, "sample_start_index": 173, "schema_version": 1, "swap_stable": true, "swap_used_after_bytes": 1961689088, "swap_used_before_bytes": 1961689088}, "sample_count": 193, "status": "timeout", "timed_out": true, "wait_seconds": 20.016489917004947, "window_count": 174}
+Exit status: 0
+
+Formal quiescent-host matrix
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_boundary_control.py --observer-matrix /tmp/aster-i094-long-final/matrix-i094.json --off-config /tmp/aster-i094-off.yaml --workload run/loop-engineering/public-benchmarks/cross-engine-core.json --lock docs/loop-engineering/benchmarks/public-dataset-lock.json --data-root run/loop-engineering/public-benchmarks --model-sha256 d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a --tokenizer-sha256 94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e --repetitions 4 --max-output-tokens 32 --cooldown-seconds 1 --idle-seconds 0 --telemetry-interval-seconds 0.05 --telemetry-probe-timeout-seconds 1.5 --enable-telemetry --paired-host-state --enable-quiescence --quiescence-sample-interval-seconds 0.1 --quiescence-window-samples 20 --quiescence-max-wait-seconds 120 --quiescence-cpu-median-limit 6 --quiescence-cpu-p95-limit 12 --quiescence-memory-percent-floor 20 --external-cpu-median-limit 6 --external-cpu-p95-limit 12 --process-timeout-seconds 600 --run-root /tmp/aster-i097-quiescent-final --output /tmp/aster-i097-quiescent-final/matrix-i097.json --iteration ITER-20260825-097-quiescent-host-control
+Input/result scope: locked Qwen3.5-9B model/tokenizer and public B4
+short/mixed records; planned observer-off/control-off x Aster/direct MLX-LM x
+four repetitions, with an independent rolling gate before every child.
+Literal output/result: measurement_status=invalid-quiescence-timeout;
+decision=reject-quiescence-timeout; planned=32; attempted=1; completed=0;
+remaining=31. The first planned direct-MLX-LM B4-short control row timed out
+before child launch; no retry or replacement row ran.
+Exit status: 0
+
+Formal timeout analysis
+Command: rtk proxy .venv/bin/python -c '[load the immutable formal artifact and print its predeclared timeout summary and SHA-256]'
+Literal output/result: {"artifact_bytes": 2628512, "artifact_sha256": "92042c9841029b4b887188e188ff9bcd1f15e18e368e49a2c85f62d6697649e8", "attempted": 1, "completed": 0, "cpu_all_median": 16.2, "cpu_all_p95_nearest_rank": 33.3, "decision": "reject-quiescence-timeout", "last_window": {"cpu_median_percent": 0.0, "cpu_p95_percent": 20.820000000000004, "failure_reasons": ["cpu-p95-above-limit"], "memory_available_min_percent": 35.47490437825521, "passed": false, "sample_count": 20, "sample_end_index": 1155, "sample_start_index": 1136, "schema_version": 1, "swap_stable": true, "swap_used_after_bytes": 1961689088, "swap_used_before_bytes": 1961689088}, "memory_min_percent": 35.09718577067057, "remaining": 31, "samples": 1156, "status": "invalid-quiescence-timeout", "swap_values": 1, "wait_seconds": 120.08462395900278, "window_min_median": 0.0, "window_min_p95": 17.025, "windows": 1137}
+Exit status: 0
+
+Evidence artifact
+Path: /Users/eitan/Documents/Projects/Python/Aster/docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/quiescent-host-control.json
+Size: 2628512 bytes
+SHA-256: 92042c9841029b4b887188e188ff9bcd1f15e18e368e49a2c85f62d6697649e8
+
+Performance result
+Primary metric: decode_driver_tps.
+Latest valid baseline: I096 observer-off -> control-off.
+- B4-short Aster: 74.262821 -> 76.051570 tok/s; paired +0.012%;
+  order strata +5.263%/-0.102%.
+- B4-short MLX-LM: 85.869765 -> 86.018931 tok/s; paired +0.748%;
+  order strata +0.370%/+1.674%.
+- B4-mixed Aster: 45.154499 -> 44.398127 tok/s; paired -1.492%;
+  order strata +0.186%/-4.459%.
+- B4-mixed MLX-LM: 66.207854 -> 67.737609 tok/s; paired +1.266%;
+  order strata +1.203%/+2.294%.
+I097 completed zero decode rows. Candidate TPS, absolute delta, relative delta,
+and order strata are null for all four engine/cell combinations. This is
+neither a speedup nor a slowdown. No runtime candidate or production change is
+admitted.
+
+Focused tests
+Command: rtk proxy .venv/bin/pytest -q tests/test_host_state_telemetry.py tests/test_decode_boundary_control.py tests/test_foundation_parity_benchmark.py
+Input: rolling admission, timeout retention, sample alignment, per-stratum
+external CPU, no-child timeout behavior, retained artifact recomputation, and
+the existing foundation/control boundaries.
+Literal output/result: 38 passed in 0.63s
+Exit status: 0
+
+Full suite
+Command: rtk proxy .venv/bin/pytest -q
+Literal output/result: 646 passed, 9 skipped, 1 warning in 8.41s
+Exit status: 0
+
+Static checks
+Command: rtk proxy .venv/bin/ruff check scripts/dev/benchmark_decode_boundary_control.py scripts/dev/host_state_telemetry.py tests/test_decode_boundary_control.py tests/test_host_state_telemetry.py
+Literal output/result: All checks passed!
+Exit status: 0
+Command: rtk proxy .venv/bin/ruff format --check scripts/dev/benchmark_decode_boundary_control.py scripts/dev/host_state_telemetry.py tests/test_decode_boundary_control.py tests/test_host_state_telemetry.py
+Literal output/result: 4 files already formatted
+Exit status: 0
+Command: rtk git diff --check
+Literal output/result: no output
+Exit status: 0
+Command: rtk proxy .venv/bin/python -c 'import json; json.load(open("docs/loop-engineering/artifacts/ITER-20260825-097-quiescent-host-control/quiescent-host-control.json")); print("artifact JSON parsed")'
+Literal output/result: artifact JSON parsed
+Exit status: 0
+
+Reference refresh verification
+Command family: rtk git -C PATH rev-parse HEAD origin/BRANCH; rtk git -C PATH status --porcelain
+Input: all 20 configured gitlinks and the four documented local-only working
+copies, each against its declared or checked-out upstream branch.
+Literal output/result: configured_verified=20 mismatches=0;
+local_only_verified=4 mismatches=0
+Exit status: 0
+Restored/current status: all 24 reference working copies are clean and match
+their fetched official branch tips. Rapid-MLX is 51e5b47b, vLLM is ba07e4a4,
+vllm-metal is aa6d9611, and the newly added Apache-2.0 mlxcel reference is
+fdc19666.
+
+Workspace audit
+Command: rtk proxy .venv/bin/python scripts/dev/check_loop_workspace.py --strict
+Literal output/result: Workspace health WARN; HEAD 09345306b065; active
+ITER-20260825-097-quiescent-host-control (baseline); 23 changes (2 staged,
+13 unstaged, 8 untracked); 7 artifact files / 2.52 MiB; debt growth 0 files /
+0 artifacts; 4 reference paths; 0 mixed-index paths; 24 generated caches;
+warnings reference-updates and generated-caches; no blockers.
+Exit status: 0

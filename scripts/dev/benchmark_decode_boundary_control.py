@@ -20,12 +20,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FOUNDATION_PATH = PROJECT_ROOT / "scripts/dev/benchmark_foundation_parity.py"
 OBSERVER_PATH = PROJECT_ROOT / "scripts/dev/benchmark_decode_observer.py"
 TELEMETRY_PATH = PROJECT_ROOT / "scripts/dev/host_state_telemetry.py"
-DEFAULT_ITERATION = "ITER-20260824-096-host-state-trace"
+DEFAULT_ITERATION = "ITER-20260825-097-quiescent-host-control"
 CELLS = ("b4-short", "b4-mixed")
 ENGINES = ("aster", "mlx-lm")
 STATES = ("observer-off", "control-off")
 PRIMARY_METRIC = "decode_driver_tps"
 CONTROL_THRESHOLD = 0.01
+QUIESCENCE_CPU_MEDIAN_LIMIT = 6.0
+QUIESCENCE_CPU_P95_LIMIT = 12.0
+QUIESCENCE_MEMORY_PERCENT_FLOOR = 20.0
+EXTERNAL_CPU_MEDIAN_LIMIT = 6.0
+EXTERNAL_CPU_P95_LIMIT = 12.0
+EXTERNAL_CPU_FORMULA = "max(0, system_cpu_percent - child_cpu_percent / logical_cpu_count)"
 HOST_STATE_FEATURES = (
     "child_cpu_percent_avg",
     "child_cpu_percent_max",
@@ -244,6 +250,92 @@ def _telemetry_contract(row: dict[str, Any]) -> bool:
     )
 
 
+def _quiescence_contract(row: dict[str, Any]) -> bool:
+    admission = row.get("host_admission")
+    if not isinstance(admission, dict):
+        return False
+    if admission.get("status") != "admitted" or admission.get("timed_out") is not False:
+        return False
+    policy = admission.get("policy")
+    samples = admission.get("samples")
+    windows = admission.get("windows")
+    admitted = admission.get("admitted_window")
+    if not isinstance(policy, dict) or not isinstance(admitted, dict):
+        return False
+    if not isinstance(samples, list) or not samples:
+        return False
+    if not isinstance(windows, list) or not windows or windows[-1] != admitted:
+        return False
+    if admitted.get("passed") is not True:
+        return False
+    window_samples = int(policy.get("window_samples", 0))
+    if window_samples <= 0 or int(admitted.get("sample_count", 0)) != window_samples:
+        return False
+    if float(admitted.get("cpu_median_percent", math.inf)) > float(
+        policy.get("cpu_median_limit", -1.0)
+    ):
+        return False
+    if float(admitted.get("cpu_p95_percent", math.inf)) > float(policy.get("cpu_p95_limit", -1.0)):
+        return False
+    if float(admitted.get("memory_available_min_percent", -1.0)) < float(
+        policy.get("memory_percent_floor", math.inf)
+    ):
+        return False
+    if admitted.get("swap_stable") is not True:
+        return False
+
+    telemetry = row.get("telemetry")
+    process = telemetry.get("process") if isinstance(telemetry, dict) else None
+    if not isinstance(process, dict) or process.get("status") != "complete":
+        return False
+    logical_cpu_count = int(process.get("logical_cpu_count", 0))
+    process_samples = process.get("samples")
+    if logical_cpu_count <= 0 or not isinstance(process_samples, list) or not process_samples:
+        return False
+    if len(process_samples) != int(process.get("sample_count", 0)):
+        return False
+    if process.get("external_cpu_formula") != EXTERNAL_CPU_FORMULA:
+        return False
+    computed_external: list[float] = []
+    for sample in process_samples:
+        try:
+            system_cpu = float(sample["system_cpu_percent"])
+            child_cpu = float(sample["cpu_percent"])
+            reported_external = float(sample["estimated_external_cpu_percent"])
+        except (KeyError, TypeError, ValueError):
+            return False
+        if not all(math.isfinite(value) and value >= 0.0 for value in (system_cpu, child_cpu)):
+            return False
+        expected_external = max(0.0, system_cpu - child_cpu / logical_cpu_count)
+        if not math.isfinite(reported_external) or not math.isclose(
+            reported_external,
+            expected_external,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            return False
+        computed_external.append(reported_external)
+    external_median = float(process.get("estimated_external_cpu_percent_median", math.nan))
+    external_p95 = float(process.get("estimated_external_cpu_percent_p95", math.nan))
+    return (
+        math.isfinite(external_median)
+        and math.isfinite(external_p95)
+        and 0.0 <= external_median <= external_p95
+        and math.isclose(
+            external_median,
+            float(statistics.median(computed_external)),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+        and math.isclose(
+            external_p95,
+            _percentile(computed_external, 0.95),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+    )
+
+
 def _allocator_contract(row: dict[str, Any]) -> bool:
     lifecycle = _unwrap(row).get("lifecycle")
     if not isinstance(lifecycle, dict):
@@ -309,6 +401,119 @@ def _pearson(values: list[tuple[float, float]]) -> float | None:
     if scale_x == 0.0 or scale_y == 0.0:
         return None
     return numerator / (scale_x * scale_y)
+
+
+def _percentile(values: list[float], quantile: float) -> float:
+    if not values:
+        raise ValueError("percentile requires at least one value")
+    ordered = sorted(float(value) for value in values)
+    position = (len(ordered) - 1) * quantile
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    fraction = position - lower
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction
+
+
+def _quiescence_diagnostics(
+    rows: list[dict[str, Any]],
+    *,
+    repetitions: int,
+    expected_policy: dict[str, float | int],
+    external_cpu_median_limit: float,
+    external_cpu_p95_limit: float,
+) -> dict[str, Any]:
+    expected_keys = {
+        (cell, engine, state) for cell in CELLS for engine in ENGINES for state in STATES
+    }
+    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {key: [] for key in expected_keys}
+    admitted_count = 0
+    timeout_count = 0
+    rejected_window_count = 0
+    total_wait_seconds = 0.0
+    policy_consistent = True
+    for row in rows:
+        key = (str(row["cell"]), str(row["engine"]), str(row["state"]))
+        if key not in grouped:
+            policy_consistent = False
+            continue
+        grouped[key].append(row)
+        admission = row.get("host_admission", {})
+        if admission.get("status") == "admitted":
+            admitted_count += 1
+        if admission.get("timed_out") is True:
+            timeout_count += 1
+        total_wait_seconds += float(admission.get("wait_seconds", 0.0))
+        rejected_window_count += sum(
+            window.get("passed") is not True for window in admission.get("windows", [])
+        )
+        policy = admission.get("policy")
+        if not isinstance(policy, dict):
+            policy_consistent = False
+            continue
+        for field, expected in expected_policy.items():
+            actual = policy.get(field)
+            try:
+                matches = (
+                    math.isclose(float(actual), expected, rel_tol=0.0, abs_tol=1e-12)
+                    if isinstance(expected, float)
+                    else int(actual) == expected
+                )
+            except (TypeError, ValueError):
+                matches = False
+            policy_consistent = policy_consistent and matches
+
+    strata: dict[str, dict[str, dict[str, Any]]] = {
+        cell: {engine: {} for engine in ENGINES} for cell in CELLS
+    }
+    external_cpu_contract = True
+    for cell, engine, state in sorted(expected_keys):
+        scoped_rows = grouped[(cell, engine, state)]
+        values = [
+            float(sample["estimated_external_cpu_percent"])
+            for row in scoped_rows
+            for sample in row.get("telemetry", {}).get("process", {}).get("samples", [])
+            if sample.get("estimated_external_cpu_percent") is not None
+        ]
+        row_count_ok = len(scoped_rows) == repetitions
+        if values:
+            external_median = float(statistics.median(values))
+            external_p95 = _percentile(values, 0.95)
+            passed = (
+                row_count_ok
+                and external_median <= external_cpu_median_limit
+                and external_p95 <= external_cpu_p95_limit
+            )
+        else:
+            external_median = None
+            external_p95 = None
+            passed = False
+        external_cpu_contract = external_cpu_contract and passed
+        strata[cell][engine][state] = {
+            "row_count": len(scoped_rows),
+            "sample_count": len(values),
+            "median_percent": external_median,
+            "p95_percent": external_p95,
+            "passed": passed,
+        }
+    return {
+        "status": "complete" if policy_consistent else "invalid-policy",
+        "row_count": len(rows),
+        "admitted_row_count": admitted_count,
+        "timeout_row_count": timeout_count,
+        "rejected_window_count": rejected_window_count,
+        "total_wait_seconds": total_wait_seconds,
+        "policy_consistent": policy_consistent,
+        "expected_policy": expected_policy,
+        "external_cpu_formula": (
+            "max(0, system_cpu_percent - child_cpu_percent / logical_cpu_count)"
+        ),
+        "external_cpu_limits": {
+            "median_percent": external_cpu_median_limit,
+            "p95_percent": external_cpu_p95_limit,
+        },
+        "external_cpu_strata": strata,
+        "external_cpu_contract": external_cpu_contract,
+    }
 
 
 def _host_state_diagnostics(
@@ -459,12 +664,23 @@ def summarize_control(
     repetitions: int,
     expected_max_output_tokens: int,
     require_telemetry: bool = False,
+    require_quiescence: bool = False,
+    quiescence_sample_interval_seconds: float = 0.1,
+    quiescence_window_samples: int = 20,
+    quiescence_max_wait_seconds: float = 120.0,
+    quiescence_cpu_median_limit: float = QUIESCENCE_CPU_MEDIAN_LIMIT,
+    quiescence_cpu_p95_limit: float = QUIESCENCE_CPU_P95_LIMIT,
+    quiescence_memory_percent_floor: float = QUIESCENCE_MEMORY_PERCENT_FLOOR,
+    external_cpu_median_limit: float = EXTERNAL_CPU_MEDIAN_LIMIT,
+    external_cpu_p95_limit: float = EXTERNAL_CPU_P95_LIMIT,
     observer_reference_rows: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Validate off/off controls and separate control noise from observer deltas."""
 
     if repetitions < 2 or repetitions % 2:
         raise ValueError("control repetitions must be an even count of at least two")
+    if require_quiescence and not require_telemetry:
+        raise ValueError("quiescence requires telemetry")
     expected = {
         (cell, repetition, engine)
         for cell in CELLS
@@ -486,6 +702,8 @@ def summarize_control(
     prewarm_ok = True
     telemetry_ok = True
     allocator_ok = True
+    quiescence_ok = True
+    quiescence_rows: list[dict[str, Any]] = []
     comparable_rows: list[dict[str, Any]] = []
     deltas: dict[str, dict[str, list[dict[str, Any]]]] = {
         cell: {engine: [] for engine in ENGINES} for cell in CELLS
@@ -536,6 +754,13 @@ def summarize_control(
         allocator_ok = (
             allocator_ok and _allocator_contract(baseline_row) and _allocator_contract(control_row)
         )
+        if require_quiescence:
+            quiescence_rows.extend((baseline_row, control_row))
+            quiescence_ok = (
+                quiescence_ok
+                and _quiescence_contract(baseline_row)
+                and _quiescence_contract(control_row)
+            )
         if baseline.get("plan_sha256") != control.get("plan_sha256"):
             raise ValueError(f"control plan differs for {cell}/{repetition}/{engine}")
         if baseline.get("input_manifest_sha256") != control.get("input_manifest_sha256"):
@@ -578,6 +803,31 @@ def summarize_control(
                 abs(value) <= CONTROL_THRESHOLD for value in order_strata[cell][engine].values()
             )
 
+    expected_quiescence_policy: dict[str, float | int] = {
+        "sample_interval_seconds": quiescence_sample_interval_seconds,
+        "window_samples": quiescence_window_samples,
+        "max_wait_seconds": quiescence_max_wait_seconds,
+        "cpu_median_limit": quiescence_cpu_median_limit,
+        "cpu_p95_limit": quiescence_cpu_p95_limit,
+        "memory_percent_floor": quiescence_memory_percent_floor,
+    }
+    quiescence_diagnostics = (
+        _quiescence_diagnostics(
+            quiescence_rows,
+            repetitions=repetitions,
+            expected_policy=expected_quiescence_policy,
+            external_cpu_median_limit=external_cpu_median_limit,
+            external_cpu_p95_limit=external_cpu_p95_limit,
+        )
+        if require_quiescence
+        else None
+    )
+    if quiescence_diagnostics is not None:
+        quiescence_ok = quiescence_ok and bool(quiescence_diagnostics["policy_consistent"])
+        external_cpu_ok = bool(quiescence_diagnostics["external_cpu_contract"])
+    else:
+        external_cpu_ok = True
+
     structural = (
         source_comparable
         and exact_output
@@ -589,20 +839,26 @@ def summarize_control(
         and prewarm_ok
         and (telemetry_ok if require_telemetry else True)
         and (allocator_ok if require_telemetry else True)
+        and (quiescence_ok if require_quiescence else True)
+        and (external_cpu_ok if require_quiescence else True)
     )
     observer_effect = _observer_effect(
         foundation,
         observer_reference_rows if observer_reference_rows is not None else baseline_rows,
         repetitions=repetitions,
     )
+    if require_quiescence and not quiescence_ok:
+        decision = "reject-quiescence-contract"
+    elif require_quiescence and not external_cpu_ok:
+        decision = "reject-external-load"
+    elif control_stable and structural:
+        decision = "classify-boundary-no-production-change"
+    else:
+        decision = "reject-control-variance"
     summary = {
         "measurement_status": "valid" if structural else "invalid-contract",
         "candidate_admitted": False,
-        "decision": (
-            "classify-boundary-no-production-change"
-            if control_stable and structural
-            else "reject-control-variance"
-        ),
+        "decision": decision,
         "primary_metric": PRIMARY_METRIC,
         "control_threshold_ratio": CONTROL_THRESHOLD,
         "control_contract": structural,
@@ -626,6 +882,10 @@ def summarize_control(
             if telemetry_ok and allocator_ok
             else {"status": "invalid-contract"}
         )
+    if require_quiescence:
+        summary["quiescence_contract"] = quiescence_ok
+        summary["external_cpu_contract"] = external_cpu_ok
+        summary["quiescence_diagnostics"] = quiescence_diagnostics
     return summary
 
 
@@ -659,6 +919,44 @@ def _run_control_row(
     if args.idle_seconds > 0:
         time.sleep(args.idle_seconds)
     idle_elapsed = time.monotonic() - idle_started
+    host_admission: dict[str, Any] | None = None
+    if args.enable_quiescence:
+        if telemetry_module is None:
+            raise ValueError("quiescence requires a telemetry module")
+        host_admission = telemetry_module.await_quiescent_host(
+            sample_interval_seconds=args.quiescence_sample_interval_seconds,
+            min_samples=args.quiescence_window_samples,
+            max_wait_seconds=args.quiescence_max_wait_seconds,
+            cpu_median_limit=args.quiescence_cpu_median_limit,
+            cpu_p95_limit=args.quiescence_cpu_p95_limit,
+            memory_percent_floor=args.quiescence_memory_percent_floor,
+        )
+        if host_admission["timed_out"]:
+            row = {
+                "cell": cell,
+                "repetition": repetition,
+                "state": state,
+                "engine": engine,
+                "state_first": state_first,
+                "control_protocol": {
+                    "config_state": "observer-off",
+                    "process_isolation": "fresh-process",
+                    "prewarm": "foundation-declared-warmup",
+                    "order": "alternating-observer-off-control-off",
+                    "idle_seconds_requested": args.idle_seconds,
+                    "idle_seconds_observed": idle_elapsed,
+                    "host_admission": "quiescence-timeout-no-child-launched",
+                },
+                "host_admission": host_admission,
+            }
+            return row, {
+                "cell": cell,
+                "repetition": repetition,
+                "state": state,
+                "engine": engine,
+                "status": "quiescence-timeout",
+                "source_path": None,
+            }
     if telemetry_module is None:
         completed = subprocess.run(
             command,
@@ -722,7 +1020,11 @@ def _run_control_row(
             "order": "alternating-observer-off-control-off",
             "idle_seconds_requested": args.idle_seconds,
             "idle_seconds_observed": idle_elapsed,
+            "host_admission": (
+                "rolling-quiescence-window" if host_admission is not None else "disabled"
+            ),
         },
+        **({"host_admission": host_admission} if host_admission is not None else {}),
         **({"telemetry": telemetry} if telemetry is not None else {}),
         "source_path": str(output),
         "source_file_sha256": sha256(output),
@@ -767,6 +1069,90 @@ def _load_control_row(
         "engine": engine,
         "status": 0,
         "source_path": str(output),
+    }
+
+
+def _evidence_kind(args: argparse.Namespace) -> str:
+    if args.enable_quiescence:
+        return "decode-boundary-quiescent-host-control-evidence"
+    if args.paired_host_state:
+        return "decode-boundary-host-state-evidence"
+    return "decode-boundary-control-evidence"
+
+
+def _execution_metadata(
+    args: argparse.Namespace,
+    observer_payload: dict[str, Any],
+    thermal_power: dict[str, Any] | None,
+    collection: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "cells": list(CELLS),
+        "engines": list(ENGINES),
+        "states": list(STATES),
+        "repetitions": args.repetitions,
+        "max_output_tokens": args.max_output_tokens,
+        "observer_matrix_expected_sample_interval": int(
+            observer_payload["execution"]["expected_sample_interval"]
+        ),
+        "control_order": "alternating observer-off/control-off first",
+        "process_isolation": "fresh-process",
+        "prewarm": "foundation-declared-warmup",
+        "off_config": str(args.off_config),
+        "cooldown_seconds": args.cooldown_seconds,
+        "idle_seconds": args.idle_seconds,
+        "telemetry_enabled": args.enable_telemetry,
+        "telemetry_interval_seconds": args.telemetry_interval_seconds,
+        "telemetry_probe_timeout_seconds": args.telemetry_probe_timeout_seconds,
+        "paired_host_state": args.paired_host_state,
+        "quiescence_enabled": args.enable_quiescence,
+        "quiescence_policy": {
+            "sample_interval_seconds": args.quiescence_sample_interval_seconds,
+            "window_samples": args.quiescence_window_samples,
+            "max_wait_seconds": args.quiescence_max_wait_seconds,
+            "cpu_median_limit": args.quiescence_cpu_median_limit,
+            "cpu_p95_limit": args.quiescence_cpu_p95_limit,
+            "memory_percent_floor": args.quiescence_memory_percent_floor,
+        },
+        "external_cpu_limits": {
+            "median_percent": args.external_cpu_median_limit,
+            "p95_percent": args.external_cpu_p95_limit,
+        },
+        "thermal_power_capability": thermal_power,
+        "collection_statuses": collection,
+    }
+
+
+def _timeout_summary(
+    args: argparse.Namespace,
+    rows: list[dict[str, Any]],
+    collection: list[dict[str, Any]],
+) -> dict[str, Any]:
+    planned = (
+        args.repetitions
+        * len(CELLS)
+        * len(ENGINES)
+        * (len(STATES) if args.paired_host_state else 1)
+    )
+    timeout_rows = [row for row in rows if row.get("host_admission", {}).get("timed_out")]
+    return {
+        "measurement_status": "invalid-quiescence-timeout",
+        "candidate_admitted": False,
+        "decision": "reject-quiescence-timeout",
+        "primary_metric": PRIMARY_METRIC,
+        "control_threshold_ratio": CONTROL_THRESHOLD,
+        "control_contract": False,
+        "telemetry_contract": False,
+        "allocator_contract": False,
+        "quiescence_contract": False,
+        "external_cpu_contract": False,
+        "planned_row_count": planned,
+        "attempted_row_count": len(rows),
+        "completed_row_count": sum("result" in row for row in rows),
+        "timeout_row_count": len(timeout_rows),
+        "timeout_rows": timeout_rows,
+        "collection_statuses": collection,
+        "remaining_rows_not_started": planned - len(rows),
     }
 
 
@@ -835,6 +1221,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                         )
                     rows.append(row)
                     collection.append(record)
+                    if record["status"] == "quiescence-timeout":
+                        return {
+                            "schema_version": 1,
+                            "kind": _evidence_kind(args),
+                            "iteration": args.iteration,
+                            "created_at": datetime.now(UTC).isoformat(),
+                            "baseline_matrix_path": str(args.observer_matrix),
+                            "baseline_matrix_sha256": sha256(args.observer_matrix),
+                            "execution": _execution_metadata(
+                                args, observer_payload, thermal_power, collection
+                            ),
+                            "source": observer_payload.get("source", {}),
+                            "summary": _timeout_summary(args, rows, collection),
+                            "observer_reference_rows": baseline_rows,
+                            "paired_baseline_rows": paired_baseline_rows,
+                            "paired_control_rows": paired_control_rows,
+                            "rows": rows,
+                        }
                     if state == "observer-off":
                         paired_baseline_rows.append(row)
                     else:
@@ -849,42 +1253,26 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         repetitions=args.repetitions,
         expected_max_output_tokens=args.max_output_tokens,
         require_telemetry=args.enable_telemetry,
+        require_quiescence=args.enable_quiescence,
+        quiescence_sample_interval_seconds=args.quiescence_sample_interval_seconds,
+        quiescence_window_samples=args.quiescence_window_samples,
+        quiescence_max_wait_seconds=args.quiescence_max_wait_seconds,
+        quiescence_cpu_median_limit=args.quiescence_cpu_median_limit,
+        quiescence_cpu_p95_limit=args.quiescence_cpu_p95_limit,
+        quiescence_memory_percent_floor=args.quiescence_memory_percent_floor,
+        external_cpu_median_limit=args.external_cpu_median_limit,
+        external_cpu_p95_limit=args.external_cpu_p95_limit,
         observer_reference_rows=baseline_rows if args.paired_host_state else None,
     )
     first = _unwrap(rows[0])
     return {
         "schema_version": 1,
-        "kind": (
-            "decode-boundary-host-state-evidence"
-            if args.paired_host_state
-            else "decode-boundary-control-evidence"
-        ),
+        "kind": _evidence_kind(args),
         "iteration": args.iteration,
         "created_at": datetime.now(UTC).isoformat(),
         "baseline_matrix_path": str(args.observer_matrix),
         "baseline_matrix_sha256": sha256(args.observer_matrix),
-        "execution": {
-            "cells": list(CELLS),
-            "engines": list(ENGINES),
-            "states": list(STATES),
-            "repetitions": args.repetitions,
-            "max_output_tokens": args.max_output_tokens,
-            "observer_matrix_expected_sample_interval": int(
-                observer_payload["execution"]["expected_sample_interval"]
-            ),
-            "control_order": "alternating observer-off/control-off first",
-            "process_isolation": "fresh-process",
-            "prewarm": "foundation-declared-warmup",
-            "off_config": str(args.off_config),
-            "cooldown_seconds": args.cooldown_seconds,
-            "idle_seconds": args.idle_seconds,
-            "telemetry_enabled": args.enable_telemetry,
-            "telemetry_interval_seconds": args.telemetry_interval_seconds,
-            "telemetry_probe_timeout_seconds": args.telemetry_probe_timeout_seconds,
-            "paired_host_state": args.paired_host_state,
-            "thermal_power_capability": thermal_power,
-            "collection_statuses": collection,
-        },
+        "execution": _execution_metadata(args, observer_payload, thermal_power, collection),
         "source": first["source"],
         "summary": summary,
         "observer_reference_rows": baseline_rows,
@@ -914,6 +1302,23 @@ def main() -> None:
     parser.add_argument("--telemetry-probe-timeout-seconds", type=float, default=1.5)
     parser.add_argument("--enable-telemetry", action="store_true")
     parser.add_argument("--paired-host-state", action="store_true")
+    parser.add_argument("--enable-quiescence", action="store_true")
+    parser.add_argument("--quiescence-sample-interval-seconds", type=float, default=0.1)
+    parser.add_argument("--quiescence-window-samples", type=int, default=20)
+    parser.add_argument("--quiescence-max-wait-seconds", type=float, default=120.0)
+    parser.add_argument(
+        "--quiescence-cpu-median-limit", type=float, default=QUIESCENCE_CPU_MEDIAN_LIMIT
+    )
+    parser.add_argument("--quiescence-cpu-p95-limit", type=float, default=QUIESCENCE_CPU_P95_LIMIT)
+    parser.add_argument(
+        "--quiescence-memory-percent-floor",
+        type=float,
+        default=QUIESCENCE_MEMORY_PERCENT_FLOOR,
+    )
+    parser.add_argument(
+        "--external-cpu-median-limit", type=float, default=EXTERNAL_CPU_MEDIAN_LIMIT
+    )
+    parser.add_argument("--external-cpu-p95-limit", type=float, default=EXTERNAL_CPU_P95_LIMIT)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--iteration", default=DEFAULT_ITERATION)
@@ -935,6 +1340,27 @@ def main() -> None:
         raise ValueError("idle seconds must be non-negative and telemetry interval positive")
     if args.telemetry_probe_timeout_seconds <= 0:
         raise ValueError("telemetry probe timeout must be positive")
+    if args.enable_quiescence and not (args.enable_telemetry and args.paired_host_state):
+        raise ValueError("quiescence requires telemetry and paired host-state rows")
+    if args.enable_quiescence and args.reuse_existing:
+        raise ValueError("quiescence cannot reuse rows without retained admission evidence")
+    if (
+        args.quiescence_sample_interval_seconds <= 0
+        or args.quiescence_window_samples <= 0
+        or args.quiescence_max_wait_seconds <= 0
+    ):
+        raise ValueError("quiescence interval, window, and maximum wait must be positive")
+    if (
+        args.quiescence_cpu_median_limit < 0
+        or args.quiescence_cpu_p95_limit < args.quiescence_cpu_median_limit
+        or not 0 < args.quiescence_memory_percent_floor <= 100
+    ):
+        raise ValueError("quiescence thresholds are invalid")
+    if (
+        args.external_cpu_median_limit < 0
+        or args.external_cpu_p95_limit < args.external_cpu_median_limit
+    ):
+        raise ValueError("external CPU thresholds are invalid")
     args.fingerprint = {
         "model_sha256": args.model_sha256,
         "tokenizer_sha256": args.tokenizer_sha256,

@@ -74,3 +74,7 @@
 	path = examples/S2-MoE
 	url = https://github.com/angerybob/S2-MoE.git
 	branch = orin
+[submodule "examples/mlxcel"]
+	path = examples/mlxcel
+	url = https://github.com/lablup/mlxcel.git
+	branch = main

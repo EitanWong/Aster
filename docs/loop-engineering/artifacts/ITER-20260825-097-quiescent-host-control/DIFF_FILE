@@ -1,0 +1,13 @@
+--- BASELINE_FILE
++++ MODIFIED_FILE
+@@ -1,7 +1,7 @@
+ {
+   "benchmark": {
+-    "quiescence_admission": "disabled",
+-    "rejected_windows": "not-recorded",
+-    "external_cpu_estimate": "not-recorded"
++    "quiescence_admission": "rolling-window-enabled",
++    "rejected_windows": "all-retained",
++    "external_cpu_estimate": "child-normalized-sample-aligned"
+   }
+ }

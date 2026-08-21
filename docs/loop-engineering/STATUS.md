@@ -8,7 +8,7 @@ Updated: 2026-08-21
 
 - Canonical current state: `docs/loop-engineering/CURRENT.json`.
 - Operating contract: `docs/loop-engineering/ITERATION_PROTOCOL.md`.
-- Last completed iteration: 096. Active iteration: 097, phase `baseline`.
+- Last completed iteration: 097. Active iteration: 098, phase `baseline`.
 - I090 closes the current Qwen3.5-9B foundation screen with a recomputable
   32-row, four-repetition performance ledger. Relative to direct/model-native
   MLX-LM, Aster's paired median decode-driver deficit is `+36.322%` at B4
@@ -82,6 +82,15 @@ Updated: 2026-08-21
   CPU deltas correlate with decode deltas but include the inference child, so
   no runtime owner or production change is admitted. I097 now pre-registers a
   rolling quiescence barrier and retains every admission timeout.
+- I097 implemented that benchmark-only barrier and exercised its sole formal
+  attempt without changing the preregistered limits. The first planned row
+  retained 1,156 samples and 1,137 rejected windows over `120.084624s`; CPU
+  median/p95 across the wait were `16.2%/33.3%`, and the minimum rolling p95
+  was `17.025%` against a `12%` ceiling. Memory remained above `35.097%` and
+  swap was unchanged. No inference child launched, so candidate TPS and all
+  deltas are `null`, not a slowdown or speedup. I098 now tests independently
+  owned same-process AB/BA decode blocks; failure makes a headless host a hard
+  prerequisite for further performance attribution.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.

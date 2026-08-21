@@ -70,3 +70,99 @@ def test_sampler_rejects_non_positive_interval() -> None:
 
     with pytest.raises(ValueError, match="interval"):
         telemetry.ProcessTelemetrySampler(1, interval_seconds=0)
+
+
+def _quiescence_sample(*, cpu: float = 4.0, memory: float = 80.0, swap: int = 10) -> dict:
+    return {
+        "captured_monotonic": 1.0,
+        "system_cpu_percent": cpu,
+        "system_available_memory_percent": memory,
+        "system_swap_used_bytes": swap,
+    }
+
+
+def test_quiescence_window_requires_cpu_memory_and_stable_swap() -> None:
+    telemetry = load_telemetry()
+
+    passed = telemetry.summarize_quiescence_window(
+        [_quiescence_sample() for _ in range(20)],
+        min_samples=20,
+        cpu_median_limit=6.0,
+        cpu_p95_limit=12.0,
+        memory_percent_floor=20.0,
+    )
+
+    assert passed["passed"] is True
+    assert passed["sample_count"] == 20
+    assert passed["cpu_median_percent"] == 4.0
+    assert passed["cpu_p95_percent"] == 4.0
+    assert passed["memory_available_min_percent"] == 80.0
+    assert passed["swap_stable"] is True
+    assert passed["failure_reasons"] == []
+
+    failed = telemetry.summarize_quiescence_window(
+        [_quiescence_sample(cpu=20.0, memory=10.0, swap=index) for index in range(20)],
+        min_samples=20,
+        cpu_median_limit=6.0,
+        cpu_p95_limit=12.0,
+        memory_percent_floor=20.0,
+    )
+
+    assert failed["passed"] is False
+    assert failed["swap_stable"] is False
+    assert failed["failure_reasons"] == [
+        "cpu-median-above-limit",
+        "cpu-p95-above-limit",
+        "memory-below-floor",
+        "swap-changed",
+    ]
+
+
+def test_await_quiescent_host_retains_rejected_and_admitted_windows() -> None:
+    telemetry = load_telemetry()
+    samples = iter(
+        [_quiescence_sample(cpu=20.0) for _ in range(20)]
+        + [_quiescence_sample(cpu=4.0) for _ in range(20)]
+    )
+
+    result = telemetry.await_quiescent_host(
+        sample_interval_seconds=0.0,
+        min_samples=20,
+        max_wait_seconds=1.0,
+        sample_fn=lambda: next(samples),
+        sleep_fn=lambda _: None,
+    )
+
+    assert result["status"] == "admitted"
+    assert len(result["samples"]) == 39
+    assert len(result["windows"]) == 20
+    assert result["windows"][0]["passed"] is False
+    assert result["windows"][-1]["passed"] is True
+    assert result["admitted_window"]["sample_start_index"] == 19
+
+
+def test_await_quiescent_host_retains_timeout_without_replacement() -> None:
+    telemetry = load_telemetry()
+
+    result = telemetry.await_quiescent_host(
+        sample_interval_seconds=0.0,
+        min_samples=2,
+        max_wait_seconds=0.0,
+        sample_fn=lambda: _quiescence_sample(cpu=20.0),
+        sleep_fn=lambda _: None,
+    )
+
+    assert result["status"] == "timeout"
+    assert result["timed_out"] is True
+    assert result["samples"]
+    assert result["windows"]
+    assert result["admitted_window"] is None
+
+
+def test_external_cpu_estimate_is_sample_aligned_and_clamped() -> None:
+    telemetry = load_telemetry()
+
+    assert telemetry.estimate_external_cpu_percent(20.0, 100.0, 10) == 10.0
+    assert telemetry.estimate_external_cpu_percent(20.0, 300.0, 10) == 0.0
+    with pytest.raises(ValueError, match="logical CPU"):
+        telemetry.estimate_external_cpu_percent(20.0, 1.0, 0)

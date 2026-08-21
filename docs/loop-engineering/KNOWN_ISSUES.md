@@ -1,5 +1,14 @@
 # Known Issues
 
+- I097 proves that the current desktop session cannot satisfy the preregistered
+  launch-quiescence contract. The first formal row waited `120.084624s`,
+  retained 1,156 samples / 1,137 rejected windows, and never launched a child.
+  Whole-wait CPU median/p95 were `16.2%/33.3%`; the minimum rolling p95 was
+  `17.025%` against the `12%` ceiling. Memory stayed above `35.097%` and swap
+  was stable. The matrix is `invalid-quiescence-timeout`, with zero performance
+  rows and null candidate/delta fields. Thresholds cannot be relaxed after the
+  result. I098 must either stabilize independently owned same-process AB/BA
+  decode controls within `1%` or require a dedicated headless benchmark host.
 - I096 captures complete host/process/allocator telemetry for 32 same-session
   off/off fresh processes, but the decode control remains unstable. Absolute
   medians move `74.262821 -> 76.051570` tok/s (B4-short Aster),
@@ -7,8 +16,7 @@
   (mixed Aster), and `66.207854 -> 67.737609` (mixed MLX-LM). Every cell has
   an order stratum outside `1%`; individual Aster deltas reach `+10.824%` and
   `-7.159%`. Total-system CPU is correlated with timing but includes the child,
-  so it cannot identify external load. I097 must gate pre-launch quiescence and
-  retain all timeouts before another runtime owner is selected.
+  so it cannot identify external load.
 - I095 confirms a fresh-process control-state confound at the common decode
   boundary. In a locked 32-token B4 matrix, all 16 off/off rows preserve exact
   output/finish, clean terminal state, zero fallback, declared warmup, and zero

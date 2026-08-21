@@ -59,6 +59,18 @@ Current upstream changes also sharpen the eventual speculation contract:
   SWA hybrid radix caching, and restores finite top-k sampling-mask checks.
   These remain distributed/CUDA ownership references, not Aster code sources.
 
+### Persistent-Load And Native Runtime Intake
+
+I097 adds [mlxcel](https://github.com/lablup/mlxcel) at `fdc19666` as an
+Apache-2.0 local reference. Its current source uses four bounded profiling
+requests before persisting a target/drafter/hardware MTP verdict, measures
+classic versus speculative cost instead of assuming a verify multiplier,
+tests block-vs-chain logits over multiple inputs and fails closed on any
+divergence, applies independent per-row acceptance/budget semantics, and plans
+paged-decode CTA chunks from the live page-count distribution. These are
+measurement, exactness, and scheduling contracts for study; they do not admit
+MTP or a new Aster backend.
+
 ### Paper Watchlist
 
 | Paper | Signal for Aster | Status |
@@ -81,6 +93,11 @@ Current upstream changes also sharpen the eventual speculation contract:
 | [LibraSpec](https://arxiv.org/abs/2608.08721) | Diffusion-based speculative decoding with marginal-gain scheduling | Watch-only speculation research; requires a compatible draft/head, rollback, and mixed-load gates. |
 | [HYMELL](https://arxiv.org/abs/2608.06723) | Current memory/efficiency direction for language-model serving | Paper watch; no verified local implementation or transferable claim yet. |
 | [DBLAST](https://arxiv.org/abs/2608.05448) | Current decoding/serving research direction | Paper watch; mechanism and hardware assumptions require primary-source reproduction before use. |
+| [MemSpec](https://arxiv.org/abs/2608.10362) | Separates draft selection from memory residency and manages a proactive resident working set on constrained edge hardware | Useful future scheduling contract; Jetson/draft-switching evidence does not bypass Aster's foundation or Apple rollback gates. |
+| [Windowed-MTP](https://arxiv.org/abs/2607.21535) | Bounds the native draft head's KV reads while retaining full target verification | High-value long-context MTP hypothesis; defer until a compatible head, exact state rollback, and foundation stability exist. |
+| [AngelSpec](https://arxiv.org/abs/2607.25852) | Co-specializes MTP/diffusion drafters and allocates verification by profiled utility under online load | Retain its load/cost methodology; training and distributed verification are outside the current local core. |
+| [On Evaluating Performance of LLM Inference Serving Systems](https://arxiv.org/abs/2507.09019) | Catalogs baseline-fairness, setup, workload, variability, and metric anti-patterns | Direct input to I098's crossed-control design; no performance claim is imported. |
+| [LLM Inference at the Edge Under Sustained Load](https://arxiv.org/abs/2603.23640) | Shows warm-condition thermal/frequency behavior can dominate mobile inference throughput | Supports sustained-load and headless-host gates; platform results are not generalized to this Mac. |
 
 The foundation gate remains active. These references expand the research
 frontier but do not authorize MTP, DFlash, EAGLE-family, tree speculation,
@@ -119,15 +136,23 @@ still exceed `1%`. System CPU pair deltas correlate with decode deltas at
 not causal. I097 therefore tests a predeclared quiescent-host launch gate before
 another runtime, MTP, or speculative candidate.
 
+I097 retained 1,156 host samples and 1,137 rejected rolling windows over 120
+seconds before the first planned child. The minimum window p95 was `17.025%`
+against the preregistered `12%` ceiling, so the matrix stopped with zero
+performance rows and null deltas. I098 moves to independently owned,
+same-process crossed decode blocks; if that cannot hold control drift within
+`1%`, a dedicated headless host becomes mandatory.
+
 ## Latest Source Refresh
 
 On 2026-08-21, read-only official Git refs and source files were refreshed.
 The newly pinned Apple-native/speculation sources are listed above; the
 configured engine heads currently include MLX `27fec909`, MLX-LM `d53e70f7`,
-SGLang `6127d1da`, vLLM `2adf4b9e`, vLLM-MLX `8c814e30`, vllm-metal
-`67100ba7`, llama.cpp `749f688f`, and OMLX `fa3e94b3`. Rapid-MLX is
-`a8e185d3`, mistral.rs is `d184053f`, Uzu is `9022ad3b`, mlx-swift-lm is
-`130e3f0c`, SpecForge is `de0ea2f5`, and S2-MoE is `fba914c3`. These are source
+SGLang `6127d1da`, vLLM `ba07e4a4`, vLLM-MLX `8c814e30`, vllm-metal
+`aa6d9611`, llama.cpp `749f688f`, and OMLX `fa3e94b3`. Rapid-MLX is
+`51e5b47b`, mistral.rs is `d184053f`, Uzu is `9022ad3b`, mlx-swift-lm is
+`130e3f0c`, SpecForge is `de0ea2f5`, S2-MoE is `fba914c3`, and mlxcel is
+`fdc19666`. These are source
 snapshots for reproducible study, not a claim that every runtime is installed
 or benchmark-comparable on this host.
 
@@ -166,6 +191,7 @@ gated; no paper result is substituted for an Aster measurement.
 | P1 | [Gigatoken](https://github.com/marcelroed/gigatoken), commit `34a1599`, MIT | Rust SIMD pretokenization, cache-aware BPE encoding, and HuggingFace compatibility API; upstream lists Qwen3.5 support | Remote source/license reviewed; not installed or routed by Aster | Treat as CPU ingress-only reference. First prove exact Qwen3.5 IDs for public/chat/special-token cases and measure queue-aware TTFT/e2e; it cannot substitute for MLX GPU prefill/decode optimization. |
 | P1 | [DFlash](https://github.com/z-lab/dflash) and the two MLX ports already under `examples/` | Parallel draft/verify and rollback for diffusion-style speculation | References cloned; not admitted | Defer until cache ownership and batch-state parity are stable. Require acceptance and real load A/B. |
 | P0 research | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm), `130e3f0c`, MIT | Apple-native MTP iterator, staged KV rounds, sticky passthrough, acceptance telemetry, Qwen3.5 MTP support | Added under `examples/`; source read at the pinned head | Use as the native state/rollback contract reference. Do not port MTP until foundation/rollback gates close. |
+| P0 research | [mlxcel](https://github.com/lablup/mlxcel), `fdc19666`, Apache-2.0 | Native MLX C++ runtime, measured MTP policy, fail-closed block/chain exactness, per-row verification, dynamic paged-decode planning | Added under `examples/`; current MTP policy, exactness, walk, and plan source inspected | Use its measurement/exactness contracts after foundation stability; do not import MTP or backend code now. |
 | P1 research | [SpecForge](https://github.com/sgl-project/SpecForge), `de0ea2f5`, MIT | EAGLE3/P-EAGLE/DFlash/Domino/DSpark training and acceptance tooling | Added under `examples/`; CUDA/ROCm/SGLang oriented | Track draft quality and acceptance methodology; no Apple runtime admission. |
 | P1 research | [S2-MoE](https://github.com/angerybob/S2-MoE), `fba914c3`, MIT | Routing-aware adaptive expansion, verification-time expert reuse, and shared target/draft context for edge MoE inference | Author llama.cpp fork pinned under `examples/`; source and tests inspected; CUDA Orin/4090 only | Retain its cost/acceptance/state contract. Do not port until Aster foundation stability, a compatible MoE model, MLX implementation, exact rollback, and real-load gain are proven. |
 | Deferred | llama.cpp MTP (`0a50d990`), vLLM-MLX (`0dd11576`), OMLX (`d0ee0e85`) | Next-n heads with target verification, hidden-state transfer, KV/recurrent rollback, membership reconciliation, and acceptance telemetry | Primary local implementations and licenses reviewed; no Aster candidate. I089 closes merge/extract ownership and exposes reference-shared cohort-sensitive BF16 arithmetic. | Revisit after I092 and the remaining foundation parity/rollback gates. Require exact sampler/stop/stream behavior plus B1/B4/B8 mixed-load acceptance, TTFT, TPOT, throughput, memory, and swap gates. |
@@ -334,12 +360,11 @@ match Aster's Apple Silicon B1-B8 path.
 
 ## Next reproduction
 
-I096 must classify the host/thermal/allocator state that remains after I095's
-fresh-process off/off control. The control-first Aster B4-mixed stratum moved
-`+25.825%` while the matching MLX-LM stratum moved `-1.403%`, so another
-observer or kernel optimization would be an invalid attribution. Use explicit
-idle intervals, process telemetry, allocator/cache counters, and a predeclared
-thermal/power availability field before interpreting decode TPS. Keep the same
-locked public inputs, exact output/finish, TTFT/e2e-tail, memory/RSS/swap,
-cancellation, and structured-processor gates. MTP/speculation stays deferred
-until this foundation and its rollback contracts are closed.
+I098 must determine whether two independently owned decode branches alternated
+in four-token AB/BA blocks can keep same-engine control deltas and both order
+strata within `1%` under the persistent desktop load measured by I097. It must
+retain every block, prove exact output/final-state identity and mutable-state
+isolation, and preserve terminal, fallback, allocator, RSS, and swap contracts.
+Failure makes a dedicated headless benchmark environment a prerequisite rather
+than authorizing looser thresholds. MTP/speculation stays deferred until this
+foundation and its rollback contracts are closed.
