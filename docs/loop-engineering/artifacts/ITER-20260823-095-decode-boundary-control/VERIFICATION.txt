@@ -1,0 +1,72 @@
+I095 TOOL TRANSACTION VERIFICATION
+
+Changed field: benchmark.state_control.
+Changed branch: benchmark-only fresh-process off/off control classification;
+production inference defaults and observer max_events remain unchanged.
+
+BASELINE command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"]["state_control"]=="observer-off"' BASELINE_FILE
+Literal output/result: assertion passed
+Exit status: 0
+
+MODIFIED command
+Command: rtk proxy .venv/bin/python -c 'import json,sys; assert json.load(open(sys.argv[1]))["benchmark"]["state_control"]=="control-off"' MODIFIED_FILE
+Literal output/result: assertion passed; MODIFIED_FILE remains at control-off
+Exit status: 0
+
+ROLLBACK command
+Command: rtk proxy ROLLBACK.sh /tmp/i095-rollback-copy.json
+Input before rollback: {"benchmark":{"state_control":"control-off","order":"alternating-ab","prewarm":"declared-warmup","process_isolation":"fresh-process"}}
+Literal output/result after rollback: {"benchmark":{"state_control":"observer-off","order":"alternating-ab","prewarm":"declared-warmup","process_isolation":"fresh-process"}}
+Exit status: 0
+Restored behavior/status: rollback copy restored to baseline; MODIFIED_FILE remains changed.
+
+Hashes
+BASELINE_FILE SHA-256: 6564a825b339bf3be9502826fec6c63c5b20e0a53ba36764db770343c96d933a
+MODIFIED_FILE SHA-256: 37ea626338ecf10e7424ee67665f2865554c28f183af346306be07eb5c8ec3db
+ROLLBACK_COPY SHA-256: 37ea626338ecf10e7424ee67665f2865554c28f183af346306be07eb5c8ec3db
+DIFF_FILE SHA-256: f4237aa7d31b3209620552f563d32c722a6416d83738282892826b308b89d8d2
+
+Formal control matrix
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_boundary_control.py --observer-matrix /tmp/aster-i094-long-final/matrix-i094.json --off-config /tmp/aster-i094-off.yaml --workload run/loop-engineering/public-benchmarks/cross-engine-core.json --lock docs/loop-engineering/benchmarks/public-dataset-lock.json --data-root run/loop-engineering/public-benchmarks --model-sha256 d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a --tokenizer-sha256 94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e --repetitions 4 --max-output-tokens 32 --cooldown-seconds 1 --process-timeout-seconds 600 --run-root /tmp/aster-i095-control-final --output /tmp/aster-i095-control-final/matrix-i095.json --iteration ITER-20260823-095-decode-boundary-control
+Literal output/result: 16 new control rows; source, exact output, terminal, fallback, swap, cap, and prewarm gates passed; control stability gate rejected.
+Exit status: 0
+
+Recomputed evidence command
+Command: rtk proxy .venv/bin/python scripts/dev/benchmark_decode_boundary_control.py --observer-matrix /tmp/aster-i094-long-final/matrix-i094.json --off-config /tmp/aster-i094-off.yaml --workload run/loop-engineering/public-benchmarks/cross-engine-core.json --lock docs/loop-engineering/benchmarks/public-dataset-lock.json --data-root run/loop-engineering/public-benchmarks --model-sha256 d77667c10dd92f5f94e7a2b3d290e411dd9564d88940a31286648cfa8b138b2a --tokenizer-sha256 94b66525e309d7ce24691be8194369f880e4f8a5ba82b726782e70fc97e1559e --repetitions 4 --max-output-tokens 32 --cooldown-seconds 1 --process-timeout-seconds 600 --run-root /tmp/aster-i095-control-final --output /tmp/aster-i095-control-final/matrix-i095-recomputed.json --iteration ITER-20260823-095-decode-boundary-control --reuse-existing
+Literal output/result: retained rows recompute as measurement_status=valid, control_contract=true, prewarm_contract=true, exact_output_identity_off_vs_control=true, control_stable_primary_and_strata=false, measurement_confounded_by_control_variance=true.
+Exit status: 0
+
+Evidence hashes
+BASELINE_MATRIX.json SHA-256: 4eaad8503963788e590a71c0c55cc91170ba7010b154a9ba55420d6aa8447334
+CONTROL_MATRIX.json SHA-256: 230e72b54e05827d70dd6520002df7a83741592aaeff1980b17c284f66e9984e
+decode-boundary-control.json SHA-256: 230e72b54e05827d70dd6520002df7a83741592aaeff1980b17c284f66e9984e
+
+Performance result
+Primary metric: decode_driver_tps; 32-token B4 public cells; four repetitions.
+Control order strata (control-off first / observer-off first):
+- b4-short Aster: -0.187% / +1.293%; MLX-LM: -0.157% / +1.695%.
+- b4-mixed Aster: +25.825% / +1.464%; MLX-LM: -1.403% / +1.274%.
+The Aster mixed control-first stratum exceeds the 1% boundary and contains a
+single +48.771% paired control delta. The retained observer off/on effect is
+therefore not assigned to observer work or a production owner.
+
+Focused tests
+Command: rtk proxy .venv/bin/pytest -q tests/test_decode_boundary_control.py tests/test_decode_observer_benchmark.py tests/test_foundation_parity_benchmark.py
+Literal output/result: 31 passed in 0.14s
+Exit status: 0
+
+Full suite
+Command: rtk proxy .venv/bin/pytest -q
+Literal output/result: 631 passed, 9 skipped, 1 warning in 7.91s
+Exit status: 0
+
+Static checks
+Command: rtk proxy .venv/bin/ruff check scripts/dev/benchmark_decode_boundary_control.py tests/test_decode_boundary_control.py
+Literal output/result: All checks passed!
+Exit status: 0
+
+Workspace audit
+Command: rtk proxy .venv/bin/python scripts/dev/check_loop_workspace.py --strict
+Literal output/result: Workspace health WARN; blockers none; 24 generated-cache warnings and the completed I095 artifact warning
+Exit status: 0

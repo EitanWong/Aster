@@ -2,12 +2,12 @@
   "schema_version": 1,
   "updated": "2026-08-21",
   "workflow_status": "active",
-  "last_completed_iteration": "ITER-20260822-094-mixed-load-attribution-stability",
-  "active_iteration": "ITER-20260823-095-decode-boundary-control",
+  "last_completed_iteration": "ITER-20260823-095-decode-boundary-control",
+  "active_iteration": "ITER-20260824-096-host-state-trace",
   "phase": "baseline",
   "baseline_commit": "6521fb003cf5307f12dc097e8ccc625404561152",
-  "objective": "Classify host and control-engine state at the common decode boundary before selecting another observer or runtime optimization.",
-  "hypothesis": "I094's longer-window variance is caused by host/process state rather than observer work; explicit idle/prewarm/order controls will move Aster and MLX-LM together or prove the boundary unassignable.",
+  "objective": "Make host, thermal, process, and allocator state explicit at the common decode boundary before selecting another observer or runtime optimization.",
+  "hypothesis": "I095's off/off control variance is caused by unobserved host/process state; explicit idle intervals and telemetry will either stabilize the control or identify the remaining state owner.",
   "success_gates": [
     "Freeze the same 9B model/tokenizer files, public source records, greedy settings, prompt chunking, output limits, cache state, runtime sources, and metric definitions for both engines.",
     "Reuse I090/I091's locked model, public records, generation settings, source hashes, and B4 cohort definitions without forced logit evaluation.",
@@ -16,9 +16,9 @@
     "Admit at most one minimal Aster-owned change only when a stage owns a reproducible >=3% primary gap and all correctness/resource/rollback gates pass; otherwise record attribution and keep defaults unchanged."
   ],
   "next_actions": [
-    "Design and run a control-first B1/B4 decode-boundary matrix with explicit host/prewarm state labels.",
-    "Require Aster and MLX-LM control order strata within 1% for decode TPS and declared resource ceilings.",
-    "Admit no observer or runtime candidate without exact semantics, rollback, and a repeatable >=3% end-to-end gain."
+    "Design and run I096's host-state trace with explicit idle intervals, process telemetry, allocator/cache counters, and thermal/power availability.",
+    "Require Aster and MLX-LM off/off control order strata within 1% for decode TPS before assigning an implementation owner.",
+    "Admit no observer, runtime, MTP, or speculative candidate without exact semantics, rollback, and a repeatable >=3% end-to-end gain."
   ],
   "performance_baseline_contract": {
     "required": true,
@@ -102,6 +102,10 @@
     "iteration_094_verification": "Focused suite passes 112 tests before final artifact coverage and 27 I094 benchmark/artifact tests; full suite passes 626 with 9 skipped and 1 warning. Ruff, JSON parsing, diff check, and rollback verification pass.",
     "iteration_094_delivery": "I094 benchmark-cap plumbing, 32-token matrix artifact, decision records, and I095 plan were delivered in 6521fb003cf5307f12dc097e8ccc625404561152; the state anchor is pushed separately after baseline binding.",
     "iteration_095_plan": "Classify host/prewarm/process state at the common decode boundary with explicit controls. Require <=1% Aster/control order-strata variance, exact public B1/B4 behavior, zero swap/fallbacks, and no production change without >=3% repeatable end-to-end gain.",
+    "iteration_095_matrix": "Sixteen new fresh-process off/off control rows reuse the locked I094 32-token B4 observer-off baseline. Source, exact output/finish, terminal, fallback, swap, output-cap, and declared-warmup contracts pass. Aster B4-mixed control-first decode TPS is +25.825% versus +1.464% observer-off-first; MLX-LM is -1.403%/+1.274%; B4-short Aster and MLX-LM are -0.187%/+1.293% and -0.157%/+1.695%.",
+    "iteration_095_decision": "Reject observer/runtime attribution because the <=1% control order-strata gate fails; one retained Aster mixed control delta is +48.771%. No production inference default changed.",
+    "iteration_095_artifact": "decode-boundary-control.json is archived under docs/loop-engineering/artifacts/ITER-20260823-095-decode-boundary-control with SHA-256 230e72b54e05827d70dd6520002df7a83741592aaeff1980b17c284f66e9984e; BASELINE_MATRIX.json is 4eaad8503963788e590a71c0c55cc91170ba7010b154a9ba55420d6aa8447334.",
+    "iteration_095_verification": "Five control-contract tests and retained-artifact recomputation pass; touched Ruff and diff checks pass. The formal 16-row control command exits 0 with exact semantics/resource/prewarm gates and a rejected control-stability gate. I096 is the active host-state trace.",
     "iteration_093_delivery": "I093 sampled observer implementation, 32-row evidence artifact, refreshed reference gitlinks, rollback verification, and I094 plan were delivered in 1f8ec3509ffd881ef1efd1d2bc2f58b52b4d540f; the status anchor is pushed separately after baseline binding.",
     "frontier_2026_08_21_refresh": "MLX-LM d06c5374 (2026-08-19 MLX 0.32.1 update observation), MLX 27fec909, llama.cpp 0e1d9185, OMLX fa3e94b3, vLLM bfb6c134, Rapid-MLX 58ad7692, mistral.rs d184053f, uzu 1fd0c461, mlx-swift-lm 3c5805a1, SGLang 0f744b684, Ollama 8f912415, vLLM-MLX 8c814e30, and vLLM-Metal 67100ba7 were fetched and recorded; all remaining pins were already at fetched branch tips. Papers 2608.05326/2608.13966/2608.08721/2608.06723/2608.05448 remain watch-only; no unverified code was transferred.",
     "frontier_2026_08_21": "Added mlx-swift-lm 3c5805a1 (MIT) with native MTP/staged-KV rollback telemetry and SpecForge 2590f48e (MIT) with EAGLE3/P-EAGLE/DFlash/Domino/DSpark paths as git-submodule references. Reviewed mlx-swift 97cf19ef, LookaheadDecoding eed010da, and papers 2608.15454/2608.05806/2608.03624/2608.00434/2608.02244/2608.08382/2608.01651. All MTP/speculation remains foundation-gated.",

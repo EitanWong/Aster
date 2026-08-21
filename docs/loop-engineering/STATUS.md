@@ -61,6 +61,16 @@ Updated: 2026-08-21
 - I094 implementation, evidence, and the I095 control-first plan are in
   `6521fb003cf5307f12dc097e8ccc625404561152`; the final state anchor follows
   after binding `CURRENT.json` to this delivery commit.
+- I095 completed a 16-row fresh-process off/off control matrix against the
+  retained I094 32-token observer rows. Source, exact output/finish, terminal,
+  fallback, swap, output-cap, and declared-warmup contracts all pass, but the
+  Aster B4-mixed control-first decode stratum is `+25.825%` versus
+  `+1.464%` observer-off-first (one paired control delta is `+48.771%`).
+  MLX-LM control strata are `-1.403%/+1.274%`; B4-short Aster and MLX-LM are
+  `-0.187%/+1.293%` and `-0.157%/+1.695%`. The `<=1%` control gate fails, so
+  I095 rejects observer/runtime attribution and makes no production change.
+  Evidence and rollback verification are archived under
+  `docs/loop-engineering/artifacts/ITER-20260823-095-decode-boundary-control/`.
 - I061 admitted a same-host Aster/direct-MLX-LM baseline with identical model
   files, locally constructed prompts, greedy sampling, fixed output caps,
   token/text/finish parity, and zero swap growth across 12 independent pairs.

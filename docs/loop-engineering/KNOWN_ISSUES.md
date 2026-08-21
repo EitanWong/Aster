@@ -1,5 +1,12 @@
 # Known Issues
 
+- I095 confirms a fresh-process control-state confound at the common decode
+  boundary. In a locked 32-token B4 matrix, all 16 off/off rows preserve exact
+  output/finish, clean terminal state, zero fallback/swap, and declared
+  warmup, but Aster B4-mixed control-first decode TPS is `+25.825%` versus
+  `+1.464%` observer-off-first (one paired delta is `+48.771%`). The retained
+  observer on/off timing therefore cannot be assigned to instrumentation or a
+  runtime owner until host/thermal/allocator state is explicitly controlled.
 - I090 establishes a valid 32-row Qwen3.5-9B foundation baseline, but two B4
   cells have declared cross-engine output divergences (`b4-short/short-3` and
   `b4-mixed/short-0`). Aster's paired median decode-driver deficit is

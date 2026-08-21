@@ -1,0 +1,10 @@
+--- docs/loop-engineering/artifacts/ITER-20260823-095-decode-boundary-control/BASELINE_FILE	2026-08-21 08:29:19
++++ docs/loop-engineering/artifacts/ITER-20260823-095-decode-boundary-control/MODIFIED_FILE	2026-08-21 08:29:19
+@@ -1,6 +1,6 @@
+ {
+   "benchmark": {
+-    "state_control": "observer-off",
++    "state_control": "control-off",
+     "process_isolation": "fresh-process",
+     "prewarm": "declared-warmup",
+     "order": "alternating-ab"

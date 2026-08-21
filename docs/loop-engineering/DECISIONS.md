@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-08-21: Reject I095 Decode Attribution Until Control State Is Stable
+
+- Decision: keep the sampled observer benchmark-only and make no production
+  inference change. The common B4 decode boundary remains confounded by
+  fresh-process/control state.
+- Evidence: 16 new off/off control rows reuse the locked I094 Qwen3.5-9B,
+  public B4 workload, 32-token cap, cache-off state, declared warmup, and
+  balanced engine/control order. Exact output/finish, source, terminal,
+  fallback, swap, output-cap, and warmup contracts all pass. Aster B4-mixed
+  control-first decode TPS is `+25.825%` versus `+1.464%` observer-off-first;
+  the retained paired control deltas include `+48.771%`. MLX-LM control
+  strata are `-1.403%/+1.274%`.
+- Interpretation: the I094 mixed observer delta cannot be assigned to observer
+  work, an Aster decode stage, or a runtime candidate. The predeclared `1%`
+  control gate fails even though semantic/resource gates pass.
+- Rollback: remove the benchmark-only control harness and its artifact; no
+  serving path imports it and no production config changed.
+- Next experiment: trace explicit host idle/thermal/allocator state at the
+  same boundary, or establish a lower-level kernel control with an equivalent
+  state contract before evaluating MTP or speculative decoding.
+
 ## 2026-07-13: Admit Before Prefill Continuation
 
 - Decision: retain the manual scheduler and process waiting admissions after decode but before prefill.

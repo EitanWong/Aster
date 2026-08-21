@@ -298,12 +298,12 @@ match Aster's Apple Silicon B1-B8 path.
 
 ## Next reproduction
 
-I092 profiles the post-group sampler graph by stage, using LLMVisor's
-piecewise attribution idea without forcing lazy evaluation. Measure model/cache
-boundary, logsumexp, greedy/random sampler graph construction,
-repetition/presence/frequency penalties, grouped evaluation, and required host
-output materialization. Test a change only when the observer is no-op and the
-stage owns a reproducible 3% of the valid B4 boundary. The same balanced
-fresh-process, exact-output, TTFT/e2e-tail, memory/RSS/swap, cancellation, and
-structured-processor gates remain mandatory. MTP/speculation stays deferred
+I096 must classify the host/thermal/allocator state that remains after I095's
+fresh-process off/off control. The control-first Aster B4-mixed stratum moved
+`+25.825%` while the matching MLX-LM stratum moved `-1.403%`, so another
+observer or kernel optimization would be an invalid attribution. Use explicit
+idle intervals, process telemetry, allocator/cache counters, and a predeclared
+thermal/power availability field before interpreting decode TPS. Keep the same
+locked public inputs, exact output/finish, TTFT/e2e-tail, memory/RSS/swap,
+cancellation, and structured-processor gates. MTP/speculation stays deferred
 until this foundation and its rollback contracts are closed.
